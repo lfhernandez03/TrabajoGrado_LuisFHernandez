@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<catalog prefer="public" xmlns="urn:oasis:names:tc:entity:xmlns:xml:catalog">
+    <uri id="Imports Wizard Entry" name="http://www.semanticweb.org/movierecommendation/ontologies/2025/movie-ontology" uri="file:/C:/Users/luish/Documents/GitHub/movie-recommender-system/DATA/ontologies/base/movie-ontology.ttl"/>
+    <uri id="Imports Wizard Entry" name="http://www.semanticweb.org/movierecommendation/ontologies/2025/context-ontology" uri="file:/C:/Users/luish/Documents/GitHub/movie-recommender-system/DATA/ontologies/base/context-ontology.ttl"/>
+    <uri id="User Entered Import Resolution" name="http://www.semanticweb.org/movierecommendation/ontologies/2025/movie-ontology" uri="bridge-ontology.ttl"/>
+    <group id="Folder Repository, directory=, recursive=true, Auto-Update=true, version=2" prefer="public" xml:base=""/>
+</catalog>

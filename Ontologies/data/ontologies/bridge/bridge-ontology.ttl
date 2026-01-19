@@ -1,0 +1,904 @@
+@prefix : <http://www.semanticweb.org/movierecommendation/ontologies/2025/bridge-ontology#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix xml: <http://www.w3.org/XML/1998/namespace> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix movie: <http://www.semanticweb.org/movierecommendation/ontologies/2025/movie-ontology#> .
+@prefix context: <http://www.semanticweb.org/movierecommendation/ontologies/2025/context-ontology#> .
+@prefix swrl: <http://www.w3.org/2003/11/swrl#> .
+@prefix swrlb: <http://www.w3.org/2003/11/swrlb#> .
+
+<http://www.semanticweb.org/movierecommendation/ontologies/2025/bridge-ontology> rdf:type owl:Ontology ;
+    owl:imports <http://www.semanticweb.org/movierecommendation/ontologies/2025/movie-ontology> ,
+                <http://www.semanticweb.org/movierecommendation/ontologies/2025/context-ontology> ;
+    rdfs:label "Bridge Ontology for GraphRAG Movie Recommendation"@en ,
+               "Ontología Puente para Recomendación de Películas con GraphRAG"@es ;
+    rdfs:comment """
+    Ontología de Integración - Alineación Semántica Dinámica para GraphRAG
+    
+    FILOSOFÍA DE DISEÑO:
+    Esta ontología NO define clases nuevas. Su único propósito es facilitar la 
+    Alineación Semántica Dinámica entre dos mundos independientes:
+    
+    1. movie-ontology (v1.0): Dominio fílmico (películas, géneros, personas)
+    2. context-ontology (v1.0): Contexto de interacción del usuario
+    
+    RESPONSABILIDADES:
+    - Definir propiedades de objeto (Object Properties) que conecten ambos mundos
+    - Proveer propiedades de datos (Data Properties) para scoring/compatibilidad
+    - Implementar reglas SWRL para filtrado lógico automático
+    - Mantener la independencia de las ontologías base (desacoplamiento)
+    
+    ARQUITECTURA DE INTEGRACIÓN:
+    
+    ┌──────────────────────────────────────────────────────────────┐
+    │                    GRAPHRAG QUERY ENGINE                      │
+    └──────────────────────────────────────────────────────────────┘
+                              ↓
+    ┌──────────────────────────────────────────────────────────────┐
+    │              BRIDGE ONTOLOGY (Esta ontología)                 │
+    │  • Propiedades de puente (isRecommendedIn, satisfiesReq...)  │
+    │  • Scoring de compatibilidad (compatibilityScore)             │
+    │  • Reglas SWRL (filtrado automático runtime vs availableTime)│
+    └──────────────────────────────────────────────────────────────┘
+              ↓                                   ↓
+    ┌─────────────────────┐         ┌─────────────────────────────┐
+    │  MOVIE ONTOLOGY     │         │    CONTEXT ONTOLOGY         │
+    │  (Dominio Fílmico)  │         │  (Contexto de Usuario)      │
+    │  • Movie            │         │  • ContextSnapshot          │
+    │  • Genre            │         │  • EmotionalContext         │
+    │  • Person           │         │  • SocialContext            │
+    │  • Company          │         │  • RequirementContext       │
+    └─────────────────────┘         └─────────────────────────────┘
+    
+    PRINCIPIOS DE ALINEACIÓN SEMÁNTICA:
+    
+    1. NO SESGOS PREDEFINIDOS:
+       Las propiedades de puente NO imponen lógica rígida. El LLM interpreta
+       el contexto y usa estas propiedades para expresar relaciones dinámicas.
+    
+    2. SCORING EXPLICATIVO:
+       El compatibilityScore NO es un cálculo fijo, sino una métrica explicativa
+       que el LLM genera para justificar por qué una película se alinea con el contexto.
+    
+    3. REGLAS LÓGICAS MÍNIMAS:
+       SWRL se usa solo para restricciones objetivas (ej: runtime ≤ availableTime).
+       El razonamiento complejo queda en el LLM, no en la ontología.
+    
+    4. NAVEGACIÓN BIDIRECCIONAL:
+       Todas las propiedades de objeto tienen inversas (owl:inverseOf) para
+       permitir queries en ambas direcciones.
+    
+    USO EN GRAPHRAG:
+    1. El LLM captura contexto del usuario → context-ontology
+    2. GraphRAG navega hacia movie-ontology usando las propiedades de puente
+    3. SWRL filtra películas que no cumplen restricciones duras
+    4. El LLM calcula compatibilityScore y ranquea resultados
+    5. Se retornan las top-k películas más alineadas
+    
+    EJEMPLO DE FLUJO:
+    Usuario: "Quiero algo épico, son las 3 AM, tengo 90 minutos, nada de terror"
+    
+    → context-ontology captura:
+      ContextSnapshot(hourOfDay=3, dayOfWeek="Martes")
+      EmotionalContext(desiredEnergyLevel="alto")
+      RequirementContext(availableTime=90, excludedGenre="terror")
+    
+    → bridge-ontology conecta:
+      Movie --isRecommendedIn--> ContextSnapshot
+      Movie --alignsWithMood--> EmotionalContext(desiredEnergyLevel="alto")
+      Movie --satisfiesRequirement--> RequirementContext
+    
+    → SWRL filtra:
+      Movie(runtime ≤ 90) ∧ Movie(genre ≠ "Horror") → satisfiesRequirement
+    
+    → LLM calcula:
+      Movie("The Matrix"): compatibilityScore=0.92 (épico, 136min NO pasa filtro SWRL)
+      Movie("Mad Max Fury Road"): compatibilityScore=0.95 (épico, 120min NO pasa)
+      Movie("John Wick"): compatibilityScore=0.89 (acción intensa, 101min NO pasa)
+      Movie("Drive"): compatibilityScore=0.87 (intenso, visual, 100min NO pasa)
+      Movie("Nightcrawler"): compatibilityScore=0.85 (intenso, nocturno, 117min NO pasa)
+      → Ajuste: Usuario realmente necesita más tiempo o películas más cortas
+    
+    Versión: 2.0 - Refactorización para GraphRAG
+    Autor: Luis Fernando Hernández Solís
+    Institución: Universidad del Valle - Escuela de Ingeniería de Sistemas y Computación
+    Año: 2026
+    """@es ;
+    owl:versionInfo "2.0" .
+
+#################################################################
+#    TABLA DE CONTENIDOS
+#################################################################
+# 1. Object Properties - Relaciones de Puente
+#    1.1 Movie ↔ ContextSnapshot
+#    1.2 Movie ↔ RequirementContext
+#    1.3 Movie ↔ EmotionalContext
+#    1.4 Movie ↔ SocialContext
+#    1.5 User ↔ Movie (Historial)
+#
+# 2. Data Properties - Scoring y Métricas
+#    2.1 Compatibilidad General
+#    2.2 Scores Específicos por Dimensión
+#
+# 3. Reglas SWRL - Filtrado Lógico
+#    3.1 Regla: Runtime vs Available Time
+#    3.2 Regla: Exclusión de Géneros
+#    3.3 Regla: Restricciones de Edad (hasChildren)
+#
+# 4. Axiomas y Restricciones
+#################################################################
+
+#################################################################
+#    1. Object Properties - Relaciones de Puente
+#################################################################
+
+#================================================================
+# 1.1 Movie ↔ ContextSnapshot
+#================================================================
+
+:isRecommendedIn rdf:type owl:ObjectProperty ;
+    rdfs:domain movie:Movie ;
+    rdfs:range context:ContextSnapshot ;
+    owl:inverseOf :recommends ;
+    rdfs:label "is recommended in"@en ,
+               "es recomendada en"@es ;
+    rdfs:comment """
+    Conecta una película con el snapshot de contexto en el que fue recomendada.
+    Esta propiedad representa la relación central del sistema: una Movie se 
+    alinea semánticamente con un ContextSnapshot específico.
+    
+    Uso en GraphRAG:
+    - Permite navegar desde películas hacia contextos (¿en qué contextos se recomienda Inception?)
+    - Permite navegar desde contextos hacia películas (¿qué películas se recomiendan para este contexto?)
+    - El LLM usa esta propiedad para estructurar la respuesta de recomendación
+    
+    NO es una relación estática: se crea dinámicamente durante cada query GraphRAG.
+    """@es .
+
+:recommends rdf:type owl:ObjectProperty ;
+    rdfs:domain context:ContextSnapshot ;
+    rdfs:range movie:Movie ;
+    rdfs:label "recommends"@en ,
+               "recomienda"@es ;
+    rdfs:comment "Inversa de isRecommendedIn. Un ContextSnapshot recomienda una Movie."@es .
+
+#================================================================
+# 1.2 Movie ↔ RequirementContext
+#================================================================
+
+:satisfiesRequirement rdf:type owl:ObjectProperty ;
+    rdfs:domain movie:Movie ;
+    rdfs:range context:RequirementContext ;
+    owl:inverseOf :isSatisfiedBy ;
+    rdfs:label "satisfies requirement"@en ,
+               "satisface requisito"@es ;
+    rdfs:comment """
+    Indica que una película cumple con los requisitos logísticos del contexto.
+    
+    Requisitos típicos que puede satisfacer:
+    - Tiempo disponible (runtime ≤ availableTime)
+    - Restricciones de contenido (no terror, apto para niños)
+    - Idioma preferido
+    - NO contiene géneros excluidos (excludedGenre)
+    - NO viola restricciones negativas (negativeConstraint)
+    
+    Esta propiedad se infiere automáticamente mediante reglas SWRL cuando:
+    1. movie:runtime ≤ context:availableTime
+    2. movie:genre NO está en context:excludedGenre
+    3. Cumple otras restricciones duras especificadas
+    
+    CRÍTICO: Si una película NO tiene esta propiedad para un RequirementContext,
+    debe ser excluida del resultado final, incluso si tiene alto compatibilityScore.
+    """@es .
+
+:isSatisfiedBy rdf:type owl:ObjectProperty ;
+    rdfs:domain context:RequirementContext ;
+    rdfs:range movie:Movie ;
+    rdfs:label "is satisfied by"@en ,
+               "es satisfecho por"@es ;
+    rdfs:comment "Inversa de satisfiesRequirement. Un requisito es satisfecho por una Movie."@es .
+
+#================================================================
+# 1.3 Movie ↔ EmotionalContext
+#================================================================
+
+:alignsWithMood rdf:type owl:ObjectProperty ;
+    rdfs:domain movie:Movie ;
+    rdfs:range context:EmotionalContext ;
+    owl:inverseOf :isAlignedWith ;
+    rdfs:label "aligns with mood"@en ,
+               "se alinea con estado emocional"@es ;
+    rdfs:comment """
+    Conecta una película con el estado emocional del contexto de usuario.
+    
+    Esta alineación considera:
+    - moodDescription: Cómo se siente el usuario actualmente
+    - emotionalNeed: Qué busca sentir (puede diferir del mood actual)
+    - desiredEnergyLevel: Nivel de energía/intensidad deseado
+    - moodIntensity: Cuán intenso es el estado emocional
+    
+    El LLM interpreta estas dimensiones para determinar la alineación.
+    
+    Ejemplos de alineación:
+    - Usuario "estresado" + emotionalNeed "escapar" → Películas relajantes
+    - Usuario "triste" + desiredEnergyLevel "alto" → Películas energéticas (contraintuitivo)
+    - Usuario "alegre" + desiredEnergyLevel "medio" → Comedias ligeras
+    
+    NO es una lógica rígida: el LLM usa su conocimiento del catálogo para decidir.
+    """@es .
+
+:isAlignedWith rdf:type owl:ObjectProperty ;
+    rdfs:domain context:EmotionalContext ;
+    rdfs:range movie:Movie ;
+    rdfs:label "is aligned with"@en ,
+               "está alineado con"@es ;
+    rdfs:comment "Inversa de alignsWithMood. Un EmotionalContext se alinea con una Movie."@es .
+
+#================================================================
+# 1.4 Movie ↔ SocialContext
+#================================================================
+
+:suitableForSocialContext rdf:type owl:ObjectProperty ;
+    rdfs:domain movie:Movie ;
+    rdfs:range context:SocialContext ;
+    owl:inverseOf :isSuitableFor ;
+    rdfs:label "suitable for social context"@en ,
+               "adecuada para contexto social"@es ;
+    rdfs:comment """
+    Indica que una película es apropiada para el contexto social especificado.
+    
+    Factores sociales considerados:
+    - companionType: Solo, pareja, familia, niños, amigos
+    - hasChildren: Presencia de niños (crítico para filtros de clasificación)
+    - groupSize: Cantidad de personas (grupos grandes necesitan consenso)
+    
+    Lógica de adecuación:
+    - hasChildren=true → Películas aptas para niños (G, PG)
+    - groupSize > 4 → Preferir "crowd-pleasers" con amplio consenso
+    - companionType="pareja" → Puede incluir romance, drama íntimo
+    - companionType="amigos" → Preferir acción, comedia, películas sociales
+    
+    El LLM usa esta propiedad para filtrar películas que NO son socialmente apropiadas.
+    """@es .
+
+:isSuitableFor rdf:type owl:ObjectProperty ;
+    rdfs:domain context:SocialContext ;
+    rdfs:range movie:Movie ;
+    rdfs:label "is suitable for"@en ,
+               "es adecuado para"@es ;
+    rdfs:comment "Inversa de suitableForSocialContext. Un SocialContext es adecuado para una Movie."@es .
+
+#================================================================
+# 1.5 User ↔ Movie (Historial de Visualización)
+#================================================================
+
+:hasWatched rdf:type owl:ObjectProperty ;
+    rdfs:domain context:User ;
+    rdfs:range movie:Movie ;
+    owl:inverseOf :wasWatchedBy ;
+    rdfs:label "has watched"@en ,
+               "ha visto"@es ;
+    rdfs:comment """
+    El usuario ha visto esta película previamente.
+    
+    Uso en GraphRAG:
+    - Para evitar recomendar películas ya vistas (a menos que el usuario lo solicite)
+    - Para identificar preferencias del usuario basadas en historial
+    - Para calcular similaridad entre películas vistas y candidatas
+    
+    IMPORTANTE: Esta propiedad puede provenir de:
+    1. Sistema de ratings (userId ha calificado movieId)
+    2. Historial de visualización
+    3. Inferencia del LLM si el usuario menciona haber visto la película
+    """@es .
+
+:wasWatchedBy rdf:type owl:ObjectProperty ;
+    rdfs:domain movie:Movie ;
+    rdfs:range context:User ;
+    rdfs:label "was watched by"@en ,
+               "fue vista por"@es ;
+    rdfs:comment "Inversa de hasWatched. Una película fue vista por un User."@es .
+
+:hasRated rdf:type owl:ObjectProperty ;
+    rdfs:domain context:User ;
+    rdfs:range movie:Movie ;
+    owl:inverseOf :wasRatedBy ;
+    rdfs:label "has rated"@en ,
+               "ha calificado"@es ;
+    rdfs:comment "El usuario ha calificado esta película (implica que la ha visto)."@es .
+
+:wasRatedBy rdf:type owl:ObjectProperty ;
+    rdfs:domain movie:Movie ;
+    rdfs:range context:User ;
+    rdfs:label "was rated by"@en ,
+               "fue calificada por"@es ;
+    rdfs:comment "Inversa de hasRated."@es .
+
+#################################################################
+#    2. Data Properties - Scoring y Métricas
+#################################################################
+
+#================================================================
+# 2.1 Compatibilidad General
+#================================================================
+
+:compatibilityScore rdf:type owl:DatatypeProperty ,
+                             owl:FunctionalProperty ;
+    rdfs:domain movie:Movie ;
+    rdfs:range xsd:float ;
+    rdfs:label "compatibility score"@en ,
+               "puntuación de compatibilidad"@es ;
+    rdfs:comment """
+    Puntuación de compatibilidad global (0.0-1.0) entre una película y el contexto actual.
+    
+    GENERACIÓN:
+    Esta puntuación es calculada por el LLM durante el proceso de GraphRAG, NO es 
+    un valor precomputado. El LLM considera:
+    
+    1. Alineación emocional (alignsWithMood)
+    2. Adecuación social (suitableForSocialContext)
+    3. Cumplimiento de requisitos (satisfiesRequirement)
+    4. Alineación temporal (dayOfWeek, hourOfDay del contexto)
+    5. Popularidad, calificación y otros factores del dominio fílmico
+    
+    INTERPRETACIÓN:
+    - 0.90 - 1.00: Altamente recomendada (match casi perfecto)
+    - 0.75 - 0.89: Buena opción (coincide en la mayoría de dimensiones)
+    - 0.60 - 0.74: Opción aceptable (algunas coincidencias)
+    - 0.00 - 0.59: Baja compatibilidad (pocas coincidencias)
+    
+    USO EN RANKING:
+    Las películas se ordenan por compatibilityScore DESC para generar el top-k.
+    
+    RESTRICCIÓN TÉCNICA: Valores válidos [0.0, 1.0]. Ver sección de axiomas.
+    """@es .
+
+#================================================================
+# 2.2 Scores Específicos por Dimensión
+#================================================================
+
+:moodMatchScore rdf:type owl:DatatypeProperty ;
+    rdfs:domain movie:Movie ;
+    rdfs:range xsd:float ;
+    rdfs:label "mood match score"@en ,
+               "puntuación de coincidencia emocional"@es ;
+    rdfs:comment """
+    Qué tan bien la película coincide con el estado emocional del usuario (0.0-1.0).
+    
+    Considera:
+    - Tono de la película vs moodDescription
+    - Cómo satisface el emotionalNeed
+    - Alineación con desiredEnergyLevel
+    
+    Ejemplo: Usuario "estresado" que busca "escapar"
+    → Película relajante: moodMatchScore=0.95
+    → Película de acción intensa: moodMatchScore=0.30
+    """@es .
+
+:socialMatchScore rdf:type owl:DatatypeProperty ;
+    rdfs:domain movie:Movie ;
+    rdfs:range xsd:float ;
+    rdfs:label "social match score"@en ,
+               "puntuación de coincidencia social"@es ;
+    rdfs:comment """
+    Qué tan apropiada es la película para el contexto social (0.0-1.0).
+    
+    Factores:
+    - Adecuación para companionType
+    - Apropiado para groupSize
+    - Cumplimiento de hasChildren (si aplica)
+    
+    Ejemplo: hasChildren=true
+    → Película G/PG: socialMatchScore=1.0
+    → Película R: socialMatchScore=0.0 (exclusión automática)
+    """@es .
+
+:energyMatchScore rdf:type owl:DatatypeProperty ;
+    rdfs:domain movie:Movie ;
+    rdfs:range xsd:float ;
+    rdfs:label "energy match score"@en ,
+               "puntuación de coincidencia energética"@es ;
+    rdfs:comment """
+    Qué tan apropiada es la película para el nivel de energía deseado (0.0-1.0).
+    
+    Reemplaza temporalMatchScore en v3. Considera:
+    - desiredEnergyLevel del EmotionalContext ('bajo', 'medio', 'alto')
+    - Intensidad/ritmo de la película
+    - Alineación con necesidades de activación/relajación
+    
+    Ejemplo: Usuario con desiredEnergyLevel='alto'
+    → Película de acción: energyMatchScore=0.95
+    → Película contemplativa: energyMatchScore=0.30
+    """@es .
+
+:temporalMatchScore rdf:type owl:DatatypeProperty ;
+    rdfs:domain movie:Movie ;
+    rdfs:range xsd:float ;
+    rdfs:label "temporal match score"@en ,
+               "puntuación de coincidencia temporal"@es ;
+    rdfs:comment """
+    DEPRECATED en v3: Usar energyMatchScore en su lugar.
+    
+    Qué tan apropiada es la película para el momento temporal (0.0-1.0).
+    
+    Considera:
+    - hourOfDay (ej: película intensa a las 3 AM puede ser adecuada)
+    - dayOfWeek (ej: fin de semana vs día laboral - sin sesgos rígidos)
+    - Duración vs momento del día
+    
+    El LLM interpreta el contexto temporal sin categorías predefinidas.
+    """@es .
+
+:requirementMatchScore rdf:type owl:DatatypeProperty ;
+    rdfs:domain movie:Movie ;
+    rdfs:range xsd:float ;
+    rdfs:label "requirement match score"@en ,
+               "puntuación de cumplimiento de requisitos"@es ;
+    rdfs:comment """
+    Qué tan bien la película cumple con los requisitos logísticos (0.0-1.0).
+    
+    Factores:
+    - Runtime vs availableTime
+    - Ausencia de géneros excluidos
+    - Idioma preferido
+    - Otras restricciones negativas
+    
+    Si satisfiesRequirement es true → requirementMatchScore debería ser alto (≥0.8)
+    """@es .
+
+#================================================================
+# 2.3 Características de Compatibilidad (v3)
+#================================================================
+
+:compatibleMood rdf:type owl:DatatypeProperty ;
+    rdfs:domain movie:Movie ;
+    rdfs:range xsd:string ;
+    rdfs:label "compatible mood"@en ,
+               "mood compatible"@es ;
+    rdfs:comment """
+    Valores de moodDescription compatibles con esta película.
+    
+    Valores normalizados (de MOOD_TYPES en rdf_context_generator.py):
+    'feliz', 'relajado', 'estresado', 'triste', 'ansioso', 'emocionado',
+    'aburrido', 'curioso', 'concentrado', 'romantico', 'nostalgico',
+    'aventurero', 'nervioso', 'solo'
+    
+    Una película puede tener múltiples valores (cardinalidad ilimitada).
+    Usado para matching SPARQL exacto con EmotionalContext.moodDescription.
+    """@es .
+
+:compatibleCompanion rdf:type owl:DatatypeProperty ;
+    rdfs:domain movie:Movie ;
+    rdfs:range xsd:string ;
+    rdfs:label "compatible companion"@en ,
+               "acompañante compatible"@es ;
+    rdfs:comment """
+    Valores de companionType compatibles con esta película.
+    
+    Valores normalizados (de COMPANION_TYPES en rdf_context_generator.py):
+    'solo', 'pareja', 'familia', 'familia con niños', 'familia extendida',
+    'amigos', 'compañeros de trabajo'
+    
+    Una película puede tener múltiples valores (cardinalidad ilimitada).
+    Usado para matching SPARQL exacto con SocialContext.companionType.
+    """@es .
+
+:compatibleEnergyLevel rdf:type owl:DatatypeProperty ;
+    rdfs:domain movie:Movie ;
+    rdfs:range xsd:string ;
+    rdfs:label "compatible energy level"@en ,
+               "nivel de energía compatible"@es ;
+    rdfs:comment """
+    Niveles de energía deseados compatibles con esta película.
+    
+    Valores normalizados (de ENERGY_LEVELS en rdf_context_generator.py):
+    'bajo', 'medio', 'alto'
+    
+    Una película puede tener múltiples valores (cardinalidad ilimitada).
+    Usado para matching SPARQL exacto con EmotionalContext.desiredEnergyLevel.
+    """@es .
+
+:isKidFriendly rdf:type owl:DatatypeProperty ,
+                        owl:FunctionalProperty ;
+    rdfs:domain movie:Movie ;
+    rdfs:range xsd:boolean ;
+    rdfs:label "is kid friendly"@en ,
+               "es apta para niños"@es ;
+    rdfs:comment """
+    Indica si la película es apropiada para niños.
+    
+    Criterios:
+    - Género: Animation, Family, Adventure, Fantasy, Music
+    - Certificación: G, PG
+    - Contenido: No violencia excesiva, lenguaje apropiado
+    
+    Usado para filtrado automático cuando SocialContext.hasChildren=true.
+    """@es .
+
+#################################################################
+#    3. Reglas SWRL - Filtrado Lógico Automático
+#################################################################
+
+#================================================================
+# 3.1 Regla: Runtime vs Available Time
+#================================================================
+
+# Regla: Si el runtime de una película es menor o igual al tiempo disponible,
+#        entonces la película satisface el requisito de tiempo.
+#
+# Sintaxis SWRL:
+# Movie(?m) ∧ RequirementContext(?req) ∧ 
+# runtime(?m, ?runtime) ∧ availableTime(?req, ?available) ∧
+# swrlb:lessThanOrEqual(?runtime, ?available)
+# → satisfiesRequirement(?m, ?req)
+
+<urn:swrl:rule:runtime_constraint>
+    rdf:type swrl:Imp ;
+    rdfs:label "Runtime Constraint Rule"@en ,
+               "Regla de Restricción de Duración"@es ;
+    rdfs:comment """
+    REGLA CRÍTICA: Filtra películas cuyo runtime excede el tiempo disponible.
+    
+    Lógica:
+    IF movie.runtime ≤ context.availableTime
+    THEN movie satisfiesRequirement context.RequirementContext
+    
+    Esta es una restricción DURA: si una película no cumple, debe ser excluida
+    del resultado final independientemente de su compatibilityScore.
+    
+    Ejemplo:
+    - Usuario tiene 90 minutos disponibles
+    - Película A: runtime=85min → PASA (satisfiesRequirement=true)
+    - Película B: runtime=150min → NO PASA (excluir del resultado)
+    
+    IMPORTANTE: El LLM puede relajar esta restricción si el usuario lo solicita
+    explícitamente (ej: "muéstrame opciones aunque sean largas").
+    """@es ;
+    swrl:body [
+        rdf:type swrl:AtomList ;
+        rdf:first [
+            rdf:type swrl:ClassAtom ;
+            swrl:classPredicate movie:Movie ;
+            swrl:argument1 [ rdf:type swrl:Variable ; swrl:variableName "m" ]
+        ] ;
+        rdf:rest [
+            rdf:type swrl:AtomList ;
+            rdf:first [
+                rdf:type swrl:ClassAtom ;
+                swrl:classPredicate context:RequirementContext ;
+                swrl:argument1 [ rdf:type swrl:Variable ; swrl:variableName "req" ]
+            ] ;
+            rdf:rest [
+                rdf:type swrl:AtomList ;
+                rdf:first [
+                    rdf:type swrl:DatavaluedPropertyAtom ;
+                    swrl:propertyPredicate movie:runtime ;
+                    swrl:argument1 [ rdf:type swrl:Variable ; swrl:variableName "m" ] ;
+                    swrl:argument2 [ rdf:type swrl:Variable ; swrl:variableName "runtime" ]
+                ] ;
+                rdf:rest [
+                    rdf:type swrl:AtomList ;
+                    rdf:first [
+                        rdf:type swrl:DatavaluedPropertyAtom ;
+                        swrl:propertyPredicate context:availableTime ;
+                        swrl:argument1 [ rdf:type swrl:Variable ; swrl:variableName "req" ] ;
+                        swrl:argument2 [ rdf:type swrl:Variable ; swrl:variableName "available" ]
+                    ] ;
+                    rdf:rest [
+                        rdf:type swrl:AtomList ;
+                        rdf:first [
+                            rdf:type swrl:BuiltinAtom ;
+                            swrl:builtin swrlb:lessThanOrEqual ;
+                            swrl:arguments [
+                                rdf:type swrl:AtomList ;
+                                rdf:first [ rdf:type swrl:Variable ; swrl:variableName "runtime" ] ;
+                                rdf:rest [
+                                    rdf:type swrl:AtomList ;
+                                    rdf:first [ rdf:type swrl:Variable ; swrl:variableName "available" ] ;
+                                    rdf:rest rdf:nil
+                                ]
+                            ]
+                        ] ;
+                        rdf:rest rdf:nil
+                    ]
+                ]
+            ]
+        ]
+    ] ;
+    swrl:head [
+        rdf:type swrl:AtomList ;
+        rdf:first [
+            rdf:type swrl:IndividualPropertyAtom ;
+            swrl:propertyPredicate :satisfiesRequirement ;
+            swrl:argument1 [ rdf:type swrl:Variable ; swrl:variableName "m" ] ;
+            swrl:argument2 [ rdf:type swrl:Variable ; swrl:variableName "req" ]
+        ] ;
+        rdf:rest rdf:nil
+    ] .
+
+#================================================================
+# 3.2 Regla: Restricción de Edad (hasChildren)
+#================================================================
+
+# Regla: Si el contexto social tiene niños (hasChildren=true),
+#        solo películas con clasificación G o PG son adecuadas.
+#
+# Sintaxis SWRL:
+# Movie(?m) ∧ SocialContext(?social) ∧
+# certification(?m, ?cert) ∧ hasChildren(?social, true) ∧
+# (cert = "G" ∨ cert = "PG")
+# → suitableForSocialContext(?m, ?social)
+#
+# NOTA: Esta regla es compleja de expresar en SWRL puro debido a la disyunción.
+#       En la práctica, el LLM maneja este filtrado directamente.
+#       Se documenta aquí como especificación lógica.
+
+<urn:swrl:rule:children_constraint>
+    rdf:type swrl:Imp ;
+    rdfs:label "Children Safety Constraint"@en ,
+               "Restricción de Seguridad para Niños"@es ;
+    rdfs:comment """
+    REGLA DE SEGURIDAD: Filtra películas NO aptas cuando hay niños presentes.
+    
+    Lógica:
+    IF context.SocialContext.hasChildren = true
+    THEN solo incluir movies con certification IN ["G", "PG", "TV-Y", "TV-G"]
+    
+    Esta es la restricción más CRÍTICA del sistema: nunca recomendar contenido
+    inapropiado cuando hay niños.
+    
+    Implementación:
+    Debido a limitaciones de SWRL con disyunciones y strings, esta regla se 
+    implementa típicamente en el código de GraphRAG, NO en el reasoner OWL.
+    
+    El LLM debe verificar:
+    1. Leer hasChildren del SocialContext
+    2. Si true, filtrar movies donde certification NOT IN ["G", "PG", ...]
+    3. Solo asignar suitableForSocialContext a películas aptas
+    """@es .
+
+#################################################################
+#    4. Axiomas y Restricciones
+#################################################################
+
+#================================================================
+# Restricciones de Rango para Scores (0.0 - 1.0)
+#================================================================
+
+# compatibilityScore debe estar entre 0.0 y 1.0
+movie:Movie rdfs:subClassOf [ 
+    rdf:type owl:Restriction ;
+    owl:onProperty :compatibilityScore ;
+    owl:allValuesFrom [ 
+        rdf:type rdfs:Datatype ;
+        owl:onDatatype xsd:float ;
+        owl:withRestrictions ( 
+            [ xsd:minInclusive "0.0"^^xsd:float ]
+            [ xsd:maxInclusive "1.0"^^xsd:float ]
+        )
+    ]
+] .
+
+# moodMatchScore debe estar entre 0.0 y 1.0
+movie:Movie rdfs:subClassOf [ 
+    rdf:type owl:Restriction ;
+    owl:onProperty :moodMatchScore ;
+    owl:allValuesFrom [ 
+        rdf:type rdfs:Datatype ;
+        owl:onDatatype xsd:float ;
+        owl:withRestrictions ( 
+            [ xsd:minInclusive "0.0"^^xsd:float ]
+            [ xsd:maxInclusive "1.0"^^xsd:float ]
+        )
+    ]
+] .
+
+# socialMatchScore debe estar entre 0.0 y 1.0
+movie:Movie rdfs:subClassOf [ 
+    rdf:type owl:Restriction ;
+    owl:onProperty :socialMatchScore ;
+    owl:allValuesFrom [ 
+        rdf:type rdfs:Datatype ;
+        owl:onDatatype xsd:float ;
+        owl:withRestrictions ( 
+            [ xsd:minInclusive "0.0"^^xsd:float ]
+            [ xsd:maxInclusive "1.0"^^xsd:float ]
+        )
+    ]
+] .
+
+# temporalMatchScore debe estar entre 0.0 y 1.0
+movie:Movie rdfs:subClassOf [ 
+    rdf:type owl:Restriction ;
+    owl:onProperty :temporalMatchScore ;
+    owl:allValuesFrom [ 
+        rdf:type rdfs:Datatype ;
+        owl:onDatatype xsd:float ;
+        owl:withRestrictions ( 
+            [ xsd:minInclusive "0.0"^^xsd:float ]
+            [ xsd:maxInclusive "1.0"^^xsd:float ]
+        )
+    ]
+] .
+
+# requirementMatchScore debe estar entre 0.0 y 1.0
+movie:Movie rdfs:subClassOf [ 
+    rdf:type owl:Restriction ;
+    owl:onProperty :requirementMatchScore ;
+    owl:allValuesFrom [ 
+        rdf:type rdfs:Datatype ;
+        owl:onDatatype xsd:float ;
+        owl:withRestrictions ( 
+            [ xsd:minInclusive "0.0"^^xsd:float ]
+            [ xsd:maxInclusive "1.0"^^xsd:float ]
+        )
+    ]
+] .
+
+#================================================================
+# Propiedades Funcionales (Valores Únicos)
+#================================================================
+
+# Una película tiene como máximo un compatibilityScore por contexto
+:compatibilityScore rdf:type owl:FunctionalProperty .
+
+#================================================================
+# Propiedades Disjuntas (Mutuamente Excluyentes)
+#================================================================
+
+# Un usuario no puede haber visto y no haber visto la misma película
+# (Lógica trivial, pero útil para validación)
+
+#################################################################
+#    Anotaciones Finales
+#################################################################
+
+<http://www.semanticweb.org/movierecommendation/ontologies/2025/bridge-ontology>
+    rdfs:comment """
+    GUÍA DE IMPLEMENTACIÓN PARA DESARROLLADORES
+    
+    ═══════════════════════════════════════════════════════════════════════
+    INTEGRACIÓN CON GRAPHRAG
+    ═══════════════════════════════════════════════════════════════════════
+    
+    1. CAPTURA DE CONTEXTO (Entrada del Usuario)
+    ──────────────────────────────────────────────
+    Usuario: "Quiero algo ligero, estoy con mi pareja, tenemos una hora"
+    
+    → El LLM extrae y crea instancias en context-ontology:
+    
+    :CurrentSnapshot a context:ContextSnapshot ;
+        context:snapshotID "snap-12345" ;
+        context:requestTimestamp "2026-01-10T20:30:00"^^xsd:dateTime ;
+        context:userIntent "película ligera para relajarse" .
+    
+    :EmotionalState a context:EmotionalContext ;
+        context:moodDescription "relajado" ;
+        context:desiredEnergyLevel "bajo" .
+    
+    :SocialState a context:SocialContext ;
+        context:companionType "pareja" ;
+        context:groupSize 2 .
+    
+    :Requirements a context:RequirementContext ;
+        context:availableTime 60 .
+    
+    :CurrentSnapshot context:feelsMood :EmotionalState ;
+                     context:withCompanion :SocialState ;
+                     context:hasRequirement :Requirements .
+    
+    ───────────────────────────────────────────────────────────────────────
+    2. NAVEGACIÓN GRAPHRAG (Query del Grafo)
+    ───────────────────────────────────────────────────────────────────────
+    
+    El sistema ejecuta queries SPARQL para encontrar películas candidatas:
+    
+    SPARQL Query Ejemplo:
+    ```sparql
+    PREFIX movie: <http://...movie-ontology#>
+    PREFIX context: <http://...context-ontology#>
+    PREFIX bridge: <http://...bridge-ontology#>
+    
+    SELECT ?movie ?title ?runtime
+    WHERE {
+        # Películas con runtime compatible
+        ?movie a movie:Movie ;
+               movie:title ?title ;
+               movie:runtime ?runtime .
+        
+        # Filtro SWRL: runtime <= availableTime
+        ?movie bridge:satisfiesRequirement ?req .
+        ?req context:availableTime ?availTime .
+        FILTER(?runtime <= ?availTime)
+        
+        # Excluir géneros no deseados (si se especificaron)
+        # FILTER NOT EXISTS { ... }
+    }
+    LIMIT 20
+    ```
+    
+    ───────────────────────────────────────────────────────────────────────
+    3. SCORING Y RANKING (Cálculo de Compatibilidad)
+    ───────────────────────────────────────────────────────────────────────
+    
+    Para cada película candidata, el LLM calcula scores:
+    
+    Ejemplo para "Lost in Translation":
+    
+    :LostInTranslation bridge:compatibilityScore 0.93 ;
+                       bridge:moodMatchScore 0.95 ;    # Muy relajada, bajo energía
+                       bridge:socialMatchScore 0.90 ;  # Excelente para pareja
+                       bridge:temporalMatchScore 0.85 ; # Apropiada para noche
+                       bridge:requirementMatchScore 1.0 . # 102min <= 60min? NO!
+    
+    PROBLEMA DETECTADO: runtime=102min > availableTime=60min
+    → satisfiesRequirement debería ser FALSE
+    → Película EXCLUIDA a pesar de alto score emocional/social
+    
+    ───────────────────────────────────────────────────────────────────────
+    4. GENERACIÓN DE RESPUESTA (Output al Usuario)
+    ───────────────────────────────────────────────────────────────────────
+    
+    El LLM genera respuesta basándose en top-k películas:
+    
+    "Basándome en tu contexto (pareja, relajado, 60 minutos disponibles),
+    te recomiendo:
+    
+    1. **Before Sunrise** (1995) - 101 min
+       → Compatibilidad: 0.92
+       → Perfecta para pareja, conversacional, relajada
+       → ADVERTENCIA: Excede ligeramente tu tiempo (41 min extra)
+    
+    2. **Midnight in Paris** (2011) - 94 min  
+       → Compatibilidad: 0.89
+       → Ligera, romántica, visualmente hermosa
+       → ADVERTENCIA: 34 min extra
+    
+    3. **Short Term 12** (2013) - 96 min
+       → Compatibilidad: 0.85
+       → Emotiva pero no pesada, excelente para pareja
+       → ADVERTENCIA: 36 min extra
+    
+    NOTA: Todas exceden ligeramente tu tiempo disponible. ¿Quieres opciones 
+    más cortas o puedes extender tu tiempo?"
+    
+    ───────────────────────────────────────────────────────────────────────
+    FLUJO TÉCNICO COMPLETO
+    ───────────────────────────────────────────────────────────────────────
+    
+    Input: Lenguaje Natural del Usuario
+      ↓
+    [LLM] Extracción de Contexto → context-ontology (RDF triples)
+      ↓
+    [GraphRAG] Query SPARQL → Navegación movie-ontology + bridge-ontology
+      ↓
+    [SWRL Reasoner] Aplicación de reglas → Filtrado de candidatos
+      ↓
+    [LLM] Scoring por dimensiones → compatibilityScore para cada película
+      ↓
+    [Ranking] ORDER BY compatibilityScore DESC → Top-K películas
+      ↓
+    [LLM] Generación de respuesta contextualizada
+      ↓
+    Output: Recomendaciones explicadas al usuario
+    
+    ───────────────────────────────────────────────────────────────────────
+    VENTAJAS DE ESTA ARQUITECTURA
+    ───────────────────────────────────────────────────────────────────────
+    
+    1. DESACOPLAMIENTO: movie-ontology y context-ontology son independientes
+    2. EXTENSIBILIDAD: Nuevas dimensiones de contexto no afectan el dominio fílmico
+    3. EXPLICABILIDAD: Los scores por dimensión justifican las recomendaciones
+    4. VALIDACIÓN: SWRL garantiza restricciones duras (runtime, edad, etc.)
+    5. FLEXIBILIDAD: El LLM puede relajar restricciones si el contexto lo amerita
+    
+    ───────────────────────────────────────────────────────────────────────
+    
+    Autor: Luis Fernando Hernández Solís
+    Universidad del Valle - Escuela de Ingeniería de Sistemas y Computación
+    Versión: 2.0 - Refactorización para GraphRAG
+    Año: 2026
+    
+    """@es .

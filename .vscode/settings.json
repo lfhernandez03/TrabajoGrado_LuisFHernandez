@@ -1,0 +1,5 @@
+{
+    "python.analysis.extraPaths": [
+        "./Ontologies/DATA/scripts/config"
+    ]
+}

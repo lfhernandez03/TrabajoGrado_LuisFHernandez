@@ -1,0 +1,2277 @@
+@prefix company: <http://www.semanticweb.org/movierecommendation/data/company/> .
+@prefix country: <http://www.semanticweb.org/movierecommendation/data/country/> .
+@prefix genre: <http://www.semanticweb.org/movierecommendation/data/genre/> .
+@prefix keyword: <http://www.semanticweb.org/movierecommendation/data/keyword/> .
+@prefix language: <http://www.semanticweb.org/movierecommendation/data/language/> .
+@prefix movie: <http://www.semanticweb.org/movierecommendation/ontologies/2025/movie-ontology#> .
+@prefix moviedata: <http://www.semanticweb.org/movierecommendation/data/movie/> .
+@prefix period: <http://www.semanticweb.org/movierecommendation/data/historicalperiod/> .
+@prefix person: <http://www.semanticweb.org/movierecommendation/data/person/> .
+@prefix plotstructure: <http://www.semanticweb.org/movierecommendation/data/plotstructure/> .
+@prefix role: <http://www.semanticweb.org/movierecommendation/data/role/> .
+@prefix theme: <http://www.semanticweb.org/movierecommendation/data/theme/> .
+@prefix tone: <http://www.semanticweb.org/movierecommendation/data/tone/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+company:20th_Century_Fox a movie:ProductionCompany ;
+    movie:companyName "20th Century Fox" .
+
+company:A_Band_Apart a movie:ProductionCompany ;
+    movie:companyName "A Band Apart" .
+
+company:A_Luta_Continua a movie:ProductionCompany ;
+    movie:companyName "A Luta Continua" .
+
+company:Carolco_Pictures a movie:ProductionCompany ;
+    movie:companyName "Carolco Pictures" .
+
+company:Castle_Rock_Entertainment a movie:ProductionCompany ;
+    movie:companyName "Castle Rock Entertainment" .
+
+company:Groucho_II_Film_Partnership a movie:ProductionCompany ;
+    movie:companyName "Groucho II Film Partnership" .
+
+company:Icon_Productions a movie:ProductionCompany ;
+    movie:companyName "Icon Productions" .
+
+company:Jersey_Films a movie:ProductionCompany ;
+    movie:companyName "Jersey Films" .
+
+company:Le_Studio_Canal a movie:ProductionCompany ;
+    movie:companyName "Le Studio Canal+" .
+
+company:Lightstorm_Entertainment a movie:ProductionCompany ;
+    movie:companyName "Lightstorm Entertainment" .
+
+company:Lucasfilm_Ltd a movie:ProductionCompany ;
+    movie:companyName "Lucasfilm Ltd." .
+
+company:Miramax a movie:ProductionCompany ;
+    movie:companyName "Miramax" .
+
+company:Orion_Pictures a movie:ProductionCompany ;
+    movie:companyName "Orion Pictures" .
+
+company:Pacific_Western a movie:ProductionCompany ;
+    movie:companyName "Pacific Western" .
+
+company:Paramount_Pictures a movie:ProductionCompany ;
+    movie:companyName "Paramount Pictures" .
+
+company:Silver_Pictures a movie:ProductionCompany ;
+    movie:companyName "Silver Pictures" .
+
+company:Strong_Heart a movie:ProductionCompany ;
+    movie:companyName "Strong Heart" .
+
+company:The_Ladd_Company a movie:ProductionCompany ;
+    movie:companyName "The Ladd Company" .
+
+company:The_Steve_Tisch_Company a movie:ProductionCompany ;
+    movie:companyName "The Steve Tisch Company" .
+
+company:Universal_Pictures a movie:ProductionCompany ;
+    movie:companyName "Universal Pictures" .
+
+company:Village_Roadshow_Pictures a movie:ProductionCompany ;
+    movie:companyName "Village Roadshow Pictures" .
+
+company:Warner_Bros_Pictures a movie:ProductionCompany ;
+    movie:companyName "Warner Bros. Pictures" .
+
+company:Wendy_Finerman_Productions a movie:ProductionCompany ;
+    movie:companyName "Wendy Finerman Productions" .
+
+country:France a movie:CountryOfOrigin ;
+    movie:countryName "France" .
+
+genre:Horror a movie:MainGenre ;
+    movie:genreName "Horror" .
+
+genre:Romance a movie:MainGenre ;
+    movie:genreName "Romance" .
+
+keyword:1940s a movie:Keyword ;
+    movie:keywordText "1940s" .
+
+keyword:1960s a movie:Keyword ;
+    movie:keywordText "1960s" .
+
+keyword:1970s a movie:Keyword ;
+    movie:keywordText "1970s" .
+
+keyword:alabama a movie:Keyword ;
+    movie:keywordText "alabama" .
+
+keyword:allegory_of_the_cave a movie:Keyword ;
+    movie:keywordText "allegory of the cave" .
+
+keyword:america a movie:Keyword ;
+    movie:keywordText "america" .
+
+keyword:amused a movie:Keyword ;
+    movie:keywordText "amused" .
+
+keyword:amusement_park a movie:Keyword ;
+    movie:keywordText "amusement park" .
+
+keyword:android a movie:Keyword ;
+    movie:keywordText "android" .
+
+keyword:anti_war_protest a movie:Keyword ;
+    movie:keywordText "anti war protest" .
+
+keyword:artificial_intelligence_ai a movie:Keyword ;
+    movie:keywordText "artificial intelligence (a.i.)" .
+
+keyword:assassino_em_s%C3%A9rie a movie:Keyword ;
+    movie:keywordText "assassino em série" .
+
+keyword:auschwitz-birkenau_concentration_camp a movie:Keyword ;
+    movie:keywordText "auschwitz-birkenau concentration camp" .
+
+keyword:autism a movie:Keyword ;
+    movie:keywordText "autism" .
+
+keyword:baffled a movie:Keyword ;
+    movie:keywordText "baffled" .
+
+keyword:biography a movie:Keyword ;
+    movie:keywordText "biography" .
+
+keyword:black_and_white a movie:Keyword ;
+    movie:keywordText "black and white" .
+
+keyword:black_panther_party a movie:Keyword ;
+    movie:keywordText "black panther party" .
+
+keyword:brontosaurus a movie:Keyword ;
+    movie:keywordText "brontosaurus" .
+
+keyword:brutality a movie:Keyword ;
+    movie:keywordText "brutality" .
+
+keyword:bus_stop a movie:Keyword ;
+    movie:keywordText "bus stop" .
+
+keyword:cannibal a movie:Keyword ;
+    movie:keywordText "cannibal" .
+
+keyword:catch_phrase a movie:Keyword ;
+    movie:keywordText "catch phrase" .
+
+keyword:catholic a movie:Keyword ;
+    movie:keywordText "catholic" .
+
+keyword:chameleon a movie:Keyword ;
+    movie:keywordText "chameleon" .
+
+keyword:college_american_football a movie:Keyword ;
+    movie:keywordText "college american football" .
+
+keyword:concentration_camp a movie:Keyword ;
+    movie:keywordText "concentration camp" .
+
+keyword:corruption a movie:Keyword ;
+    movie:keywordText "corruption" .
+
+keyword:crime_boss a movie:Keyword ;
+    movie:keywordText "crime boss" .
+
+keyword:cyberpunk a movie:Keyword ;
+    movie:keywordText "cyberpunk" .
+
+keyword:cyborg a movie:Keyword ;
+    movie:keywordText "cyborg" .
+
+keyword:defense_industry a movie:Keyword ;
+    movie:keywordText "defense industry" .
+
+keyword:delinquent a movie:Keyword ;
+    movie:keywordText "delinquent" .
+
+keyword:desert a movie:Keyword ;
+    movie:keywordText "desert" .
+
+keyword:dinosaur a movie:Keyword ;
+    movie:keywordText "dinosaur" .
+
+keyword:disgusted a movie:Keyword ;
+    movie:keywordText "disgusted" .
+
+keyword:dna a movie:Keyword ;
+    movie:keywordText "dna" .
+
+keyword:dream_world a movie:Keyword ;
+    movie:keywordText "dream world" .
+
+keyword:dreams a movie:Keyword ;
+    movie:keywordText "dreams" .
+
+keyword:drug_addiction a movie:Keyword ;
+    movie:keywordText "drug addiction" .
+
+keyword:drug_dealer a movie:Keyword ;
+    movie:keywordText "drug dealer" .
+
+keyword:dystopian_sci-fi a movie:Keyword ;
+    movie:keywordText "dystopian sci-fi" .
+
+keyword:electric_fence a movie:Keyword ;
+    movie:keywordText "electric fence" .
+
+keyword:empire a movie:Keyword ;
+    movie:keywordText "empire" .
+
+keyword:england a movie:Keyword ;
+    movie:keywordText "england" .
+
+keyword:evil a movie:Keyword ;
+    movie:keywordText "evil" .
+
+keyword:excited a movie:Keyword ;
+    movie:keywordText "excited" .
+
+keyword:exhilarated a movie:Keyword ;
+    movie:keywordText "exhilarated" .
+
+keyword:exotic_island a movie:Keyword ;
+    movie:keywordText "exotic island" .
+
+keyword:factory a movie:Keyword ;
+    movie:keywordText "factory" .
+
+keyword:family_relationships a movie:Keyword ;
+    movie:keywordText "family relationships" .
+
+keyword:fbi a movie:Keyword ;
+    movie:keywordText "fbi" .
+
+keyword:feel-good a movie:Keyword ;
+    movie:keywordText "feel-good" .
+
+keyword:fictional_war a movie:Keyword ;
+    movie:keywordText "fictional war" .
+
+keyword:fight a movie:Keyword ;
+    movie:keywordText "fight" .
+
+keyword:framed_for_murder a movie:Keyword ;
+    movie:keywordText "framed for murder" .
+
+keyword:galaxy a movie:Keyword ;
+    movie:keywordText "galaxy" .
+
+keyword:ghetto a movie:Keyword ;
+    movie:keywordText "ghetto" .
+
+keyword:gnosticism a movie:Keyword ;
+    movie:keywordText "gnosticism" .
+
+keyword:good_versus_evil a movie:Keyword ;
+    movie:keywordText "good versus evil" .
+
+keyword:hacker a movie:Keyword ;
+    movie:keywordText "hacker" .
+
+keyword:hermit a movie:Keyword ;
+    movie:keywordText "hermit" .
+
+keyword:hero a movie:Keyword ;
+    movie:keywordText "hero" .
+
+keyword:hippie a movie:Keyword ;
+    movie:keywordText "hippie" .
+
+keyword:historical_fiction a movie:Keyword ;
+    movie:keywordText "historical fiction" .
+
+keyword:holocaust_shoah a movie:Keyword ;
+    movie:keywordText "holocaust (shoah)" .
+
+keyword:hope a movie:Keyword ;
+    movie:keywordText "hope" .
+
+keyword:idealism a movie:Keyword ;
+    movie:keywordText "idealism" .
+
+keyword:industrialist a movie:Keyword ;
+    movie:keywordText "industrialist" .
+
+keyword:insurgence a movie:Keyword ;
+    movie:keywordText "insurgence" .
+
+keyword:interracial_friendship a movie:Keyword ;
+    movie:keywordText "interracial friendship" .
+
+keyword:island a movie:Keyword ;
+    movie:keywordText "island" .
+
+keyword:jew_persecution a movie:Keyword ;
+    movie:keywordText "jew persecution" .
+
+keyword:juvenile_delinquent a movie:Keyword ;
+    movie:keywordText "juvenile delinquent" .
+
+keyword:kidnapping a movie:Keyword ;
+    movie:keywordText "kidnapping" .
+
+keyword:krak%C3%B3w_poland a movie:Keyword ;
+    movie:keywordText "kraków, poland" .
+
+keyword:kung_fu a movie:Keyword ;
+    movie:keywordText "kung fu" .
+
+keyword:los_angeles_california a movie:Keyword ;
+    movie:keywordText "los angeles, california" .
+
+keyword:loss_of_loved_one a movie:Keyword ;
+    movie:keywordText "loss of loved one" .
+
+keyword:martial_arts a movie:Keyword ;
+    movie:keywordText "martial arts" .
+
+keyword:medieval a movie:Keyword ;
+    movie:keywordText "medieval" .
+
+keyword:mental_institution a movie:Keyword ;
+    movie:keywordText "mental institution" .
+
+keyword:mentally_disabled a movie:Keyword ;
+    movie:keywordText "mentally disabled" .
+
+keyword:messiah a movie:Keyword ;
+    movie:keywordText "messiah" .
+
+keyword:military a movie:Keyword ;
+    movie:keywordText "military" .
+
+keyword:moral_ambiguity a movie:Keyword ;
+    movie:keywordText "moral ambiguity" .
+
+keyword:morphing a movie:Keyword ;
+    movie:keywordText "morphing" .
+
+keyword:moth a movie:Keyword ;
+    movie:keywordText "moth" .
+
+keyword:mother_son_relationship a movie:Keyword ;
+    movie:keywordText "mother son relationship" .
+
+keyword:multiple_storylines a movie:Keyword ;
+    movie:keywordText "multiple storylines" .
+
+keyword:murder a movie:Keyword ;
+    movie:keywordText "murder" .
+
+keyword:nazi a movie:Keyword ;
+    movie:keywordText "nazi" .
+
+keyword:nazi_train a movie:Keyword ;
+    movie:keywordText "nazi train" .
+
+keyword:new_years_eve a movie:Keyword ;
+    movie:keywordText "new year's eve" .
+
+keyword:nonlinear_timeline a movie:Keyword ;
+    movie:keywordText "nonlinear timeline" .
+
+keyword:nostalgic a movie:Keyword ;
+    movie:keywordText "nostalgic" .
+
+keyword:nuclear_weapons a movie:Keyword ;
+    movie:keywordText "nuclear weapons" .
+
+keyword:oppression a movie:Keyword ;
+    movie:keywordText "oppression" .
+
+keyword:optimism a movie:Keyword ;
+    movie:keywordText "optimism" .
+
+keyword:paleontology a movie:Keyword ;
+    movie:keywordText "paleontology" .
+
+keyword:parent_child_relationship a movie:Keyword ;
+    movie:keywordText "parent child relationship" .
+
+keyword:parole_board a movie:Keyword ;
+    movie:keywordText "parole board" .
+
+keyword:past_history a movie:Keyword ;
+    movie:keywordText "past history" .
+
+keyword:philosophy a movie:Keyword ;
+    movie:keywordText "philosophy" .
+
+keyword:pill a movie:Keyword ;
+    movie:keywordText "pill" .
+
+keyword:planet a movie:Keyword ;
+    movie:keywordText "planet" .
+
+keyword:poland a movie:Keyword ;
+    movie:keywordText "poland" .
+
+keyword:police_brutality a movie:Keyword ;
+    movie:keywordText "police brutality" .
+
+keyword:post-apocalyptic_future a movie:Keyword ;
+    movie:keywordText "post-apocalyptic future" .
+
+keyword:post-traumatic_stress_disorder_ptsd a movie:Keyword ;
+    movie:keywordText "post-traumatic stress disorder (ptsd)" .
+
+keyword:prison a movie:Keyword ;
+    movie:keywordText "prison" .
+
+keyword:prison_cell a movie:Keyword ;
+    movie:keywordText "prison cell" .
+
+keyword:prison_escape a movie:Keyword ;
+    movie:keywordText "prison escape" .
+
+keyword:prophecy a movie:Keyword ;
+    movie:keywordText "prophecy" .
+
+keyword:psychiatrist a movie:Keyword ;
+    movie:keywordText "psychiatrist" .
+
+keyword:psychological_profiling a movie:Keyword ;
+    movie:keywordText "psychological profiling" .
+
+keyword:psychological_thriller a movie:Keyword ;
+    movie:keywordText "psychological thriller" .
+
+keyword:psychopath a movie:Keyword ;
+    movie:keywordText "psychopath" .
+
+keyword:r%C3%A9veillon a movie:Keyword ;
+    movie:keywordText "réveillon" .
+
+keyword:rebel a movie:Keyword ;
+    movie:keywordText "rebel" .
+
+keyword:rebellion a movie:Keyword ;
+    movie:keywordText "rebellion" .
+
+keyword:rescue_mission a movie:Keyword ;
+    movie:keywordText "rescue mission" .
+
+keyword:saving_the_world a movie:Keyword ;
+    movie:keywordText "saving the world" .
+
+keyword:savior a movie:Keyword ;
+    movie:keywordText "savior" .
+
+keyword:scientific_study a movie:Keyword ;
+    movie:keywordText "scientific study" .
+
+keyword:scotland a movie:Keyword ;
+    movie:keywordText "scotland" .
+
+keyword:segunda_guerra_mundial a movie:Keyword ;
+    movie:keywordText "segunda guerra mundial" .
+
+keyword:self_sacrifice a movie:Keyword ;
+    movie:keywordText "self sacrifice" .
+
+keyword:serial_killer a movie:Keyword ;
+    movie:keywordText "serial killer" .
+
+keyword:shape_shifter a movie:Keyword ;
+    movie:keywordText "shape shifter" .
+
+keyword:shotgun a movie:Keyword ;
+    movie:keywordText "shotgun" .
+
+keyword:simulated_reality a movie:Keyword ;
+    movie:keywordText "simulated reality" .
+
+keyword:single_mother a movie:Keyword ;
+    movie:keywordText "single mother" .
+
+keyword:single_parent a movie:Keyword ;
+    movie:keywordText "single parent" .
+
+keyword:skinning a movie:Keyword ;
+    movie:keywordText "skinning" .
+
+keyword:smuggling_contraband a movie:Keyword ;
+    movie:keywordText "smuggling (contraband)" .
+
+keyword:space a movie:Keyword ;
+    movie:keywordText "space" .
+
+keyword:space_opera a movie:Keyword ;
+    movie:keywordText "space opera" .
+
+keyword:ss_nazi_schutzstaffel a movie:Keyword ;
+    movie:keywordText "ss (nazi schutzstaffel)" .
+
+keyword:stolen_money a movie:Keyword ;
+    movie:keywordText "stolen money" .
+
+keyword:super_power a movie:Keyword ;
+    movie:keywordText "super power" .
+
+keyword:theft a movie:Keyword ;
+    movie:keywordText "theft" .
+
+keyword:theme_park a movie:Keyword ;
+    movie:keywordText "theme park" .
+
+keyword:time_travel a movie:Keyword ;
+    movie:keywordText "time travel" .
+
+keyword:totalitarianism a movie:Keyword ;
+    movie:keywordText "totalitarianism" .
+
+keyword:train a movie:Keyword ;
+    movie:keywordText "train" .
+
+keyword:triceratops a movie:Keyword ;
+    movie:keywordText "triceratops" .
+
+keyword:troubled_teen a movie:Keyword ;
+    movie:keywordText "troubled teen" .
+
+keyword:truth a movie:Keyword ;
+    movie:keywordText "truth" .
+
+keyword:twisted a movie:Keyword ;
+    movie:keywordText "twisted" .
+
+keyword:tyrannosaurus_rex a movie:Keyword ;
+    movie:keywordText "tyrannosaurus rex" .
+
+keyword:urban_setting a movie:Keyword ;
+    movie:keywordText "urban setting" .
+
+keyword:usa_president a movie:Keyword ;
+    movie:keywordText "usa president" .
+
+keyword:vietnam_veteran a movie:Keyword ;
+    movie:keywordText "vietnam veteran" .
+
+keyword:vietnam_war a movie:Keyword ;
+    movie:keywordText "vietnam war" .
+
+keyword:villain a movie:Keyword ;
+    movie:keywordText "villain" .
+
+keyword:virginia a movie:Keyword ;
+    movie:keywordText "virginia" .
+
+keyword:virtual_reality a movie:Keyword ;
+    movie:keywordText "virtual reality" .
+
+keyword:voiceover a movie:Keyword ;
+    movie:keywordText "voiceover" .
+
+keyword:waitress a movie:Keyword ;
+    movie:keywordText "waitress" .
+
+keyword:war a movie:Keyword ;
+    movie:keywordText "war" .
+
+keyword:washington_dc_usa a movie:Keyword ;
+    movie:keywordText "washington dc, usa" .
+
+keyword:weapons_manufacturer a movie:Keyword ;
+    movie:keywordText "weapons manufacturer" .
+
+keyword:wizard a movie:Keyword ;
+    movie:keywordText "wizard" .
+
+keyword:world_war_ii a movie:Keyword ;
+    movie:keywordText "world war ii" .
+
+keyword:wrongful_imprisonment a movie:Keyword ;
+    movie:keywordText "wrongful imprisonment" .
+
+<http://www.semanticweb.org/movierecommendation/data/language/%D7%A2%D7%91%D7%A8%D7%99%D7%AA> a movie:Language .
+
+language:Deutsch a movie:Language .
+
+language:Latin a movie:Language .
+
+language:Polski a movie:Language .
+
+moviedata:certification_PG a movie:Certification ;
+    movie:certificationCountry "US" ;
+    movie:certificationRating "PG" .
+
+person:Adam_Greenberg a movie:Cinematographer ;
+    movie:hasName "Adam Greenberg" .
+
+person:Alan_Silvestri a movie:Composer ;
+    movie:hasName "Alan Silvestri" .
+
+person:Alec_Guinness a movie:Actor ;
+    movie:hasName "Alec Guinness" ;
+    movie:playsRole role:role_260_Alec_Guinness_Obi-Wan_Ben_Kenobi .
+
+person:Andrzej_Sekula a movie:Cinematographer ;
+    movie:hasName "Andrzej Sekula" .
+
+person:Angus_Macfadyen a movie:Actor ;
+    movie:hasName "Angus Macfadyen" ;
+    movie:playsRole role:role_110_Angus_Macfadyen_Robert_the_Bruce .
+
+person:Anthony_Daniels a movie:Actor ;
+    movie:hasName "Anthony Daniels" ;
+    movie:playsRole role:role_260_Anthony_Daniels_C-3PO .
+
+person:Anthony_Heald a movie:Actor ;
+    movie:hasName "Anthony Heald" ;
+    movie:playsRole role:role_593_Anthony_Heald_Dr_Frederick_Chilton .
+
+person:Anthony_Hopkins a movie:Actor ;
+    movie:hasName "Anthony Hopkins" ;
+    movie:playsRole role:role_593_Anthony_Hopkins_Dr_Hannibal_Lecter .
+
+person:Arnold_Schwarzenegger a movie:Actor ;
+    movie:hasName "Arnold Schwarzenegger" ;
+    movie:playsRole role:role_589_Arnold_Schwarzenegger_The_Terminator .
+
+person:Arthur_Schmidt a movie:Editor ;
+    movie:hasName "Arthur Schmidt" .
+
+person:BD_Wong a movie:Actor ;
+    movie:hasName "BD Wong" ;
+    movie:playsRole role:role_480_BD_Wong_Wu .
+
+person:Ben_Kingsley a movie:Actor ;
+    movie:hasName "Ben Kingsley" ;
+    movie:playsRole role:role_527_Ben_Kingsley_Itzhak_Stern .
+
+person:Bill_Pope a movie:Cinematographer ;
+    movie:hasName "Bill Pope" .
+
+person:Bob_Gunton a movie:Actor ;
+    movie:hasName "Bob Gunton" ;
+    movie:playsRole role:role_318_Bob_Gunton_Warden_Norton .
+
+person:Bob_Peck a movie:Actor ;
+    movie:hasName "Bob Peck" ;
+    movie:playsRole role:role_480_Bob_Peck_Muldoon .
+
+person:Brad_Fiedel a movie:Composer ;
+    movie:hasName "Brad Fiedel" .
+
+person:Brendan_Gleeson a movie:Actor ;
+    movie:hasName "Brendan Gleeson" ;
+    movie:playsRole role:role_110_Brendan_Gleeson_Hamish_Campbell .
+
+person:Brooke_Smith a movie:Actor ;
+    movie:hasName "Brooke Smith" ;
+    movie:playsRole role:role_593_Brooke_Smith_Catherine_Martin .
+
+person:Bruce_Davey a movie:Producer ;
+    movie:hasName "Bruce Davey" .
+
+person:Bruce_Willis a movie:Actor ;
+    movie:hasName "Bruce Willis" ;
+    movie:playsRole role:role_296_Bruce_Willis_Butch_Coolidge .
+
+person:Caroline_Goodall a movie:Actor ;
+    movie:hasName "Caroline Goodall" ;
+    movie:playsRole role:role_527_Caroline_Goodall_Emilie_Schindler .
+
+person:Carrie-Anne_Moss a movie:Actor ;
+    movie:hasName "Carrie-Anne Moss" ;
+    movie:playsRole role:role_2571_Carrie-Anne_Moss_Trinity .
+
+person:Carrie_Fisher a movie:Actor ;
+    movie:hasName "Carrie Fisher" ;
+    movie:playsRole role:role_260_Carrie_Fisher_Princess_Leia_Organa .
+
+person:Castulo_Guerra a movie:Actor ;
+    movie:hasName "Castulo Guerra" ;
+    movie:playsRole role:role_589_Castulo_Guerra_Enrique_Salceda .
+
+person:Catherine_McCormack a movie:Actor ;
+    movie:hasName "Catherine McCormack" ;
+    movie:playsRole role:role_110_Catherine_McCormack_Murron_MacClannough .
+
+person:Clancy_Brown a movie:Actor ;
+    movie:hasName "Clancy Brown" ;
+    movie:playsRole role:role_318_Clancy_Brown_Captain_Byron_T_Hadley .
+
+person:Conrad_Buff_IV a movie:Editor ;
+    movie:hasName "Conrad Buff IV" .
+
+person:Craig_McKay a movie:Editor ;
+    movie:hasName "Craig McKay" .
+
+person:David_Koepp a movie:Screenwriter ;
+    movie:hasName "David Koepp" .
+
+person:Dean_Cundey a movie:Cinematographer ;
+    movie:hasName "Dean Cundey" .
+
+person:Diane_Baker a movie:Actor ;
+    movie:hasName "Diane Baker" ;
+    movie:playsRole role:role_593_Diane_Baker_Senator_Ruth_Martin .
+
+person:Don_Burgess a movie:Cinematographer ;
+    movie:hasName "Don Burgess" .
+
+person:Don_Davis a movie:Composer ;
+    movie:hasName "Don Davis" .
+
+person:Earl_Boen a movie:Actor ;
+    movie:hasName "Earl Boen" ;
+    movie:playsRole role:role_589_Earl_Boen_Dr_Silberman .
+
+person:Edward_Furlong a movie:Actor ;
+    movie:hasName "Edward Furlong" ;
+    movie:playsRole role:role_589_Edward_Furlong_John_Connor .
+
+person:Embeth_Davidtz a movie:Actor ;
+    movie:hasName "Embeth Davidtz" ;
+    movie:playsRole role:role_527_Embeth_Davidtz_Helen_Hirsch .
+
+person:Eric_Roth a movie:Screenwriter ;
+    movie:hasName "Eric Roth" .
+
+person:Eric_Stoltz a movie:Actor ;
+    movie:hasName "Eric Stoltz" ;
+    movie:playsRole role:role_296_Eric_Stoltz_Lance .
+
+person:Gary_Kurtz a movie:Producer ;
+    movie:hasName "Gary Kurtz" .
+
+person:Gary_Sinise a movie:Actor ;
+    movie:hasName "Gary Sinise" ;
+    movie:playsRole role:role_356_Gary_Sinise_Lieutenant_Dan_Taylor .
+
+person:George_Lucas a movie:Director ;
+    movie:hasName "George Lucas" .
+
+person:Gil_Bellows a movie:Actor ;
+    movie:hasName "Gil Bellows" ;
+    movie:playsRole role:role_318_Gil_Bellows_Tommy .
+
+person:Gilbert_Taylor a movie:Cinematographer ;
+    movie:hasName "Gilbert Taylor" .
+
+person:Gloria_Foster a movie:Actor ;
+    movie:hasName "Gloria Foster" ;
+    movie:playsRole role:role_2571_Gloria_Foster_Oracle .
+
+person:Haley_Joel_Osment a movie:Actor ;
+    movie:hasName "Haley Joel Osment" ;
+    movie:playsRole role:role_356_Haley_Joel_Osment_Forrest_Junior .
+
+person:Hanna_Hall a movie:Actor ;
+    movie:hasName "Hanna Hall" ;
+    movie:playsRole role:role_356_Hanna_Hall_Young_Jenny_Curran .
+
+person:Harrison_Ford a movie:Actor ;
+    movie:hasName "Harrison Ford" ;
+    movie:playsRole role:role_260_Harrison_Ford_Han_Solo .
+
+person:Harvey_Keitel a movie:Actor ;
+    movie:hasName "Harvey Keitel" ;
+    movie:playsRole role:role_296_Harvey_Keitel_The_Wolf .
+
+person:Howard_Shore a movie:Composer ;
+    movie:hasName "Howard Shore" .
+
+person:Hugo_Weaving a movie:Actor ;
+    movie:hasName "Hugo Weaving" ;
+    movie:playsRole role:role_2571_Hugo_Weaving_Agent_Smith .
+
+person:James_Cosmo a movie:Actor ;
+    movie:hasName "James Cosmo" ;
+    movie:playsRole role:role_110_James_Cosmo_Campbell .
+
+person:James_Horner a movie:Composer ;
+    movie:hasName "James Horner" .
+
+person:James_Robinson a movie:Actor ;
+    movie:hasName "James Robinson" ;
+    movie:playsRole role:role_110_James_Robinson_Young_William_Wallace .
+
+person:James_Whitmore a movie:Actor ;
+    movie:hasName "James Whitmore" ;
+    movie:playsRole role:role_318_James_Whitmore_Brooks_Hatlen .
+
+person:Janusz_Kami%C5%84ski a movie:Cinematographer ;
+    movie:hasName "Janusz Kamiński" .
+
+person:Jeff_Goldblum a movie:Actor ;
+    movie:hasName "Jeff Goldblum" ;
+    movie:playsRole role:role_480_Jeff_Goldblum_Malcolm .
+
+person:Jodie_Foster a movie:Actor ;
+    movie:hasName "Jodie Foster" ;
+    movie:playsRole role:role_593_Jodie_Foster_Clarice_Starling .
+
+person:Joe_Morton a movie:Actor ;
+    movie:hasName "Joe Morton" ;
+    movie:playsRole role:role_589_Joe_Morton_Miles_Dyson .
+
+person:Joe_Pantoliano a movie:Actor ;
+    movie:hasName "Joe Pantoliano" ;
+    movie:playsRole role:role_2571_Joe_Pantoliano_Cypher .
+
+person:Joel_Silver a movie:Producer ;
+    movie:hasName "Joel Silver" .
+
+person:John_Toll a movie:Cinematographer ;
+    movie:hasName "John Toll" .
+
+person:John_Travolta a movie:Actor ;
+    movie:hasName "John Travolta" ;
+    movie:playsRole role:role_296_John_Travolta_Vincent_Vega .
+
+person:Jonathan_Demme a movie:Director ;
+    movie:hasName "Jonathan Demme" .
+
+person:Jonathan_Sagall a movie:Actor ;
+    movie:hasName "Jonathan Sagall" ;
+    movie:playsRole role:role_527_Jonathan_Sagall_Poldek_Pfefferberg .
+
+person:Joseph_Mazzello a movie:Actor ;
+    movie:hasName "Joseph Mazzello" ;
+    movie:playsRole role:role_480_Joseph_Mazzello_Tim .
+
+person:Julian_Arahanga a movie:Actor ;
+    movie:hasName "Julian Arahanga" ;
+    movie:playsRole role:role_2571_Julian_Arahanga_Apoc .
+
+person:Kasi_Lemmons a movie:Actor ;
+    movie:hasName "Kasi Lemmons" ;
+    movie:playsRole role:role_593_Kasi_Lemmons_Ardelia_Mapp .
+
+person:Kathleen_Kennedy a movie:Producer ;
+    movie:hasName "Kathleen Kennedy" .
+
+person:Keanu_Reeves a movie:Actor ;
+    movie:hasName "Keanu Reeves" ;
+    movie:playsRole role:role_2571_Keanu_Reeves_Neo .
+
+person:Kenny_Baker a movie:Actor ;
+    movie:hasName "Kenny Baker" ;
+    movie:playsRole role:role_260_Kenny_Baker_R2-D2 .
+
+person:Lana_Wachowski a movie:Director ;
+    movie:hasName "Lana Wachowski" .
+
+person:Laura_Dern a movie:Actor ;
+    movie:hasName "Laura Dern" ;
+    movie:playsRole role:role_480_Laura_Dern_Ellie .
+
+person:Laurence_Fishburne a movie:Actor ;
+    movie:hasName "Laurence Fishburne" ;
+    movie:playsRole role:role_2571_Laurence_Fishburne_Morpheus .
+
+person:Lawrence_Bender a movie:Producer ;
+    movie:hasName "Lawrence Bender" .
+
+person:Liam_Neeson a movie:Actor ;
+    movie:hasName "Liam Neeson" ;
+    movie:playsRole role:role_527_Liam_Neeson_Oskar_Schindler .
+
+person:Linda_Hamilton a movie:Actor ;
+    movie:hasName "Linda Hamilton" ;
+    movie:playsRole role:role_589_Linda_Hamilton_Sarah_Connor .
+
+person:Ma%C5%82gorzata_Gebel a movie:Actor ;
+    movie:hasName "Małgorzata Gebel" ;
+    movie:playsRole role:role_527_Ma%C5%82gorzata_Gebel_Viktoria_Klonowska .
+
+person:Marcus_Chong a movie:Actor ;
+    movie:hasName "Marcus Chong" ;
+    movie:playsRole role:role_2571_Marcus_Chong_Tank .
+
+person:Mark_Hamill a movie:Actor ;
+    movie:hasName "Mark Hamill" ;
+    movie:playsRole role:role_260_Mark_Hamill_Luke_Skywalker .
+
+person:Mark_Rolston a movie:Actor ;
+    movie:hasName "Mark Rolston" ;
+    movie:playsRole role:role_318_Mark_Rolston_Bogs_Diamond .
+
+person:Martin_Ferrero a movie:Actor ;
+    movie:hasName "Martin Ferrero" ;
+    movie:playsRole role:role_480_Martin_Ferrero_Gennaro .
+
+person:Michael_Conner_Humphreys a movie:Actor ;
+    movie:hasName "Michael Conner Humphreys" ;
+    movie:playsRole role:role_356_Michael_Conner_Humphreys_Young_Forrest_Gump .
+
+person:Morgan_Freeman a movie:Actor ;
+    movie:hasName "Morgan Freeman" ;
+    movie:playsRole role:role_318_Morgan_Freeman_Ellis_Boyd_Red_Redding .
+
+person:Mykelti_Williamson a movie:Actor ;
+    movie:hasName "Mykelti Williamson" ;
+    movie:playsRole role:role_356_Mykelti_Williamson_Bubba_Blue .
+
+person:Niki_Marvin a movie:Producer ;
+    movie:hasName "Niki Marvin" .
+
+person:Patrick_McGoohan a movie:Actor ;
+    movie:hasName "Patrick McGoohan" ;
+    movie:playsRole role:role_110_Patrick_McGoohan_King_Edward .
+
+person:Paul_Hirsch a movie:Editor ;
+    movie:hasName "Paul Hirsch" .
+
+person:Peter_Cushing a movie:Actor ;
+    movie:hasName "Peter Cushing" ;
+    movie:playsRole role:role_260_Peter_Cushing_Grand_Moff_Tarkin .
+
+person:Peter_Mayhew a movie:Actor ;
+    movie:hasName "Peter Mayhew" ;
+    movie:playsRole role:role_260_Peter_Mayhew_Chewbacca .
+
+person:Quentin_Tarantino a movie:Director ;
+    movie:hasName "Quentin Tarantino" .
+
+person:Ralph_Fiennes a movie:Actor ;
+    movie:hasName "Ralph Fiennes" ;
+    movie:playsRole role:role_527_Ralph_Fiennes_Amon_Goeth .
+
+person:Richard_Attenborough a movie:Actor ;
+    movie:hasName "Richard Attenborough" ;
+    movie:playsRole role:role_480_Richard_Attenborough_Hammond .
+
+person:Richard_Francis-Bruce a movie:Editor ;
+    movie:hasName "Richard Francis-Bruce" .
+
+person:Robert_Patrick a movie:Actor ;
+    movie:hasName "Robert Patrick" ;
+    movie:playsRole role:role_589_Robert_Patrick_T-1000 .
+
+person:Robert_Zemeckis a movie:Director ;
+    movie:hasName "Robert Zemeckis" .
+
+person:Robin_Wright a movie:Actor ;
+    movie:hasName "Robin Wright" ;
+    movie:playsRole role:role_356_Robin_Wright_Jenny_Curran .
+
+person:Roger_Deakins a movie:Cinematographer ;
+    movie:hasName "Roger Deakins" .
+
+person:Ron_Bozman a movie:Producer ;
+    movie:hasName "Ron Bozman" .
+
+person:S_Epatha_Merkerson a movie:Actor ;
+    movie:hasName "S. Epatha Merkerson" ;
+    movie:playsRole role:role_589_S_Epatha_Merkerson_Tarissa_Dyson .
+
+person:Sally_Field a movie:Actor ;
+    movie:hasName "Sally Field" ;
+    movie:playsRole role:role_356_Sally_Field_Mrs_Gump .
+
+person:Sally_Menke a movie:Editor ;
+    movie:hasName "Sally Menke" .
+
+person:Sam_Neill a movie:Actor ;
+    movie:hasName "Sam Neill" ;
+    movie:playsRole role:role_480_Sam_Neill_Grant .
+
+person:Samuel_L_Jackson a movie:Actor ;
+    movie:hasName "Samuel L. Jackson" ;
+    movie:playsRole role:role_296_Samuel_L_Jackson_Jules_Winnfield .
+
+person:Scott_Glenn a movie:Actor ;
+    movie:hasName "Scott Glenn" ;
+    movie:playsRole role:role_593_Scott_Glenn_Jack_Crawford .
+
+person:Shmuel_Levy a movie:Actor ;
+    movie:hasName "Shmuel Levy" ;
+    movie:playsRole role:role_527_Shmuel_Levy_Wilek_Chilowicz .
+
+person:Sophie_Marceau a movie:Actor ;
+    movie:hasName "Sophie Marceau" ;
+    movie:playsRole role:role_110_Sophie_Marceau_Princess_Isabelle .
+
+person:Steve_Tisch a movie:Producer ;
+    movie:hasName "Steve Tisch" .
+
+person:Steven_Rosenblum a movie:Editor ;
+    movie:hasName "Steven Rosenblum" .
+
+person:Steven_Zaillian a movie:Screenwriter ;
+    movie:hasName "Steven Zaillian" .
+
+person:Tak_Fujimoto a movie:Cinematographer ;
+    movie:hasName "Tak Fujimoto" .
+
+person:Ted_Levine a movie:Actor ;
+    movie:hasName "Ted Levine" ;
+    movie:playsRole role:role_593_Ted_Levine_Jame_Gumb .
+
+person:Ted_Tally a movie:Screenwriter ;
+    movie:hasName "Ted Tally" .
+
+person:Thomas_Newman a movie:Composer ;
+    movie:hasName "Thomas Newman" .
+
+person:Tim_Robbins a movie:Actor ;
+    movie:hasName "Tim Robbins" ;
+    movie:playsRole role:role_318_Tim_Robbins_Andy_Dufresne .
+
+person:Tim_Roth a movie:Actor ;
+    movie:hasName "Tim Roth" ;
+    movie:playsRole role:role_296_Tim_Roth_Pumpkin .
+
+person:Tom_Hanks a movie:Actor ;
+    movie:hasName "Tom Hanks" ;
+    movie:playsRole role:role_356_Tom_Hanks_Forrest_Gump .
+
+person:Uma_Thurman a movie:Actor ;
+    movie:hasName "Uma Thurman" ;
+    movie:playsRole role:role_296_Uma_Thurman_Mia_Wallace .
+
+person:Ving_Rhames a movie:Actor ;
+    movie:hasName "Ving Rhames" ;
+    movie:playsRole role:role_296_Ving_Rhames_Marsellus_Wallace .
+
+person:William_Sadler a movie:Actor ;
+    movie:hasName "William Sadler" ;
+    movie:playsRole role:role_318_William_Sadler_Heywood .
+
+person:Zach_Staenberg a movie:Editor ;
+    movie:hasName "Zach Staenberg" .
+
+plotstructure:EpisodicNarrative a movie:EpisodicNarrative .
+
+role:role_110_Angus_Macfadyen_Robert_the_Bruce a movie:SupportingRole ;
+    movie:characterName "Robert the Bruce" ;
+    movie:inMovie moviedata:movie_110_Braveheart ;
+    movie:isLeadRole false .
+
+role:role_110_Brendan_Gleeson_Hamish_Campbell a movie:SupportingRole ;
+    movie:characterName "Hamish Campbell" ;
+    movie:inMovie moviedata:movie_110_Braveheart ;
+    movie:isLeadRole false .
+
+role:role_110_Catherine_McCormack_Murron_MacClannough a movie:LeadRole ;
+    movie:characterName "Murron MacClannough" ;
+    movie:inMovie moviedata:movie_110_Braveheart ;
+    movie:isLeadRole true .
+
+role:role_110_James_Cosmo_Campbell a movie:SupportingRole ;
+    movie:characterName "Campbell" ;
+    movie:inMovie moviedata:movie_110_Braveheart ;
+    movie:isLeadRole false .
+
+role:role_110_James_Robinson_Young_William_Wallace a movie:SupportingRole ;
+    movie:characterName "Young William Wallace" ;
+    movie:inMovie moviedata:movie_110_Braveheart ;
+    movie:isLeadRole false .
+
+role:role_110_Mel_Gibson_William_Wallace a movie:LeadRole ;
+    movie:characterName "William Wallace" ;
+    movie:inMovie moviedata:movie_110_Braveheart ;
+    movie:isLeadRole true .
+
+role:role_110_Patrick_McGoohan_King_Edward a movie:SupportingRole ;
+    movie:characterName "King Edward" ;
+    movie:inMovie moviedata:movie_110_Braveheart ;
+    movie:isLeadRole false .
+
+role:role_110_Sophie_Marceau_Princess_Isabelle a movie:LeadRole ;
+    movie:characterName "Princess Isabelle" ;
+    movie:inMovie moviedata:movie_110_Braveheart ;
+    movie:isLeadRole true .
+
+role:role_2571_Carrie-Anne_Moss_Trinity a movie:LeadRole ;
+    movie:characterName "Trinity" ;
+    movie:inMovie moviedata:movie_2571_Matrix_The ;
+    movie:isLeadRole true .
+
+role:role_2571_Gloria_Foster_Oracle a movie:SupportingRole ;
+    movie:characterName "Oracle" ;
+    movie:inMovie moviedata:movie_2571_Matrix_The ;
+    movie:isLeadRole false .
+
+role:role_2571_Hugo_Weaving_Agent_Smith a movie:SupportingRole ;
+    movie:characterName "Agent Smith" ;
+    movie:inMovie moviedata:movie_2571_Matrix_The ;
+    movie:isLeadRole false .
+
+role:role_2571_Joe_Pantoliano_Cypher a movie:SupportingRole ;
+    movie:characterName "Cypher" ;
+    movie:inMovie moviedata:movie_2571_Matrix_The ;
+    movie:isLeadRole false .
+
+role:role_2571_Julian_Arahanga_Apoc a movie:SupportingRole ;
+    movie:characterName "Apoc" ;
+    movie:inMovie moviedata:movie_2571_Matrix_The ;
+    movie:isLeadRole false .
+
+role:role_2571_Keanu_Reeves_Neo a movie:LeadRole ;
+    movie:characterName "Neo" ;
+    movie:inMovie moviedata:movie_2571_Matrix_The ;
+    movie:isLeadRole true .
+
+role:role_2571_Laurence_Fishburne_Morpheus a movie:LeadRole ;
+    movie:characterName "Morpheus" ;
+    movie:inMovie moviedata:movie_2571_Matrix_The ;
+    movie:isLeadRole true .
+
+role:role_2571_Marcus_Chong_Tank a movie:SupportingRole ;
+    movie:characterName "Tank" ;
+    movie:inMovie moviedata:movie_2571_Matrix_The ;
+    movie:isLeadRole false .
+
+role:role_260_Alec_Guinness_Obi-Wan_Ben_Kenobi a movie:SupportingRole ;
+    movie:characterName "Obi-Wan \"Ben\" Kenobi" ;
+    movie:inMovie moviedata:movie_260_Star_Wars_Episode_IV_-_A_New_Hope ;
+    movie:isLeadRole false .
+
+role:role_260_Anthony_Daniels_C-3PO a movie:SupportingRole ;
+    movie:characterName "C-3PO" ;
+    movie:inMovie moviedata:movie_260_Star_Wars_Episode_IV_-_A_New_Hope ;
+    movie:isLeadRole false .
+
+role:role_260_Carrie_Fisher_Princess_Leia_Organa a movie:LeadRole ;
+    movie:characterName "Princess Leia Organa" ;
+    movie:inMovie moviedata:movie_260_Star_Wars_Episode_IV_-_A_New_Hope ;
+    movie:isLeadRole true .
+
+role:role_260_Harrison_Ford_Han_Solo a movie:LeadRole ;
+    movie:characterName "Han Solo" ;
+    movie:inMovie moviedata:movie_260_Star_Wars_Episode_IV_-_A_New_Hope ;
+    movie:isLeadRole true .
+
+role:role_260_Kenny_Baker_R2-D2 a movie:SupportingRole ;
+    movie:characterName "R2-D2" ;
+    movie:inMovie moviedata:movie_260_Star_Wars_Episode_IV_-_A_New_Hope ;
+    movie:isLeadRole false .
+
+role:role_260_Mark_Hamill_Luke_Skywalker a movie:LeadRole ;
+    movie:characterName "Luke Skywalker" ;
+    movie:inMovie moviedata:movie_260_Star_Wars_Episode_IV_-_A_New_Hope ;
+    movie:isLeadRole true .
+
+role:role_260_Peter_Cushing_Grand_Moff_Tarkin a movie:SupportingRole ;
+    movie:characterName "Grand Moff Tarkin" ;
+    movie:inMovie moviedata:movie_260_Star_Wars_Episode_IV_-_A_New_Hope ;
+    movie:isLeadRole false .
+
+role:role_260_Peter_Mayhew_Chewbacca a movie:SupportingRole ;
+    movie:characterName "Chewbacca" ;
+    movie:inMovie moviedata:movie_260_Star_Wars_Episode_IV_-_A_New_Hope ;
+    movie:isLeadRole false .
+
+role:role_296_Bruce_Willis_Butch_Coolidge a movie:SupportingRole ;
+    movie:characterName "Butch Coolidge" ;
+    movie:inMovie moviedata:movie_296_Pulp_Fiction ;
+    movie:isLeadRole false .
+
+role:role_296_Eric_Stoltz_Lance a movie:SupportingRole ;
+    movie:characterName "Lance" ;
+    movie:inMovie moviedata:movie_296_Pulp_Fiction ;
+    movie:isLeadRole false .
+
+role:role_296_Harvey_Keitel_The_Wolf a movie:SupportingRole ;
+    movie:characterName "The Wolf" ;
+    movie:inMovie moviedata:movie_296_Pulp_Fiction ;
+    movie:isLeadRole false .
+
+role:role_296_John_Travolta_Vincent_Vega a movie:LeadRole ;
+    movie:characterName "Vincent Vega" ;
+    movie:inMovie moviedata:movie_296_Pulp_Fiction ;
+    movie:isLeadRole true .
+
+role:role_296_Samuel_L_Jackson_Jules_Winnfield a movie:LeadRole ;
+    movie:characterName "Jules Winnfield" ;
+    movie:inMovie moviedata:movie_296_Pulp_Fiction ;
+    movie:isLeadRole true .
+
+role:role_296_Tim_Roth_Pumpkin a movie:SupportingRole ;
+    movie:characterName "Pumpkin" ;
+    movie:inMovie moviedata:movie_296_Pulp_Fiction ;
+    movie:isLeadRole false .
+
+role:role_296_Uma_Thurman_Mia_Wallace a movie:LeadRole ;
+    movie:characterName "Mia Wallace" ;
+    movie:inMovie moviedata:movie_296_Pulp_Fiction ;
+    movie:isLeadRole true .
+
+role:role_296_Ving_Rhames_Marsellus_Wallace a movie:SupportingRole ;
+    movie:characterName "Marsellus Wallace" ;
+    movie:inMovie moviedata:movie_296_Pulp_Fiction ;
+    movie:isLeadRole false .
+
+role:role_318_Bob_Gunton_Warden_Norton a movie:LeadRole ;
+    movie:characterName "Warden Norton" ;
+    movie:inMovie moviedata:movie_318_Shawshank_Redemption_The ;
+    movie:isLeadRole true .
+
+role:role_318_Clancy_Brown_Captain_Byron_T_Hadley a movie:SupportingRole ;
+    movie:characterName "Captain Byron T. Hadley" ;
+    movie:inMovie moviedata:movie_318_Shawshank_Redemption_The ;
+    movie:isLeadRole false .
+
+role:role_318_Gil_Bellows_Tommy a movie:SupportingRole ;
+    movie:characterName "Tommy" ;
+    movie:inMovie moviedata:movie_318_Shawshank_Redemption_The ;
+    movie:isLeadRole false .
+
+role:role_318_James_Whitmore_Brooks_Hatlen a movie:SupportingRole ;
+    movie:characterName "Brooks Hatlen" ;
+    movie:inMovie moviedata:movie_318_Shawshank_Redemption_The ;
+    movie:isLeadRole false .
+
+role:role_318_Mark_Rolston_Bogs_Diamond a movie:SupportingRole ;
+    movie:characterName "Bogs Diamond" ;
+    movie:inMovie moviedata:movie_318_Shawshank_Redemption_The ;
+    movie:isLeadRole false .
+
+role:role_318_Morgan_Freeman_Ellis_Boyd_Red_Redding a movie:LeadRole ;
+    movie:characterName "Ellis Boyd 'Red' Redding" ;
+    movie:inMovie moviedata:movie_318_Shawshank_Redemption_The ;
+    movie:isLeadRole true .
+
+role:role_318_Tim_Robbins_Andy_Dufresne a movie:LeadRole ;
+    movie:characterName "Andy Dufresne" ;
+    movie:inMovie moviedata:movie_318_Shawshank_Redemption_The ;
+    movie:isLeadRole true .
+
+role:role_318_William_Sadler_Heywood a movie:SupportingRole ;
+    movie:characterName "Heywood" ;
+    movie:inMovie moviedata:movie_318_Shawshank_Redemption_The ;
+    movie:isLeadRole false .
+
+role:role_356_Gary_Sinise_Lieutenant_Dan_Taylor a movie:LeadRole ;
+    movie:characterName "Lieutenant Dan Taylor" ;
+    movie:inMovie moviedata:movie_356_Forrest_Gump ;
+    movie:isLeadRole true .
+
+role:role_356_Haley_Joel_Osment_Forrest_Junior a movie:SupportingRole ;
+    movie:characterName "Forrest Junior" ;
+    movie:inMovie moviedata:movie_356_Forrest_Gump ;
+    movie:isLeadRole false .
+
+role:role_356_Hanna_Hall_Young_Jenny_Curran a movie:SupportingRole ;
+    movie:characterName "Young Jenny Curran" ;
+    movie:inMovie moviedata:movie_356_Forrest_Gump ;
+    movie:isLeadRole false .
+
+role:role_356_Michael_Conner_Humphreys_Young_Forrest_Gump a movie:SupportingRole ;
+    movie:characterName "Young Forrest Gump" ;
+    movie:inMovie moviedata:movie_356_Forrest_Gump ;
+    movie:isLeadRole false .
+
+role:role_356_Mykelti_Williamson_Bubba_Blue a movie:SupportingRole ;
+    movie:characterName "Bubba Blue" ;
+    movie:inMovie moviedata:movie_356_Forrest_Gump ;
+    movie:isLeadRole false .
+
+role:role_356_Robin_Wright_Jenny_Curran a movie:LeadRole ;
+    movie:characterName "Jenny Curran" ;
+    movie:inMovie moviedata:movie_356_Forrest_Gump ;
+    movie:isLeadRole true .
+
+role:role_356_Sally_Field_Mrs_Gump a movie:SupportingRole ;
+    movie:characterName "Mrs. Gump" ;
+    movie:inMovie moviedata:movie_356_Forrest_Gump ;
+    movie:isLeadRole false .
+
+role:role_356_Tom_Hanks_Forrest_Gump a movie:LeadRole ;
+    movie:characterName "Forrest Gump" ;
+    movie:inMovie moviedata:movie_356_Forrest_Gump ;
+    movie:isLeadRole true .
+
+role:role_480_BD_Wong_Wu a movie:SupportingRole ;
+    movie:characterName "Wu" ;
+    movie:inMovie moviedata:movie_480_Jurassic_Park ;
+    movie:isLeadRole false .
+
+role:role_480_Bob_Peck_Muldoon a movie:SupportingRole ;
+    movie:characterName "Muldoon" ;
+    movie:inMovie moviedata:movie_480_Jurassic_Park ;
+    movie:isLeadRole false .
+
+role:role_480_Jeff_Goldblum_Malcolm a movie:LeadRole ;
+    movie:characterName "Malcolm" ;
+    movie:inMovie moviedata:movie_480_Jurassic_Park ;
+    movie:isLeadRole true .
+
+role:role_480_Joseph_Mazzello_Tim a movie:SupportingRole ;
+    movie:characterName "Tim" ;
+    movie:inMovie moviedata:movie_480_Jurassic_Park ;
+    movie:isLeadRole false .
+
+role:role_480_Laura_Dern_Ellie a movie:LeadRole ;
+    movie:characterName "Ellie" ;
+    movie:inMovie moviedata:movie_480_Jurassic_Park ;
+    movie:isLeadRole true .
+
+role:role_480_Martin_Ferrero_Gennaro a movie:SupportingRole ;
+    movie:characterName "Gennaro" ;
+    movie:inMovie moviedata:movie_480_Jurassic_Park ;
+    movie:isLeadRole false .
+
+role:role_480_Richard_Attenborough_Hammond a movie:SupportingRole ;
+    movie:characterName "Hammond" ;
+    movie:inMovie moviedata:movie_480_Jurassic_Park ;
+    movie:isLeadRole false .
+
+role:role_480_Sam_Neill_Grant a movie:LeadRole ;
+    movie:characterName "Grant" ;
+    movie:inMovie moviedata:movie_480_Jurassic_Park ;
+    movie:isLeadRole true .
+
+role:role_527_Ben_Kingsley_Itzhak_Stern a movie:LeadRole ;
+    movie:characterName "Itzhak Stern" ;
+    movie:inMovie moviedata:movie_527_Schindlers_List ;
+    movie:isLeadRole true .
+
+role:role_527_Caroline_Goodall_Emilie_Schindler a movie:SupportingRole ;
+    movie:characterName "Emilie Schindler" ;
+    movie:inMovie moviedata:movie_527_Schindlers_List ;
+    movie:isLeadRole false .
+
+role:role_527_Embeth_Davidtz_Helen_Hirsch a movie:SupportingRole ;
+    movie:characterName "Helen Hirsch" ;
+    movie:inMovie moviedata:movie_527_Schindlers_List ;
+    movie:isLeadRole false .
+
+role:role_527_Jonathan_Sagall_Poldek_Pfefferberg a movie:SupportingRole ;
+    movie:characterName "Poldek Pfefferberg" ;
+    movie:inMovie moviedata:movie_527_Schindlers_List ;
+    movie:isLeadRole false .
+
+role:role_527_Liam_Neeson_Oskar_Schindler a movie:LeadRole ;
+    movie:characterName "Oskar Schindler" ;
+    movie:inMovie moviedata:movie_527_Schindlers_List ;
+    movie:isLeadRole true .
+
+role:role_527_Ma%C5%82gorzata_Gebel_Viktoria_Klonowska a movie:SupportingRole ;
+    movie:characterName "Viktoria Klonowska" ;
+    movie:inMovie moviedata:movie_527_Schindlers_List ;
+    movie:isLeadRole false .
+
+role:role_527_Ralph_Fiennes_Amon_Goeth a movie:LeadRole ;
+    movie:characterName "Amon Goeth" ;
+    movie:inMovie moviedata:movie_527_Schindlers_List ;
+    movie:isLeadRole true .
+
+role:role_527_Shmuel_Levy_Wilek_Chilowicz a movie:SupportingRole ;
+    movie:characterName "Wilek Chilowicz" ;
+    movie:inMovie moviedata:movie_527_Schindlers_List ;
+    movie:isLeadRole false .
+
+role:role_589_Arnold_Schwarzenegger_The_Terminator a movie:LeadRole ;
+    movie:characterName "The Terminator" ;
+    movie:inMovie moviedata:movie_589_Terminator_2_Judgment_Day ;
+    movie:isLeadRole true .
+
+role:role_589_Castulo_Guerra_Enrique_Salceda a movie:SupportingRole ;
+    movie:characterName "Enrique Salceda" ;
+    movie:inMovie moviedata:movie_589_Terminator_2_Judgment_Day ;
+    movie:isLeadRole false .
+
+role:role_589_Earl_Boen_Dr_Silberman a movie:SupportingRole ;
+    movie:characterName "Dr. Silberman" ;
+    movie:inMovie moviedata:movie_589_Terminator_2_Judgment_Day ;
+    movie:isLeadRole false .
+
+role:role_589_Edward_Furlong_John_Connor a movie:LeadRole ;
+    movie:characterName "John Connor" ;
+    movie:inMovie moviedata:movie_589_Terminator_2_Judgment_Day ;
+    movie:isLeadRole true .
+
+role:role_589_Joe_Morton_Miles_Dyson a movie:SupportingRole ;
+    movie:characterName "Miles Dyson" ;
+    movie:inMovie moviedata:movie_589_Terminator_2_Judgment_Day ;
+    movie:isLeadRole false .
+
+role:role_589_Linda_Hamilton_Sarah_Connor a movie:LeadRole ;
+    movie:characterName "Sarah Connor" ;
+    movie:inMovie moviedata:movie_589_Terminator_2_Judgment_Day ;
+    movie:isLeadRole true .
+
+role:role_589_Robert_Patrick_T-1000 a movie:SupportingRole ;
+    movie:characterName "T-1000" ;
+    movie:inMovie moviedata:movie_589_Terminator_2_Judgment_Day ;
+    movie:isLeadRole false .
+
+role:role_589_S_Epatha_Merkerson_Tarissa_Dyson a movie:SupportingRole ;
+    movie:characterName "Tarissa Dyson" ;
+    movie:inMovie moviedata:movie_589_Terminator_2_Judgment_Day ;
+    movie:isLeadRole false .
+
+role:role_593_Anthony_Heald_Dr_Frederick_Chilton a movie:SupportingRole ;
+    movie:characterName "Dr. Frederick Chilton" ;
+    movie:inMovie moviedata:movie_593_Silence_of_the_Lambs_The ;
+    movie:isLeadRole false .
+
+role:role_593_Anthony_Hopkins_Dr_Hannibal_Lecter a movie:LeadRole ;
+    movie:characterName "Dr. Hannibal Lecter" ;
+    movie:inMovie moviedata:movie_593_Silence_of_the_Lambs_The ;
+    movie:isLeadRole true .
+
+role:role_593_Brooke_Smith_Catherine_Martin a movie:SupportingRole ;
+    movie:characterName "Catherine Martin" ;
+    movie:inMovie moviedata:movie_593_Silence_of_the_Lambs_The ;
+    movie:isLeadRole false .
+
+role:role_593_Diane_Baker_Senator_Ruth_Martin a movie:SupportingRole ;
+    movie:characterName "Senator Ruth Martin" ;
+    movie:inMovie moviedata:movie_593_Silence_of_the_Lambs_The ;
+    movie:isLeadRole false .
+
+role:role_593_Jodie_Foster_Clarice_Starling a movie:LeadRole ;
+    movie:characterName "Clarice Starling" ;
+    movie:inMovie moviedata:movie_593_Silence_of_the_Lambs_The ;
+    movie:isLeadRole true .
+
+role:role_593_Kasi_Lemmons_Ardelia_Mapp a movie:SupportingRole ;
+    movie:characterName "Ardelia Mapp" ;
+    movie:inMovie moviedata:movie_593_Silence_of_the_Lambs_The ;
+    movie:isLeadRole false .
+
+role:role_593_Scott_Glenn_Jack_Crawford a movie:LeadRole ;
+    movie:characterName "Jack Crawford" ;
+    movie:inMovie moviedata:movie_593_Silence_of_the_Lambs_The ;
+    movie:isLeadRole true .
+
+role:role_593_Ted_Levine_Jame_Gumb a movie:SupportingRole ;
+    movie:characterName "Jame Gumb" ;
+    movie:inMovie moviedata:movie_593_Silence_of_the_Lambs_The ;
+    movie:isLeadRole false .
+
+theme:Identity a movie:Theme ;
+    movie:themeName "Identity" .
+
+theme:Power a movie:Theme ;
+    movie:themeName "Power" .
+
+company:Amblin_Entertainment a movie:ProductionCompany ;
+    movie:companyName "Amblin Entertainment" .
+
+genre:Adventure a movie:MainGenre ;
+    movie:genreName "Adventure" .
+
+genre:Comedy a movie:MainGenre ;
+    movie:genreName "Comedy" .
+
+keyword:action_hero a movie:Keyword ;
+    movie:keywordText "action hero" .
+
+keyword:based_on_true_story a movie:Keyword ;
+    movie:keywordText "based on true story" .
+
+keyword:disheartening a movie:Keyword ;
+    movie:keywordText "disheartening" .
+
+keyword:distressing a movie:Keyword ;
+    movie:keywordText "distressing" .
+
+keyword:disturbed a movie:Keyword ;
+    movie:keywordText "disturbed" .
+
+keyword:dystopia a movie:Keyword ;
+    movie:keywordText "dystopia" .
+
+keyword:freedom a movie:Keyword ;
+    movie:keywordText "freedom" .
+
+keyword:friendship a movie:Keyword ;
+    movie:keywordText "friendship" .
+
+keyword:man_vs_machine a movie:Keyword ;
+    movie:keywordText "man vs machine" .
+
+keyword:neo-noir a movie:Keyword ;
+    movie:keywordText "neo-noir" .
+
+keyword:redemption a movie:Keyword ;
+    movie:keywordText "redemption" .
+
+language:Fran%C3%A7ais a movie:Language .
+
+moviedata:certification_PG-13 a movie:Certification ;
+    movie:certificationCountry "US" ;
+    movie:certificationRating "PG-13" .
+
+person:Frank_Darabont a movie:Director,
+        movie:Screenwriter ;
+    movie:hasName "Frank Darabont" .
+
+person:James_Cameron a movie:Director,
+        movie:Producer ;
+    movie:hasName "James Cameron" .
+
+person:Mel_Gibson a movie:Actor,
+        movie:Director ;
+    movie:hasName "Mel Gibson" ;
+    movie:playsRole role:role_110_Mel_Gibson_William_Wallace .
+
+person:Michael_Kahn a movie:Editor ;
+    movie:hasName "Michael Kahn" .
+
+plotstructure:NonLinearNarrative a movie:NonLinearNarrative .
+
+theme:Freedom a movie:Theme ;
+    movie:themeName "Freedom" .
+
+theme:Justice a movie:Theme ;
+    movie:themeName "Justice" .
+
+theme:Love a movie:Theme ;
+    movie:themeName "Love" .
+
+theme:Redemption a movie:Theme ;
+    movie:themeName "Redemption" .
+
+tone:RomanticTone a movie:RomanticTone ;
+    movie:toneName "RomanticTone" .
+
+genre:Crime a movie:MainGenre ;
+    movie:genreName "Crime" .
+
+genre:War a movie:MainGenre ;
+    movie:genreName "War" .
+
+keyword:based_on_novel_or_book a movie:Keyword ;
+    movie:keywordText "based on novel or book" .
+
+language:Espa%C3%B1ol a movie:Language .
+
+person:John_Williams a movie:Composer ;
+    movie:hasName "John Williams" .
+
+person:Steven_Spielberg a movie:Director,
+        movie:Producer ;
+    movie:hasName "Steven Spielberg" .
+
+theme:Family a movie:Theme ;
+    movie:themeName "Family" .
+
+tone:SuspensefulTone a movie:SuspensefulTone ;
+    movie:toneName "SuspensefulTone" .
+
+genre:Sci-Fi a movie:MainGenre ;
+    movie:genreName "Sci-Fi" .
+
+genre:Thriller a movie:MainGenre ;
+    movie:genreName "Thriller" .
+
+genre:Action a movie:MainGenre ;
+    movie:genreName "Action" .
+
+genre:Drama a movie:MainGenre ;
+    movie:genreName "Drama" .
+
+tone:DarkTone a movie:DarkTone ;
+    movie:toneName "DarkTone" .
+
+moviedata:certification_R a movie:Certification ;
+    movie:certificationCountry "US" ;
+    movie:certificationRating "R" .
+
+plotstructure:LinearNarrative a movie:LinearNarrative .
+
+moviedata:movie_110_Braveheart a movie:FeatureFilm ;
+    movie:hasActor person:Angus_Macfadyen,
+        person:Brendan_Gleeson,
+        person:Catherine_McCormack,
+        person:James_Cosmo,
+        person:James_Robinson,
+        person:Mel_Gibson,
+        person:Patrick_McGoohan,
+        person:Sophie_Marceau ;
+    movie:hasAverageRating "4.031645569620253"^^xsd:float ;
+    movie:hasBoxOffice 213216216.0 ;
+    movie:hasBudget 72000000.0 ;
+    movie:hasCertification moviedata:certification_R ;
+    movie:hasCinematographer person:John_Toll ;
+    movie:hasComposer person:James_Horner ;
+    movie:hasCountryOfOrigin country:United_States_of_America ;
+    movie:hasDirector person:Mel_Gibson ;
+    movie:hasEditor person:Steven_Rosenblum ;
+    movie:hasHistoricalPeriod period:Historical ;
+    movie:hasIMDbID 112573 ;
+    movie:hasIMDbRating "8.3"^^xsd:float ;
+    movie:hasIMDbVoteCount 1150527 ;
+    movie:hasKeyword keyword:based_on_true_story,
+        keyword:catholic,
+        keyword:england,
+        keyword:idealism,
+        keyword:loss_of_loved_one,
+        keyword:medieval,
+        keyword:scotland,
+        keyword:war ;
+    movie:hasLanguage language:English,
+        language:Fran%C3%A7ais,
+        language:Latin ;
+    movie:hasMainGenre genre:Action,
+        genre:Drama,
+        genre:War ;
+    movie:hasMetascore 68 ;
+    movie:hasOriginalLanguage "en" ;
+    movie:hasOriginalTitle "Braveheart" ;
+    movie:hasPlotStructure plotstructure:LinearNarrative ;
+    movie:hasPlotSummary "¿Qué clase de hombre desafiaría a un rey? 'Braveheart' es una historia épica medieval sobre la independencia de Escocia en el siglo XIII, basada en la leyenda de William Wallace, un montañés escocés que arrastra a su clan a luchar contra la tiranía del rey Eduardo I de Inglaterra. Después del brutal asesinato de su joven esposa por los ingleses, Wallace sólo busca venganza. Hambrientos y en inferior número, Wallace lidera a los patriotas escoceses y consigue organizar un ejército de guerreros sedientos de libertad logrando recuperar con ello el espíritu que haría a Escocia libre para siempre." ;
+    movie:hasPopularity "11.1353"^^xsd:float ;
+    movie:hasProducer person:Bruce_Davey ;
+    movie:hasProductionCompany company:Icon_Productions,
+        company:The_Ladd_Company ;
+    movie:hasProductionCountries "United States of America" ;
+    movie:hasRatingCount 237 ;
+    movie:hasSpokenLanguages "English|Français|Latin|" ;
+    movie:hasTMDbID 197 ;
+    movie:hasTMDbRating "7.941"^^xsd:float ;
+    movie:hasTMDbVoteCount 10813 ;
+    movie:hasTagline "Su pasión cautivó a una mujer. Su valor inspiró a todo un pueblo. Su corazón desafió a un rey." ;
+    movie:hasTheme theme:Love ;
+    movie:hasTitle "Braveheart" ;
+    movie:hasTone tone:RomanticTone ;
+    movie:releaseDate "1995-05-24"^^xsd:date ;
+    movie:runtime 177 .
+
+moviedata:movie_2571_Matrix_The a movie:FeatureFilm ;
+    movie:hasActor person:Carrie-Anne_Moss,
+        person:Gloria_Foster,
+        person:Hugo_Weaving,
+        person:Joe_Pantoliano,
+        person:Julian_Arahanga,
+        person:Keanu_Reeves,
+        person:Laurence_Fishburne,
+        person:Marcus_Chong ;
+    movie:hasAverageRating "4.192446043165468"^^xsd:float ;
+    movie:hasBoxOffice 463517383.0 ;
+    movie:hasBudget 63000000.0 ;
+    movie:hasCertification moviedata:certification_R ;
+    movie:hasCinematographer person:Bill_Pope ;
+    movie:hasComposer person:Don_Davis ;
+    movie:hasCountryOfOrigin country:United_States_of_America ;
+    movie:hasDirector person:Lana_Wachowski ;
+    movie:hasEditor person:Zach_Staenberg ;
+    movie:hasHistoricalPeriod period:Historical ;
+    movie:hasIMDbID 133093 ;
+    movie:hasIMDbRating "8.7"^^xsd:float ;
+    movie:hasIMDbVoteCount 2217731 ;
+    movie:hasKeyword keyword:action_hero,
+        keyword:allegory_of_the_cave,
+        keyword:artificial_intelligence_ai,
+        keyword:baffled,
+        keyword:cyberpunk,
+        keyword:distressing,
+        keyword:disturbed,
+        keyword:dream_world,
+        keyword:dreams,
+        keyword:dystopia,
+        keyword:dystopian_sci-fi,
+        keyword:fight,
+        keyword:gnosticism,
+        keyword:hacker,
+        keyword:insurgence,
+        keyword:kung_fu,
+        keyword:man_vs_machine,
+        keyword:martial_arts,
+        keyword:messiah,
+        keyword:philosophy,
+        keyword:pill,
+        keyword:prophecy,
+        keyword:saving_the_world,
+        keyword:self_sacrifice,
+        keyword:simulated_reality,
+        keyword:truth,
+        keyword:virtual_reality ;
+    movie:hasLanguage language:English ;
+    movie:hasMainGenre genre:Action,
+        genre:Sci-Fi,
+        genre:Thriller ;
+    movie:hasMetascore 73 ;
+    movie:hasOriginalLanguage "en" ;
+    movie:hasOriginalTitle "The Matrix" ;
+    movie:hasPlotStructure plotstructure:LinearNarrative ;
+    movie:hasPlotSummary "Thomas Anderson lleva una doble vida: por el día es programador en una importante empresa de software, y por la noche un hacker informático llamado Neo. Su vida no volverá a ser igual cuando unos misteriosos personajes le inviten a descubrir la respuesta a la pregunta que no le deja dormir: ¿qué es Matrix?" ;
+    movie:hasPopularity "22.7205"^^xsd:float ;
+    movie:hasProducer person:Joel_Silver ;
+    movie:hasProductionCompany company:Groucho_II_Film_Partnership,
+        company:Silver_Pictures,
+        company:Village_Roadshow_Pictures,
+        company:Warner_Bros_Pictures ;
+    movie:hasProductionCountries "United States of America" ;
+    movie:hasRatingCount 278 ;
+    movie:hasSpokenLanguages "English" ;
+    movie:hasTMDbID 603 ;
+    movie:hasTMDbRating "8.237"^^xsd:float ;
+    movie:hasTMDbVoteCount 27237 ;
+    movie:hasTagline "Bienvenido al mundo real." ;
+    movie:hasTheme theme:Family ;
+    movie:hasTitle "Matrix, The" ;
+    movie:hasTone tone:SuspensefulTone ;
+    movie:releaseDate "1999-03-31"^^xsd:date ;
+    movie:runtime 138 .
+
+moviedata:movie_260_Star_Wars_Episode_IV_-_A_New_Hope a movie:FeatureFilm ;
+    movie:hasActor person:Alec_Guinness,
+        person:Anthony_Daniels,
+        person:Carrie_Fisher,
+        person:Harrison_Ford,
+        person:Kenny_Baker,
+        person:Mark_Hamill,
+        person:Peter_Cushing,
+        person:Peter_Mayhew ;
+    movie:hasAverageRating "4.231075697211155"^^xsd:float ;
+    movie:hasBoxOffice 775398007.0 ;
+    movie:hasBudget 11000000.0 ;
+    movie:hasCertification moviedata:certification_PG ;
+    movie:hasCinematographer person:Gilbert_Taylor ;
+    movie:hasComposer person:John_Williams ;
+    movie:hasCountryOfOrigin country:United_States_of_America ;
+    movie:hasDirector person:George_Lucas ;
+    movie:hasEditor person:Paul_Hirsch ;
+    movie:hasHistoricalPeriod period:Historical ;
+    movie:hasIMDbID 76759 ;
+    movie:hasIMDbRating "8.6"^^xsd:float ;
+    movie:hasIMDbVoteCount 1550406 ;
+    movie:hasKeyword keyword:amused,
+        keyword:android,
+        keyword:desert,
+        keyword:empire,
+        keyword:excited,
+        keyword:exhilarated,
+        keyword:freedom,
+        keyword:galaxy,
+        keyword:hermit,
+        keyword:nostalgic,
+        keyword:oppression,
+        keyword:planet,
+        keyword:rebel,
+        keyword:rebellion,
+        keyword:rescue_mission,
+        keyword:smuggling_contraband,
+        keyword:space,
+        keyword:space_opera,
+        keyword:super_power,
+        keyword:totalitarianism,
+        keyword:wizard ;
+    movie:hasLanguage language:English ;
+    movie:hasMainGenre genre:Action,
+        genre:Adventure,
+        genre:Sci-Fi ;
+    movie:hasMetascore 90 ;
+    movie:hasOriginalLanguage "en" ;
+    movie:hasOriginalTitle "Star Wars" ;
+    movie:hasPlotStructure plotstructure:LinearNarrative ;
+    movie:hasPlotSummary "La princesa Leia, líder del movimiento rebelde que desea reinstaurar la República en la galaxia en los tiempos ominosos del Imperio, es capturada por las malévolas Fuerzas Imperiales, capitaneadas por el implacable Darth Vader, el sirviente más fiel del emperador. El intrépido Luke Skywalker, ayudado por Han Solo, capitán de la nave espacial \"El Halcón Milenario\", y los androides, R2D2 y C3PO, serán los encargados de luchar contra el enemigo y rescatar a la princesa para volver a instaurar la justicia en el seno de la Galaxia." ;
+    movie:hasPopularity "18.1016"^^xsd:float ;
+    movie:hasProducer person:Gary_Kurtz ;
+    movie:hasProductionCompany company:20th_Century_Fox,
+        company:Lucasfilm_Ltd ;
+    movie:hasProductionCountries "United States of America" ;
+    movie:hasRatingCount 251 ;
+    movie:hasSpokenLanguages "English" ;
+    movie:hasTMDbID 11 ;
+    movie:hasTMDbRating "8.202"^^xsd:float ;
+    movie:hasTMDbVoteCount 21838 ;
+    movie:hasTagline "Hace mucho tiempo, en una galaxia muy lejana..." ;
+    movie:hasTheme theme:Freedom,
+        theme:Power ;
+    movie:hasTitle "Star Wars: Episode IV - A New Hope" ;
+    movie:hasTone tone:SuspensefulTone ;
+    movie:releaseDate "1977-05-25"^^xsd:date ;
+    movie:runtime 121 .
+
+moviedata:movie_296_Pulp_Fiction a movie:FeatureFilm ;
+    movie:hasActor person:Bruce_Willis,
+        person:Eric_Stoltz,
+        person:Harvey_Keitel,
+        person:John_Travolta,
+        person:Samuel_L_Jackson,
+        person:Tim_Roth,
+        person:Uma_Thurman,
+        person:Ving_Rhames ;
+    movie:hasAverageRating "4.197068403908795"^^xsd:float ;
+    movie:hasBoxOffice 213928762.0 ;
+    movie:hasBudget 8000000.0 ;
+    movie:hasCertification moviedata:certification_R ;
+    movie:hasCinematographer person:Andrzej_Sekula ;
+    movie:hasCountryOfOrigin country:United_States_of_America ;
+    movie:hasDirector person:Quentin_Tarantino ;
+    movie:hasEditor person:Sally_Menke ;
+    movie:hasHistoricalPeriod period:Historical ;
+    movie:hasIMDbID 110912 ;
+    movie:hasIMDbRating "8.8"^^xsd:float ;
+    movie:hasIMDbVoteCount 2398909 ;
+    movie:hasKeyword keyword:crime_boss,
+        keyword:disgusted,
+        keyword:disheartening,
+        keyword:distressing,
+        keyword:disturbed,
+        keyword:drug_dealer,
+        keyword:los_angeles_california,
+        keyword:multiple_storylines,
+        keyword:neo-noir,
+        keyword:nonlinear_timeline,
+        keyword:redemption,
+        keyword:stolen_money,
+        keyword:theft ;
+    movie:hasLanguage language:English,
+        language:Espa%C3%B1ol,
+        language:Fran%C3%A7ais ;
+    movie:hasMainGenre genre:Comedy,
+        genre:Crime,
+        genre:Drama,
+        genre:Thriller ;
+    movie:hasMetascore 95 ;
+    movie:hasOriginalLanguage "en" ;
+    movie:hasOriginalTitle "Pulp Fiction" ;
+    movie:hasPlotStructure plotstructure:NonLinearNarrative ;
+    movie:hasPlotSummary "Jules y Vincent, dos asesinos a sueldo con muy pocas luces, trabajan para Marsellus Wallace. Vincent le confiesa a Jules que Marsellus le ha pedido que cuide de Mia, su mujer. Jules le recomienda prudencia porque es muy peligroso sobrepasarse con la novia del jefe. Cuando llega la hora de trabajar, ambos deben ponerse manos a la obra. Su misión: recuperar un misterioso maletín." ;
+    movie:hasPopularity "22.1757"^^xsd:float ;
+    movie:hasProducer person:Lawrence_Bender ;
+    movie:hasProductionCompany company:A_Band_Apart,
+        company:Jersey_Films,
+        company:Miramax ;
+    movie:hasProductionCountries "United States of America" ;
+    movie:hasRatingCount 307 ;
+    movie:hasSpokenLanguages "English|Español|Français" ;
+    movie:hasTMDbID 680 ;
+    movie:hasTMDbRating "8.486"^^xsd:float ;
+    movie:hasTMDbVoteCount 29554 ;
+    movie:hasTagline "No sabrás los hechos hasta que veas la ficción." ;
+    movie:hasTheme theme:Redemption ;
+    movie:hasTitle "Pulp Fiction" ;
+    movie:hasTone tone:DarkTone ;
+    movie:releaseDate "1994-09-10"^^xsd:date ;
+    movie:runtime 154 .
+
+moviedata:movie_318_Shawshank_Redemption_The a movie:FeatureFilm ;
+    movie:hasActor person:Bob_Gunton,
+        person:Clancy_Brown,
+        person:Gil_Bellows,
+        person:James_Whitmore,
+        person:Mark_Rolston,
+        person:Morgan_Freeman,
+        person:Tim_Robbins,
+        person:William_Sadler ;
+    movie:hasAverageRating "4.429022082018927"^^xsd:float ;
+    movie:hasBoxOffice 28341469.0 ;
+    movie:hasBudget 25000000.0 ;
+    movie:hasCertification moviedata:certification_R ;
+    movie:hasCinematographer person:Roger_Deakins ;
+    movie:hasComposer person:Thomas_Newman ;
+    movie:hasCountryOfOrigin country:United_States_of_America ;
+    movie:hasDirector person:Frank_Darabont ;
+    movie:hasEditor person:Richard_Francis-Bruce ;
+    movie:hasHistoricalPeriod period:Historical ;
+    movie:hasIMDbID 111161 ;
+    movie:hasIMDbRating "9.3"^^xsd:float ;
+    movie:hasIMDbVoteCount 3136948 ;
+    movie:hasKeyword keyword:1940s,
+        keyword:based_on_novel_or_book,
+        keyword:corruption,
+        keyword:delinquent,
+        keyword:framed_for_murder,
+        keyword:freedom,
+        keyword:friendship,
+        keyword:hope,
+        keyword:interracial_friendship,
+        keyword:parole_board,
+        keyword:police_brutality,
+        keyword:prison,
+        keyword:prison_cell,
+        keyword:prison_escape,
+        keyword:redemption,
+        keyword:voiceover,
+        keyword:wrongful_imprisonment ;
+    movie:hasLanguage language:English ;
+    movie:hasMainGenre genre:Crime,
+        genre:Drama ;
+    movie:hasMetascore 82 ;
+    movie:hasOriginalLanguage "en" ;
+    movie:hasOriginalTitle "The Shawshank Redemption" ;
+    movie:hasPlotStructure plotstructure:LinearNarrative ;
+    movie:hasPlotSummary "Acusado del asesinato de su mujer, Andrew Dufresne, tras ser condenado a cadena perpetua, es enviado a la prisión de Shawshank. Con el paso de los años conseguirá ganarse la confianza del director del centro y el respeto de sus compañeros presidiarios, especialmente de Red, el jefe de la mafia de los sobornos." ;
+    movie:hasPopularity "28.6873"^^xsd:float ;
+    movie:hasProducer person:Niki_Marvin ;
+    movie:hasProductionCompany company:Castle_Rock_Entertainment ;
+    movie:hasProductionCountries "United States of America" ;
+    movie:hasRatingCount 317 ;
+    movie:hasScreenwriter person:Frank_Darabont ;
+    movie:hasSpokenLanguages "English" ;
+    movie:hasTMDbID 278 ;
+    movie:hasTMDbRating "8.714"^^xsd:float ;
+    movie:hasTMDbVoteCount 29551 ;
+    movie:hasTagline "El miedo te hace prisionero. Sólo la esperanza puede liberar." ;
+    movie:hasTheme theme:Family,
+        theme:Freedom,
+        theme:Redemption ;
+    movie:hasTitle "Shawshank Redemption, The" ;
+    movie:hasTone tone:DarkTone ;
+    movie:releaseDate "1994-09-23"^^xsd:date ;
+    movie:runtime 143 .
+
+moviedata:movie_356_Forrest_Gump a movie:FeatureFilm ;
+    movie:hasActor person:Gary_Sinise,
+        person:Haley_Joel_Osment,
+        person:Hanna_Hall,
+        person:Michael_Conner_Humphreys,
+        person:Mykelti_Williamson,
+        person:Robin_Wright,
+        person:Sally_Field,
+        person:Tom_Hanks ;
+    movie:hasAverageRating "4.164133738601824"^^xsd:float ;
+    movie:hasBoxOffice 677387716.0 ;
+    movie:hasBudget 55000000.0 ;
+    movie:hasCertification moviedata:certification_PG-13 ;
+    movie:hasCinematographer person:Don_Burgess ;
+    movie:hasComposer person:Alan_Silvestri ;
+    movie:hasCountryOfOrigin country:United_States_of_America ;
+    movie:hasDirector person:Robert_Zemeckis ;
+    movie:hasEditor person:Arthur_Schmidt ;
+    movie:hasHistoricalPeriod period:Historical ;
+    movie:hasIMDbID 109830 ;
+    movie:hasIMDbRating "8.8"^^xsd:float ;
+    movie:hasIMDbVoteCount 2452716 ;
+    movie:hasKeyword keyword:1960s,
+        keyword:1970s,
+        keyword:alabama,
+        keyword:america,
+        keyword:anti_war_protest,
+        keyword:autism,
+        keyword:based_on_novel_or_book,
+        keyword:black_panther_party,
+        keyword:bus_stop,
+        keyword:chameleon,
+        keyword:college_american_football,
+        keyword:drug_addiction,
+        keyword:family_relationships,
+        keyword:feel-good,
+        keyword:friendship,
+        keyword:hippie,
+        keyword:mentally_disabled,
+        keyword:military,
+        keyword:mother_son_relationship,
+        keyword:new_years_eve,
+        keyword:optimism,
+        keyword:parent_child_relationship,
+        keyword:post-traumatic_stress_disorder_ptsd,
+        keyword:r%C3%A9veillon,
+        keyword:single_mother,
+        keyword:single_parent,
+        keyword:usa_president,
+        keyword:vietnam_veteran,
+        keyword:vietnam_war,
+        keyword:waitress,
+        keyword:washington_dc_usa ;
+    movie:hasLanguage language:English ;
+    movie:hasMainGenre genre:Comedy,
+        genre:Drama,
+        genre:Romance,
+        genre:War ;
+    movie:hasMetascore 82 ;
+    movie:hasOriginalLanguage "en" ;
+    movie:hasOriginalTitle "Forrest Gump" ;
+    movie:hasPlotStructure plotstructure:EpisodicNarrative ;
+    movie:hasPlotSummary "Forrest Gump es un chico con deficiencias mentales no muy profundas y con alguna incapacidad motora que, a pesar de todo, llegará a convertirse, entre otras cosas, en un héroe durante la Guerra del Vietnam. Su persistencia y bondad le llevarán a conseguir una gran fortuna, ser objeto del clamor popular y a codearse con las más altas esferas sociales y políticas del país. Siempre sin olvidar a Jenny, su gran amor desde que era niño." ;
+    movie:hasPopularity "19.5528"^^xsd:float ;
+    movie:hasProducer person:Steve_Tisch ;
+    movie:hasProductionCompany company:Paramount_Pictures,
+        company:The_Steve_Tisch_Company,
+        company:Wendy_Finerman_Productions ;
+    movie:hasProductionCountries "United States of America" ;
+    movie:hasRatingCount 329 ;
+    movie:hasScreenwriter person:Eric_Roth ;
+    movie:hasSpokenLanguages "English" ;
+    movie:hasTMDbID 13 ;
+    movie:hasTMDbRating "8.462"^^xsd:float ;
+    movie:hasTMDbVoteCount 29110 ;
+    movie:hasTagline "La vida es como una caja de bombones... nunca sabes lo que te va a tocar" ;
+    movie:hasTheme theme:Family,
+        theme:Justice,
+        theme:Love ;
+    movie:hasTitle "Forrest Gump" ;
+    movie:hasTone tone:RomanticTone ;
+    movie:releaseDate "1994-06-23"^^xsd:date ;
+    movie:runtime 142 .
+
+moviedata:movie_480_Jurassic_Park a movie:FeatureFilm ;
+    movie:hasActor person:BD_Wong,
+        person:Bob_Peck,
+        person:Jeff_Goldblum,
+        person:Joseph_Mazzello,
+        person:Laura_Dern,
+        person:Martin_Ferrero,
+        person:Richard_Attenborough,
+        person:Sam_Neill ;
+    movie:hasAverageRating "3.75"^^xsd:float ;
+    movie:hasBoxOffice 920100000.0 ;
+    movie:hasBudget 63000000.0 ;
+    movie:hasCertification moviedata:certification_PG-13 ;
+    movie:hasCinematographer person:Dean_Cundey ;
+    movie:hasComposer person:John_Williams ;
+    movie:hasCountryOfOrigin country:United_States_of_America ;
+    movie:hasDirector person:Steven_Spielberg ;
+    movie:hasEditor person:Michael_Kahn ;
+    movie:hasHistoricalPeriod period:Historical ;
+    movie:hasIMDbID 107290 ;
+    movie:hasIMDbRating "8.2"^^xsd:float ;
+    movie:hasIMDbVoteCount 1157660 ;
+    movie:hasKeyword keyword:amusement_park,
+        keyword:brontosaurus,
+        keyword:dinosaur,
+        keyword:dna,
+        keyword:electric_fence,
+        keyword:exotic_island,
+        keyword:island,
+        keyword:paleontology,
+        keyword:theme_park,
+        keyword:triceratops,
+        keyword:tyrannosaurus_rex ;
+    movie:hasLanguage language:English,
+        language:Espa%C3%B1ol ;
+    movie:hasMainGenre genre:Action,
+        genre:Adventure,
+        genre:Sci-Fi,
+        genre:Thriller ;
+    movie:hasMetascore 68 ;
+    movie:hasOriginalLanguage "en" ;
+    movie:hasOriginalTitle "Jurassic Park" ;
+    movie:hasPlotStructure plotstructure:LinearNarrative ;
+    movie:hasPlotSummary "El multimillonario John Hammond tiene una idea para un espectacular parque temático: una isla retirada donde los visitantes puedan observar dinosaurios reales. Con la última tecnología en el desarrollo de ADN, los científicos pueden clonar braquiosaurios, triceratops, velociraptors y un tiranosaurio rex, utilizando para ello la sangre fosilizada en ámbar contenida en insectos que los mordieron hace millones de años. Los paleontólogos Alan Grant, Ellie Sattler y Ian Malcolm visitan el parque y quedan muy sorprendidos con los resultados obtenidos. Pero cuando un problemático empleado manipula el sofisticado sistema de seguridad los dinosaurios escapan, obligando a los visitantes a luchar por su supervivencia." ;
+    movie:hasPopularity "7.7598"^^xsd:float ;
+    movie:hasProducer person:Kathleen_Kennedy ;
+    movie:hasProductionCompany company:Amblin_Entertainment,
+        company:Universal_Pictures ;
+    movie:hasProductionCountries "United States of America" ;
+    movie:hasRatingCount 238 ;
+    movie:hasScreenwriter person:David_Koepp ;
+    movie:hasSpokenLanguages "English|Español" ;
+    movie:hasTMDbID 329 ;
+    movie:hasTMDbRating "7.965"^^xsd:float ;
+    movie:hasTMDbVoteCount 17422 ;
+    movie:hasTagline "Una aventura de 65 millones de años." ;
+    movie:hasTitle "Jurassic Park" ;
+    movie:hasTone tone:SuspensefulTone ;
+    movie:releaseDate "1993-06-11"^^xsd:date ;
+    movie:runtime 120 .
+
+moviedata:movie_527_Schindlers_List a movie:FeatureFilm ;
+    movie:hasActor person:Ben_Kingsley,
+        person:Caroline_Goodall,
+        person:Embeth_Davidtz,
+        person:Jonathan_Sagall,
+        person:Liam_Neeson,
+        person:Ma%C5%82gorzata_Gebel,
+        person:Ralph_Fiennes,
+        person:Shmuel_Levy ;
+    movie:hasAverageRating "4.225"^^xsd:float ;
+    movie:hasBoxOffice 321365567.0 ;
+    movie:hasBudget 22000000.0 ;
+    movie:hasCertification moviedata:certification_R ;
+    movie:hasCinematographer person:Janusz_Kami%C5%84ski ;
+    movie:hasComposer person:John_Williams ;
+    movie:hasCountryOfOrigin country:United_States_of_America ;
+    movie:hasDirector person:Steven_Spielberg ;
+    movie:hasEditor person:Michael_Kahn ;
+    movie:hasHistoricalPeriod period:Historical ;
+    movie:hasIMDbID 108052 ;
+    movie:hasIMDbRating "9.0"^^xsd:float ;
+    movie:hasIMDbVoteCount 1564912 ;
+    movie:hasKeyword keyword:auschwitz-birkenau_concentration_camp,
+        keyword:based_on_true_story,
+        keyword:biography,
+        keyword:black_and_white,
+        keyword:concentration_camp,
+        keyword:defense_industry,
+        keyword:disheartening,
+        keyword:evil,
+        keyword:factory,
+        keyword:ghetto,
+        keyword:hero,
+        keyword:historical_fiction,
+        keyword:holocaust_shoah,
+        keyword:industrialist,
+        keyword:jew_persecution,
+        keyword:krak%C3%B3w_poland,
+        keyword:nazi,
+        keyword:nazi_train,
+        keyword:poland,
+        keyword:segunda_guerra_mundial,
+        keyword:ss_nazi_schutzstaffel,
+        keyword:train,
+        keyword:weapons_manufacturer,
+        keyword:world_war_ii ;
+    movie:hasLanguage <http://www.semanticweb.org/movierecommendation/data/language/%D7%A2%D7%91%D7%A8%D7%99%D7%AA>,
+        language:Deutsch,
+        language:English,
+        language:Polski ;
+    movie:hasMainGenre genre:Drama,
+        genre:War ;
+    movie:hasMetascore 95 ;
+    movie:hasOriginalLanguage "en" ;
+    movie:hasOriginalTitle "Schindler's List" ;
+    movie:hasPlotStructure plotstructure:LinearNarrative ;
+    movie:hasPlotSummary "Oskar Schindler, un hombre de enorme astucia y talento para las relaciones públicas, organiza un ambicioso plan para ganarse la simpatía de los nazis. Después de la invasión de Polonia por los alemanes, consigue, gracias a sus relaciones con los nazis, la propiedad de una fábrica de Cracovia. Allí emplea a cientos de operarios judíos, cuya explotación le hace prosperar rápidamente. Su gerente, también judío, es el verdadero director en la sombra, pues Schindler no tiene el menor conocimiento industrial." ;
+    movie:hasPopularity "15.6081"^^xsd:float ;
+    movie:hasProducer person:Steven_Spielberg ;
+    movie:hasProductionCompany company:Amblin_Entertainment ;
+    movie:hasProductionCountries "United States of America" ;
+    movie:hasRatingCount 220 ;
+    movie:hasScreenwriter person:Steven_Zaillian ;
+    movie:hasSpokenLanguages "Deutsch|Polski|עִבְרִית|English" ;
+    movie:hasTMDbID 424 ;
+    movie:hasTMDbRating "8.565"^^xsd:float ;
+    movie:hasTMDbVoteCount 17007 ;
+    movie:hasTagline "Quien salva una vida, salva al mundo entero." ;
+    movie:hasTheme theme:Justice ;
+    movie:hasTitle "Schindler's List" ;
+    movie:hasTone tone:DarkTone ;
+    movie:releaseDate "1993-12-15"^^xsd:date ;
+    movie:runtime 195 .
+
+moviedata:movie_589_Terminator_2_Judgment_Day a movie:FeatureFilm ;
+    movie:hasActor person:Arnold_Schwarzenegger,
+        person:Castulo_Guerra,
+        person:Earl_Boen,
+        person:Edward_Furlong,
+        person:Joe_Morton,
+        person:Linda_Hamilton,
+        person:Robert_Patrick,
+        person:S_Epatha_Merkerson ;
+    movie:hasAverageRating "3.970982142857143"^^xsd:float ;
+    movie:hasBoxOffice 517778573.0 ;
+    movie:hasBudget 102000000.0 ;
+    movie:hasCertification moviedata:certification_R ;
+    movie:hasCinematographer person:Adam_Greenberg ;
+    movie:hasComposer person:Brad_Fiedel ;
+    movie:hasCountryOfOrigin country:France,
+        country:United_States_of_America ;
+    movie:hasDirector person:James_Cameron ;
+    movie:hasEditor person:Conrad_Buff_IV ;
+    movie:hasHistoricalPeriod period:Historical ;
+    movie:hasIMDbID 103064 ;
+    movie:hasIMDbRating "8.6"^^xsd:float ;
+    movie:hasIMDbVoteCount 1266859 ;
+    movie:hasKeyword keyword:action_hero,
+        keyword:catch_phrase,
+        keyword:cyborg,
+        keyword:dystopia,
+        keyword:fictional_war,
+        keyword:good_versus_evil,
+        keyword:juvenile_delinquent,
+        keyword:man_vs_machine,
+        keyword:mental_institution,
+        keyword:moral_ambiguity,
+        keyword:morphing,
+        keyword:nuclear_weapons,
+        keyword:post-apocalyptic_future,
+        keyword:savior,
+        keyword:shape_shifter,
+        keyword:shotgun,
+        keyword:time_travel,
+        keyword:troubled_teen,
+        keyword:urban_setting,
+        keyword:villain ;
+    movie:hasLanguage language:English,
+        language:Espa%C3%B1ol ;
+    movie:hasMainGenre genre:Action,
+        genre:Sci-Fi ;
+    movie:hasMetascore 75 ;
+    movie:hasOriginalLanguage "en" ;
+    movie:hasOriginalTitle "Terminator 2: Judgment Day" ;
+    movie:hasPlotStructure plotstructure:LinearNarrative ;
+    movie:hasPlotSummary "Ha pasado once años desde que Sarah Connor fue marcada como objetivo para ser eliminada por un cyborg del futuro. Ahora su hijo John, el futuro líder de la resistencia, es el objetivo de un Terminator más moderno, más mortífero. Una vez más, la resistencia se las ha ingeniado para enviar un protector de vuelta al pasado para intentar salvar a John y a su madre Sarah." ;
+    movie:hasPopularity "12.6665"^^xsd:float ;
+    movie:hasProducer person:James_Cameron ;
+    movie:hasProductionCompany company:Carolco_Pictures,
+        company:Le_Studio_Canal,
+        company:Lightstorm_Entertainment,
+        company:Pacific_Western ;
+    movie:hasProductionCountries "France|United States of America" ;
+    movie:hasRatingCount 224 ;
+    movie:hasSpokenLanguages "English|Español" ;
+    movie:hasTMDbID 280 ;
+    movie:hasTMDbRating "8.138"^^xsd:float ;
+    movie:hasTMDbVoteCount 13862 ;
+    movie:hasTagline "No es nada personal." ;
+    movie:hasTitle "Terminator 2: Judgment Day" ;
+    movie:hasTone tone:DarkTone ;
+    movie:releaseDate "1991-07-03"^^xsd:date ;
+    movie:runtime 137 .
+
+moviedata:movie_593_Silence_of_the_Lambs_The a movie:FeatureFilm ;
+    movie:hasActor person:Anthony_Heald,
+        person:Anthony_Hopkins,
+        person:Brooke_Smith,
+        person:Diane_Baker,
+        person:Jodie_Foster,
+        person:Kasi_Lemmons,
+        person:Scott_Glenn,
+        person:Ted_Levine ;
+    movie:hasAverageRating "4.161290322580645"^^xsd:float ;
+    movie:hasBoxOffice 272742922.0 ;
+    movie:hasBudget 19000000.0 ;
+    movie:hasCertification moviedata:certification_R ;
+    movie:hasCinematographer person:Tak_Fujimoto ;
+    movie:hasComposer person:Howard_Shore ;
+    movie:hasCountryOfOrigin country:United_States_of_America ;
+    movie:hasDirector person:Jonathan_Demme ;
+    movie:hasEditor person:Craig_McKay ;
+    movie:hasHistoricalPeriod period:Historical ;
+    movie:hasIMDbID 102926 ;
+    movie:hasIMDbRating "8.6"^^xsd:float ;
+    movie:hasIMDbVoteCount 1690179 ;
+    movie:hasKeyword keyword:assassino_em_s%C3%A9rie,
+        keyword:based_on_novel_or_book,
+        keyword:brutality,
+        keyword:cannibal,
+        keyword:fbi,
+        keyword:kidnapping,
+        keyword:moth,
+        keyword:murder,
+        keyword:neo-noir,
+        keyword:past_history,
+        keyword:psychiatrist,
+        keyword:psychological_profiling,
+        keyword:psychological_thriller,
+        keyword:psychopath,
+        keyword:scientific_study,
+        keyword:serial_killer,
+        keyword:skinning,
+        keyword:twisted,
+        keyword:virginia ;
+    movie:hasLanguage language:English ;
+    movie:hasMainGenre genre:Crime,
+        genre:Horror,
+        genre:Thriller ;
+    movie:hasMetascore 86 ;
+    movie:hasOriginalLanguage "en" ;
+    movie:hasOriginalTitle "The Silence of the Lambs" ;
+    movie:hasPlotStructure plotstructure:NonLinearNarrative ;
+    movie:hasPlotSummary "Clarice Starling, del FBI, se aventura a una prisión de máxima seguridad para analizar el cerebro enfermo de Hannibal Lecter, un psiquiatra convertido en caníbal." ;
+    movie:hasPopularity "3.4157"^^xsd:float ;
+    movie:hasProducer person:Ron_Bozman ;
+    movie:hasProductionCompany company:A_Luta_Continua,
+        company:Orion_Pictures,
+        company:Strong_Heart ;
+    movie:hasProductionCountries "United States of America" ;
+    movie:hasRatingCount 279 ;
+    movie:hasScreenwriter person:Ted_Tally ;
+    movie:hasSpokenLanguages "English" ;
+    movie:hasTMDbID 274 ;
+    movie:hasTMDbRating "8.346"^^xsd:float ;
+    movie:hasTMDbVoteCount 17468 ;
+    movie:hasTagline "Para entrar en la mente de un asesino, tendrá que desafiar a la mente de un loco." ;
+    movie:hasTheme theme:Identity ;
+    movie:hasTitle "Silence of the Lambs, The" ;
+    movie:hasTone tone:DarkTone ;
+    movie:releaseDate "1991-02-14"^^xsd:date ;
+    movie:runtime 118 .
+
+country:United_States_of_America a movie:CountryOfOrigin ;
+    movie:countryName "United States of America" .
+
+period:Historical a movie:Historical ;
+    movie:periodName "Historical" .
+
+language:English a movie:Language .
+

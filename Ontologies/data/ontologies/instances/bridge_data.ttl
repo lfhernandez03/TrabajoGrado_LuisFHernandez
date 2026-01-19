@@ -1,0 +1,191 @@
+@prefix bridge: <http://www.semanticweb.org/movierecommendation/ontologies/2025/bridge-ontology#> .
+@prefix movie: <http://www.semanticweb.org/movierecommendation/ontologies/2025/movie-ontology#> .
+@prefix moviedata: <http://www.semanticweb.org/movierecommendation/data/movie/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+moviedata:movie_110_Braveheart a movie:Movie ;
+    bridge:compatibilityScore "0.84"^^xsd:float ;
+    bridge:compatibleCompanion "amigos",
+        "solo" ;
+    bridge:compatibleEnergyLevel "alto" ;
+    bridge:compatibleMood "aventurero",
+        "emocionado",
+        "estresado" ;
+    bridge:energyMatchScore "0.9"^^xsd:float ;
+    bridge:isKidFriendly false ;
+    bridge:moodMatchScore "0.7"^^xsd:float,
+        "0.8"^^xsd:float,
+        "0.9"^^xsd:float ;
+    bridge:socialMatchScore "0.8"^^xsd:float,
+        "0.9"^^xsd:float ;
+    movie:hasTitle "Braveheart" ;
+    movie:runtime 177 .
+
+moviedata:movie_2571_Matrix_The a movie:Movie ;
+    bridge:compatibilityScore "0.84"^^xsd:float ;
+    bridge:compatibleCompanion "amigos",
+        "solo" ;
+    bridge:compatibleEnergyLevel "alto" ;
+    bridge:compatibleMood "aventurero",
+        "emocionado",
+        "estresado" ;
+    bridge:energyMatchScore "0.9"^^xsd:float ;
+    bridge:isKidFriendly false ;
+    bridge:moodMatchScore "0.7"^^xsd:float,
+        "0.8"^^xsd:float,
+        "0.9"^^xsd:float ;
+    bridge:socialMatchScore "0.8"^^xsd:float,
+        "0.9"^^xsd:float ;
+    movie:hasTitle "Matrix, The" ;
+    movie:runtime 138 .
+
+moviedata:movie_260_Star_Wars_Episode_IV_-_A_New_Hope a movie:Movie ;
+    bridge:compatibilityScore "0.84"^^xsd:float ;
+    bridge:compatibleCompanion "amigos",
+        "solo" ;
+    bridge:compatibleEnergyLevel "alto" ;
+    bridge:compatibleMood "aventurero",
+        "emocionado",
+        "estresado" ;
+    bridge:energyMatchScore "0.9"^^xsd:float ;
+    bridge:isKidFriendly false ;
+    bridge:moodMatchScore "0.7"^^xsd:float,
+        "0.8"^^xsd:float,
+        "0.9"^^xsd:float ;
+    bridge:socialMatchScore "0.8"^^xsd:float,
+        "0.9"^^xsd:float ;
+    movie:hasTitle "Star Wars: Episode IV - A New Hope" ;
+    movie:runtime 121 .
+
+moviedata:movie_296_Pulp_Fiction a movie:Movie ;
+    bridge:compatibilityScore "0.83"^^xsd:float ;
+    bridge:compatibleCompanion "amigos",
+        "familia",
+        "pareja" ;
+    bridge:compatibleEnergyLevel "medio" ;
+    bridge:compatibleMood "aburrido",
+        "feliz",
+        "relajado" ;
+    bridge:energyMatchScore "0.9"^^xsd:float ;
+    bridge:isKidFriendly false ;
+    bridge:moodMatchScore "0.7"^^xsd:float,
+        "0.8"^^xsd:float,
+        "0.9"^^xsd:float ;
+    bridge:socialMatchScore "0.7"^^xsd:float,
+        "0.8"^^xsd:float,
+        "0.9"^^xsd:float ;
+    movie:hasTitle "Pulp Fiction" ;
+    movie:runtime 154 .
+
+moviedata:movie_318_Shawshank_Redemption_The a movie:Movie ;
+    bridge:compatibilityScore "0.84"^^xsd:float ;
+    bridge:compatibleCompanion "amigos",
+        "solo" ;
+    bridge:compatibleEnergyLevel "medio" ;
+    bridge:compatibleMood "concentrado",
+        "curioso",
+        "estresado" ;
+    bridge:energyMatchScore "0.9"^^xsd:float ;
+    bridge:isKidFriendly false ;
+    bridge:moodMatchScore "0.7"^^xsd:float,
+        "0.8"^^xsd:float,
+        "0.9"^^xsd:float ;
+    bridge:socialMatchScore "0.8"^^xsd:float,
+        "0.9"^^xsd:float ;
+    movie:hasTitle "Shawshank Redemption, The" ;
+    movie:runtime 143 .
+
+moviedata:movie_356_Forrest_Gump a movie:Movie ;
+    bridge:compatibilityScore "0.83"^^xsd:float ;
+    bridge:compatibleCompanion "amigos",
+        "familia",
+        "pareja" ;
+    bridge:compatibleEnergyLevel "medio" ;
+    bridge:compatibleMood "aburrido",
+        "feliz",
+        "relajado" ;
+    bridge:energyMatchScore "0.9"^^xsd:float ;
+    bridge:isKidFriendly false ;
+    bridge:moodMatchScore "0.7"^^xsd:float,
+        "0.8"^^xsd:float,
+        "0.9"^^xsd:float ;
+    bridge:socialMatchScore "0.7"^^xsd:float,
+        "0.8"^^xsd:float,
+        "0.9"^^xsd:float ;
+    movie:hasTitle "Forrest Gump" ;
+    movie:runtime 142 .
+
+moviedata:movie_480_Jurassic_Park a movie:Movie ;
+    bridge:compatibilityScore "0.84"^^xsd:float ;
+    bridge:compatibleCompanion "amigos",
+        "solo" ;
+    bridge:compatibleEnergyLevel "alto" ;
+    bridge:compatibleMood "aventurero",
+        "emocionado",
+        "estresado" ;
+    bridge:energyMatchScore "0.9"^^xsd:float ;
+    bridge:isKidFriendly false ;
+    bridge:moodMatchScore "0.7"^^xsd:float,
+        "0.8"^^xsd:float,
+        "0.9"^^xsd:float ;
+    bridge:socialMatchScore "0.8"^^xsd:float,
+        "0.9"^^xsd:float ;
+    movie:hasTitle "Jurassic Park" ;
+    movie:runtime 120 .
+
+moviedata:movie_527_Schindlers_List a movie:Movie ;
+    bridge:compatibilityScore "0.83"^^xsd:float ;
+    bridge:compatibleCompanion "pareja",
+        "solo" ;
+    bridge:compatibleEnergyLevel "bajo",
+        "medio" ;
+    bridge:compatibleMood "concentrado",
+        "curioso",
+        "triste" ;
+    bridge:energyMatchScore "0.8"^^xsd:float,
+        "0.9"^^xsd:float ;
+    bridge:isKidFriendly false ;
+    bridge:moodMatchScore "0.7"^^xsd:float,
+        "0.8"^^xsd:float,
+        "0.9"^^xsd:float ;
+    bridge:socialMatchScore "0.8"^^xsd:float,
+        "0.9"^^xsd:float ;
+    movie:hasTitle "Schindler's List" ;
+    movie:runtime 195 .
+
+moviedata:movie_589_Terminator_2_Judgment_Day a movie:Movie ;
+    bridge:compatibilityScore "0.84"^^xsd:float ;
+    bridge:compatibleCompanion "amigos",
+        "solo" ;
+    bridge:compatibleEnergyLevel "alto" ;
+    bridge:compatibleMood "aventurero",
+        "emocionado",
+        "estresado" ;
+    bridge:energyMatchScore "0.9"^^xsd:float ;
+    bridge:isKidFriendly false ;
+    bridge:moodMatchScore "0.7"^^xsd:float,
+        "0.8"^^xsd:float,
+        "0.9"^^xsd:float ;
+    bridge:socialMatchScore "0.8"^^xsd:float,
+        "0.9"^^xsd:float ;
+    movie:hasTitle "Terminator 2: Judgment Day" ;
+    movie:runtime 137 .
+
+moviedata:movie_593_Silence_of_the_Lambs_The a movie:Movie ;
+    bridge:compatibilityScore "0.84"^^xsd:float ;
+    bridge:compatibleCompanion "amigos",
+        "solo" ;
+    bridge:compatibleEnergyLevel "medio" ;
+    bridge:compatibleMood "concentrado",
+        "curioso",
+        "estresado" ;
+    bridge:energyMatchScore "0.9"^^xsd:float ;
+    bridge:isKidFriendly false ;
+    bridge:moodMatchScore "0.7"^^xsd:float,
+        "0.8"^^xsd:float,
+        "0.9"^^xsd:float ;
+    bridge:socialMatchScore "0.8"^^xsd:float,
+        "0.9"^^xsd:float ;
+    movie:hasTitle "Silence of the Lambs, The" ;
+    movie:runtime 118 .
+

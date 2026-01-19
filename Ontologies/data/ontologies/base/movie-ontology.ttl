@@ -1,0 +1,1843 @@
+@prefix : <http://www.semanticweb.org/movierecommendation/ontologies/2025/movie-ontology#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix xml: <http://www.w3.org/XML/1998/namespace> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix schema: <http://schema.org/> .
+@prefix dbo: <http://dbpedia.org/ontology/> .
+@prefix foaf: <http://xmlns.com/foaf/0.1/> .
+@prefix movie: <http://data.linkedmdb.org/resource/movie/> .
+
+<http://www.semanticweb.org/movierecommendation/ontologies/2025/movie-ontology> rdf:type owl:Ontology ;
+    rdfs:label "Movie Domain Ontology for GraphRAG"@en ,
+               "Ontología de Dominio Cinematográfico para GraphRAG"@es ;
+    rdfs:comment "Ontología de dominio cinematográfico optimizada para sistemas de recomendación con GraphRAG y LLM"@es ;
+    owl:versionInfo "1.0" .
+
+#################################################################
+#    TABLA DE CONTENIDOS
+#################################################################
+# 1. Classes - Jerarquía Principal
+#    1.1 Entity (Raíz)
+#    1.2 Movie y subclases
+#    1.3 Person y roles
+#    1.4 Attributes (Genre, Keyword, NarrativeElement, etc.)
+#    1.5 CulturalContext
+#    1.6 Rating y AgeRating
+#    1.7 ProductionCompany, Certification, Award
+#    1.8 MovieCluster (GraphRAG)
+#
+# 2. Object Properties
+#    2.1 Movie ↔ Person (navegación full-duplex)
+#    2.2 Movie ↔ Attribute
+#    2.3 Movie ↔ Movie (similitud)
+#    2.4 Movie ↔ MovieCluster (GraphRAG)
+#    2.5 Person ↔ Role
+#    2.6 Role ↔ Movie
+#    2.7 Award
+#    2.8 Context Bridge
+#
+# 3. Data Properties
+#    3.1 Movie (metadata básica, GraphRAG, ratings)
+#    3.2 Person
+#    3.3 Rating
+#    3.4 Attributes (Genre, Keyword, Theme, Tone, etc.)
+#    3.5 CulturalContext
+#    3.6 AgeRating, Award, Role
+#    3.7 MovieCluster (GraphRAG)
+#
+# 4. Axiomas y Restricciones
+# 5. Instancias de Ejemplo
+# 6. Anotaciones
+#################################################################
+
+#################################################################
+#    Classes - Jerarquía Principal
+#################################################################
+
+###  Entity (Clase Raíz)
+:Entity rdf:type owl:Class ;
+    rdfs:label "Entity"@en ,
+               "Entidad"@es ;
+    rdfs:comment "Clase raíz que agrupa todas las entidades del dominio cinematográfico"@es .
+
+###  Movie
+:Movie rdf:type owl:Class ;
+    rdfs:subClassOf :Entity ;
+    owl:equivalentClass schema:Movie ,
+                       dbo:Film ;
+    rdfs:label "Movie"@en ,
+               "Película"@es ;
+    rdfs:comment "Obra cinematográfica o audiovisual"@es .
+
+:FeatureFilm rdf:type owl:Class ;
+    rdfs:subClassOf :Movie ;
+    rdfs:label "Feature Film"@en ,
+               "Largometraje"@es .
+
+:Documentary rdf:type owl:Class ;
+    rdfs:subClassOf :Movie ;
+    rdfs:label "Documentary"@en ,
+               "Documental"@es .
+
+:ShortFilm rdf:type owl:Class ;
+    rdfs:subClassOf :Movie ;
+    rdfs:label "Short Film"@en ,
+               "Cortometraje"@es .
+
+:AnimatedFilm rdf:type owl:Class ;
+    rdfs:subClassOf :Movie ;
+    rdfs:label "Animated Film"@en ,
+               "Película Animada"@es .
+
+###  Person
+:Person rdf:type owl:Class ;
+    rdfs:subClassOf :Entity ;
+    owl:equivalentClass schema:Person ,
+                       dbo:Person ,
+                       foaf:Person ;
+    rdfs:label "Person"@en ,
+               "Persona"@es ;
+    rdfs:comment "Individuo involucrado en la producción cinematográfica"@es .
+
+:Director rdf:type owl:Class ;
+    rdfs:subClassOf :Person ;
+    owl:equivalentClass schema:MovieDirector ,
+                       dbo:Director ;
+    rdfs:label "Director"@en ,
+               "Director"@es .
+
+:Actor rdf:type owl:Class ;
+    rdfs:subClassOf :Person ;
+    owl:equivalentClass schema:Actor ,
+                       dbo:Actor ;
+    rdfs:label "Actor"@en ,
+               "Actor"@es .
+
+:Producer rdf:type owl:Class ;
+    rdfs:subClassOf :Person ;
+    rdfs:label "Producer"@en ,
+               "Productor"@es .
+
+:Screenwriter rdf:type owl:Class ;
+    rdfs:subClassOf :Person ;
+    rdfs:label "Screenwriter"@en ,
+               "Guionista"@es .
+
+:Cinematographer rdf:type owl:Class ;
+    rdfs:subClassOf :Person ;
+    rdfs:label "Cinematographer"@en ,
+               "Director de Fotografía"@es .
+
+:Composer rdf:type owl:Class ;
+    rdfs:subClassOf :Person ;
+    rdfs:label "Composer"@en ,
+               "Compositor"@es .
+
+:Editor rdf:type owl:Class ;
+    rdfs:subClassOf :Person ;
+    rdfs:label "Editor"@en ,
+               "Editor"@es .
+
+###  Attribute
+:Attribute rdf:type owl:Class ;
+    rdfs:subClassOf :Entity ;
+    rdfs:label "Attribute"@en ,
+               "Atributo"@es ;
+    rdfs:comment "Características descriptivas de las películas"@es .
+
+###  Genre
+:Genre rdf:type owl:Class ;
+    rdfs:subClassOf :Attribute ;
+    owl:equivalentClass schema:Genre ,
+                       movie:Genre ;
+    rdfs:label "Genre"@en ,
+               "Género"@es .
+
+:MainGenre rdf:type owl:Class ;
+    rdfs:subClassOf :Genre ;
+    rdfs:label "Main Genre"@en ,
+               "Género Principal"@es .
+
+:Subgenre rdf:type owl:Class ;
+    rdfs:subClassOf :Genre ;
+    rdfs:label "Subgenre"@en ,
+               "Subgénero"@es .
+
+###  Keyword
+:Keyword rdf:type owl:Class ;
+    rdfs:subClassOf :Attribute ;
+    rdfs:label "Keyword"@en ,
+               "Palabra Clave"@es ;
+    rdfs:comment "Palabras clave descriptivas de la película"@es .
+
+###  NarrativeElement
+:NarrativeElement rdf:type owl:Class ;
+    rdfs:subClassOf :Attribute ;
+    rdfs:label "Narrative Element"@en ,
+               "Elemento Narrativo"@es ;
+    rdfs:comment "Aspectos de la estructura y contenido narrativo"@es .
+
+:Theme rdf:type owl:Class ;
+    rdfs:subClassOf :NarrativeElement ;
+    rdfs:label "Theme"@en ,
+               "Tema"@es .
+
+:Tone rdf:type owl:Class ;
+    rdfs:subClassOf :NarrativeElement ;
+    rdfs:label "Tone"@en ,
+               "Tono"@es .
+
+:DramaticTone rdf:type owl:Class ;
+    rdfs:subClassOf :Tone ;
+    rdfs:label "Dramatic Tone"@en ,
+               "Tono Dramático"@es .
+
+:ComedyTone rdf:type owl:Class ;
+    rdfs:subClassOf :Tone ;
+    rdfs:label "Comedy Tone"@en ,
+               "Tono Cómico"@es .
+
+:SuspensefulTone rdf:type owl:Class ;
+    rdfs:subClassOf :Tone ;
+    rdfs:label "Suspenseful Tone"@en ,
+               "Tono Suspense"@es .
+
+:RomanticTone rdf:type owl:Class ;
+    rdfs:subClassOf :Tone ;
+    rdfs:label "Romantic Tone"@en ,
+               "Tono Romántico"@es .
+
+:DarkTone rdf:type owl:Class ;
+    rdfs:subClassOf :Tone ;
+    rdfs:label "Dark Tone"@en ,
+               "Tono Oscuro"@es .
+
+:PlotStructure rdf:type owl:Class ;
+    rdfs:subClassOf :NarrativeElement ;
+    rdfs:label "Plot Structure"@en ,
+               "Estructura de Trama"@es .
+
+:LinearNarrative rdf:type owl:Class ;
+    rdfs:subClassOf :PlotStructure ;
+    rdfs:label "Linear Narrative"@en ,
+               "Narrativa Lineal"@es .
+
+:NonLinearNarrative rdf:type owl:Class ;
+    rdfs:subClassOf :PlotStructure ;
+    rdfs:label "Non-Linear Narrative"@en ,
+               "Narrativa No Lineal"@es .
+
+:EpisodicNarrative rdf:type owl:Class ;
+    rdfs:subClassOf :PlotStructure ;
+    rdfs:label "Episodic Narrative"@en ,
+               "Narrativa Episódica"@es .
+
+###  CulturalContext
+:CulturalContext rdf:type owl:Class ;
+    rdfs:subClassOf :Attribute ;
+    rdfs:label "Cultural Context"@en ,
+               "Contexto Cultural"@es .
+
+:CountryOfOrigin rdf:type owl:Class ;
+    rdfs:subClassOf :CulturalContext ;
+    rdfs:label "Country of Origin"@en ,
+               "País de Origen"@es .
+
+:HistoricalPeriod rdf:type owl:Class ;
+    rdfs:subClassOf :CulturalContext ;
+    rdfs:label "Historical Period"@en ,
+               "Período Histórico"@es .
+
+:Contemporary rdf:type owl:Class ;
+    rdfs:subClassOf :HistoricalPeriod ;
+    rdfs:label "Contemporary"@en ,
+               "Contemporáneo"@es .
+
+:Historical rdf:type owl:Class ;
+    rdfs:subClassOf :HistoricalPeriod ;
+    rdfs:label "Historical"@en ,
+               "Histórico"@es .
+
+:Futuristic rdf:type owl:Class ;
+    rdfs:subClassOf :HistoricalPeriod ;
+    rdfs:label "Futuristic"@en ,
+               "Futurista"@es .
+
+:Language rdf:type owl:Class ;
+    rdfs:subClassOf :CulturalContext ;
+    rdfs:label "Language"@en ,
+               "Idioma"@es .
+
+###  AgeRatingCategory
+:AgeRatingCategory rdf:type owl:Class ;
+    rdfs:subClassOf :Attribute ;
+    rdfs:label "Age Rating Category"@en ,
+               "Categoría de Clasificación por Edad"@es .
+
+:GeneralAudience rdf:type owl:Class ;
+    rdfs:subClassOf :AgeRatingCategory ;
+    rdfs:label "General Audience"@en ,
+               "Audiencia General"@es .
+
+:ParentalGuidance rdf:type owl:Class ;
+    rdfs:subClassOf :AgeRatingCategory ;
+    rdfs:label "Parental Guidance"@en ,
+               "Orientación Parental"@es .
+
+:Teen rdf:type owl:Class ;
+    rdfs:subClassOf :AgeRatingCategory ;
+    rdfs:label "Teen"@en ,
+               "Adolescentes"@es .
+
+:Mature rdf:type owl:Class ;
+    rdfs:subClassOf :AgeRatingCategory ;
+    rdfs:label "Mature"@en ,
+               "Adultos"@es .
+
+:AdultOnly rdf:type owl:Class ;
+    rdfs:subClassOf :AgeRatingCategory ;
+    rdfs:label "Adult Only"@en ,
+               "Solo Adultos"@es .
+
+###  Rating
+:Rating rdf:type owl:Class ;
+    rdfs:subClassOf :Attribute ;
+    owl:equivalentClass schema:Rating ;
+    rdfs:label "Rating"@en ,
+               "Calificación"@es .
+
+:CriticRating rdf:type owl:Class ;
+    rdfs:subClassOf :Rating ;
+    rdfs:label "Critic Rating"@en ,
+               "Calificación de Críticos"@es .
+
+:UserRating rdf:type owl:Class ;
+    rdfs:subClassOf :Rating ;
+    rdfs:label "User Rating"@en ,
+               "Calificación de Usuarios"@es .
+
+:AggregateRating rdf:type owl:Class ;
+    rdfs:subClassOf :Rating ;
+    rdfs:label "Aggregate Rating"@en ,
+               "Calificación Agregada"@es .
+
+###  Role
+:Role rdf:type owl:Class ;
+    rdfs:subClassOf :Entity ;
+    rdfs:label "Role"@en ,
+               "Rol"@es ;
+    rdfs:comment "Relación intermedia entre Person y Movie"@es .
+
+:ActingRole rdf:type owl:Class ;
+    rdfs:subClassOf :Role ;
+    rdfs:label "Acting Role"@en ,
+               "Rol de Actuación"@es .
+
+:LeadRole rdf:type owl:Class ;
+    rdfs:subClassOf :ActingRole ;
+    rdfs:label "Lead Role"@en ,
+               "Rol Principal"@es .
+
+:SupportingRole rdf:type owl:Class ;
+    rdfs:subClassOf :ActingRole ;
+    rdfs:label "Supporting Role"@en ,
+               "Rol de Reparto"@es .
+
+:CameoRole rdf:type owl:Class ;
+    rdfs:subClassOf :ActingRole ;
+    rdfs:label "Cameo Role"@en ,
+               "Cameo"@es .
+
+:CreativeRole rdf:type owl:Class ;
+    rdfs:subClassOf :Role ;
+    rdfs:label "Creative Role"@en ,
+               "Rol Creativo"@es .
+
+:PrimaryRole rdf:type owl:Class ;
+    rdfs:subClassOf :CreativeRole ;
+    rdfs:label "Primary Role"@en ,
+               "Rol Primario"@es .
+
+:CollaborativeRole rdf:type owl:Class ;
+    rdfs:subClassOf :CreativeRole ;
+    rdfs:label "Collaborative Role"@en ,
+               "Rol Colaborativo"@es .
+
+###  ProductionCompany
+:ProductionCompany rdf:type owl:Class ;
+    rdfs:subClassOf :Entity ;
+    rdfs:label "Production Company"@en ,
+               "Compañía de Producción"@es ;
+    rdfs:comment "Estudio o compañía que produce películas"@es .
+
+###  Certification
+:Certification rdf:type owl:Class ;
+    rdfs:subClassOf :Entity ;
+    rdfs:label "Certification"@en ,
+               "Certificación"@es ;
+    rdfs:comment "Certificación etaria por país"@es .
+
+###  Award
+:Award rdf:type owl:Class ;
+    rdfs:subClassOf :Entity ;
+    owl:equivalentClass dbo:Award ;
+    rdfs:label "Award"@en ,
+               "Premio"@es .
+
+:FilmAward rdf:type owl:Class ;
+    rdfs:subClassOf :Award ;
+    rdfs:label "Film Award"@en ,
+               "Premio de Película"@es .
+
+:BestPicture rdf:type owl:Class ;
+    rdfs:subClassOf :FilmAward ;
+    rdfs:label "Best Picture"@en ,
+               "Mejor Película"@es .
+
+:BestForeignFilm rdf:type owl:Class ;
+    rdfs:subClassOf :FilmAward ;
+    rdfs:label "Best Foreign Film"@en ,
+               "Mejor Película Extranjera"@es .
+
+:BestDocumentary rdf:type owl:Class ;
+    rdfs:subClassOf :FilmAward ;
+    rdfs:label "Best Documentary"@en ,
+               "Mejor Documental"@es .
+
+:PersonAward rdf:type owl:Class ;
+    rdfs:subClassOf :Award ;
+    rdfs:label "Person Award"@en ,
+               "Premio Personal"@es .
+
+:BestDirector rdf:type owl:Class ;
+    rdfs:subClassOf :PersonAward ;
+    rdfs:label "Best Director"@en ,
+               "Mejor Director"@es .
+
+:BestActor rdf:type owl:Class ;
+    rdfs:subClassOf :PersonAward ;
+    rdfs:label "Best Actor"@en ,
+               "Mejor Actor"@es .
+
+:BestActress rdf:type owl:Class ;
+    rdfs:subClassOf :PersonAward ;
+    rdfs:label "Best Actress"@en ,
+               "Mejor Actriz"@es .
+
+:BestSupportingActor rdf:type owl:Class ;
+    rdfs:subClassOf :PersonAward ;
+    rdfs:label "Best Supporting Actor"@en ,
+               "Mejor Actor de Reparto"@es .
+
+:BestSupportingActress rdf:type owl:Class ;
+    rdfs:subClassOf :PersonAward ;
+    rdfs:label "Best Supporting Actress"@en ,
+               "Mejor Actriz de Reparto"@es .
+
+:BestScreenplay rdf:type owl:Class ;
+    rdfs:subClassOf :PersonAward ;
+    rdfs:label "Best Screenplay"@en ,
+               "Mejor Guion"@es .
+
+###  AwardParticipation (Clase auxiliar)
+:AwardParticipation rdf:type owl:Class ;
+    rdfs:label "Award Participation"@en ,
+               "Participación en Premio"@es ;
+    rdfs:comment "Relación n-aria entre entidades y premios"@es .
+
+###  MovieCluster (GraphRAG)
+:MovieCluster rdf:type owl:Class ;
+    rdfs:subClassOf :Entity ;
+    rdfs:label "Movie Cluster"@en ,
+               "Cluster de Películas"@es ;
+    rdfs:comment "Agrupación de películas similares detectada mediante algoritmos de clustering (Louvain, Leiden) para GraphRAG. Permite navegación jerárquica y reducción del espacio de búsqueda para LLM."@es .
+
+#################################################################
+#    Object Properties - Relaciones Movie ↔ Person
+#################################################################
+
+:hasDirector rdf:type owl:ObjectProperty ;
+    rdfs:domain :Movie ;
+    rdfs:range :Director ;
+    owl:inverseOf :isDirectorOf ;
+    rdfs:label "has director"@en ,
+               "tiene director"@es .
+
+:isDirectorOf rdf:type owl:ObjectProperty ;
+    rdfs:domain :Director ;
+    rdfs:range :Movie ;
+    rdfs:label "is director of"@en ,
+               "es director de"@es .
+
+:hasActor rdf:type owl:ObjectProperty ;
+    rdfs:domain :Movie ;
+    rdfs:range :Actor ;
+    owl:inverseOf :isActorIn ;
+    rdfs:label "has actor"@en ,
+               "tiene actor"@es .
+
+:isActorIn rdf:type owl:ObjectProperty ;
+    rdfs:domain :Actor ;
+    rdfs:range :Movie ;
+    rdfs:label "is actor in"@en ,
+               "es actor en"@es .
+
+:hasProducer rdf:type owl:ObjectProperty ;
+    rdfs:domain :Movie ;
+    rdfs:range :Producer ;
+    rdfs:label "has producer"@en ,
+               "tiene productor"@es .
+
+:hasScreenwriter rdf:type owl:ObjectProperty ;
+    rdfs:domain :Movie ;
+    rdfs:range :Screenwriter ;
+    rdfs:label "has screenwriter"@en ,
+               "tiene guionista"@es .
+
+:hasCinematographer rdf:type owl:ObjectProperty ;
+    rdfs:domain :Movie ;
+    rdfs:range :Cinematographer ;
+    rdfs:label "has cinematographer"@en ,
+               "tiene director de fotografía"@es .
+
+:hasComposer rdf:type owl:ObjectProperty ;
+    rdfs:domain :Movie ;
+    rdfs:range :Composer ;
+    rdfs:label "has composer"@en ,
+               "tiene compositor"@es .
+
+:hasEditor rdf:type owl:ObjectProperty ;
+    rdfs:domain :Movie ;
+    rdfs:range :Editor ;
+    rdfs:label "has editor"@en ,
+               "tiene editor"@es .
+
+#################################################################
+#    Object Properties - Relaciones Movie ↔ Attribute
+#################################################################
+
+:hasGenre rdf:type owl:ObjectProperty ;
+    rdfs:domain :Movie ;
+    rdfs:range :Genre ;
+    owl:inverseOf :isGenreOf ;
+    rdfs:label "has genre"@en ,
+               "tiene género"@es .
+
+:isGenreOf rdf:type owl:ObjectProperty ;
+    rdfs:domain :Genre ;
+    rdfs:range :Movie ;
+    rdfs:label "is genre of"@en ,
+               "es género de"@es .
+
+:hasMainGenre rdf:type owl:ObjectProperty ;
+    rdfs:subPropertyOf :hasGenre ;
+    rdfs:domain :Movie ;
+    rdfs:range :MainGenre ;
+    rdfs:label "has main genre"@en ,
+               "tiene género principal"@es .
+
+:hasSubgenre rdf:type owl:ObjectProperty ;
+    rdfs:subPropertyOf :hasGenre ;
+    rdfs:domain :Movie ;
+    rdfs:range :Subgenre ;
+    rdfs:label "has subgenre"@en ,
+               "tiene subgénero"@es .
+
+:hasKeyword rdf:type owl:ObjectProperty ;
+    rdfs:domain :Movie ;
+    rdfs:range :Keyword ;
+    owl:inverseOf :isKeywordOf ;
+    rdfs:label "has keyword"@en ,
+               "tiene palabra clave"@es .
+
+:isKeywordOf rdf:type owl:ObjectProperty ;
+    rdfs:domain :Keyword ;
+    rdfs:range :Movie ;
+    rdfs:label "is keyword of"@en ,
+               "es palabra clave de"@es .
+
+:hasProductionCompany rdf:type owl:ObjectProperty ;
+    rdfs:domain :Movie ;
+    rdfs:range :ProductionCompany ;
+    owl:inverseOf :producedMovie ;
+    rdfs:label "has production company"@en ,
+               "tiene compañía de producción"@es .
+
+:producedMovie rdf:type owl:ObjectProperty ;
+    rdfs:domain :ProductionCompany ;
+    rdfs:range :Movie ;
+    rdfs:label "produced movie"@en ,
+               "produjo película"@es .
+
+:hasCertification rdf:type owl:ObjectProperty ;
+    rdfs:domain :Movie ;
+    rdfs:range :Certification ;
+    rdfs:label "has certification"@en ,
+               "tiene certificación"@es .
+
+:hasNarrativeElement rdf:type owl:ObjectProperty ;
+    rdfs:domain :Movie ;
+    rdfs:range :NarrativeElement ;
+    rdfs:label "has narrative element"@en ,
+               "tiene elemento narrativo"@es .
+
+:hasTone rdf:type owl:ObjectProperty ;
+    rdfs:subPropertyOf :hasNarrativeElement ;
+    rdfs:domain :Movie ;
+    rdfs:range :Tone ;
+    rdfs:label "has tone"@en ,
+               "tiene tono"@es .
+
+:hasTheme rdf:type owl:ObjectProperty ;
+    rdfs:subPropertyOf :hasNarrativeElement ;
+    rdfs:domain :Movie ;
+    rdfs:range :Theme ;
+    rdfs:label "has theme"@en ,
+               "tiene tema"@es .
+
+:hasPlotStructure rdf:type owl:ObjectProperty ;
+    rdfs:subPropertyOf :hasNarrativeElement ;
+    rdfs:domain :Movie ;
+    rdfs:range :PlotStructure ;
+    rdfs:label "has plot structure"@en ,
+               "tiene estructura de trama"@es .
+
+:hasCulturalContext rdf:type owl:ObjectProperty ;
+    rdfs:domain :Movie ;
+    rdfs:range :CulturalContext ;
+    rdfs:label "has cultural context"@en ,
+               "tiene contexto cultural"@es .
+
+:hasCountryOfOrigin rdf:type owl:ObjectProperty ;
+    rdfs:subPropertyOf :hasCulturalContext ;
+    rdfs:domain :Movie ;
+    rdfs:range :CountryOfOrigin ;
+    owl:inverseOf :isCountryOfOriginOf ;
+    rdfs:label "has country of origin"@en ,
+               "tiene país de origen"@es .
+
+:isCountryOfOriginOf rdf:type owl:ObjectProperty ;
+    rdfs:domain :CountryOfOrigin ;
+    rdfs:range :Movie ;
+    rdfs:label "is country of origin of"@en ,
+               "es país de origen de"@es .
+
+:hasHistoricalPeriod rdf:type owl:ObjectProperty ;
+    rdfs:subPropertyOf :hasCulturalContext ;
+    rdfs:domain :Movie ;
+    rdfs:range :HistoricalPeriod ;
+    rdfs:label "has historical period"@en ,
+               "tiene período histórico"@es .
+
+:hasLanguage rdf:type owl:ObjectProperty ;
+    rdfs:subPropertyOf :hasCulturalContext ;
+    rdfs:domain :Movie ;
+    rdfs:range :Language ;
+    owl:inverseOf :isLanguageOf ;
+    rdfs:label "has language"@en ,
+               "tiene idioma"@es .
+
+:isLanguageOf rdf:type owl:ObjectProperty ;
+    rdfs:domain :Language ;
+    rdfs:range :Movie ;
+    rdfs:label "is language of"@en ,
+               "es idioma de"@es .
+
+:hasAgeRating rdf:type owl:ObjectProperty ;
+    rdfs:domain :Movie ;
+    rdfs:range :AgeRatingCategory ;
+    rdfs:label "has age rating"@en ,
+               "tiene clasificación por edad"@es .
+
+:hasRating rdf:type owl:ObjectProperty ;
+    rdfs:domain :Movie ;
+    rdfs:range :Rating ;
+    rdfs:label "has rating"@en ,
+               "tiene calificación"@es .
+
+#################################################################
+#    Object Properties - Relaciones Person ↔ Role
+#################################################################
+
+:hasRole rdf:type owl:ObjectProperty ;
+    rdfs:domain :Person ;
+    rdfs:range :Role ;
+    rdfs:label "has role"@en ,
+               "tiene rol"@es .
+
+:playsRole rdf:type owl:ObjectProperty ;
+    rdfs:subPropertyOf :hasRole ;
+    rdfs:domain :Actor ;
+    rdfs:range :ActingRole ;
+    rdfs:label "plays role"@en ,
+               "interpreta rol"@es .
+
+:performsCreativeRole rdf:type owl:ObjectProperty ;
+    rdfs:subPropertyOf :hasRole ;
+    rdfs:domain :Person ;
+    rdfs:range :CreativeRole ;
+    rdfs:label "performs creative role"@en ,
+               "realiza rol creativo"@es .
+
+#################################################################
+#    Object Properties - Relaciones Role ↔ Movie
+#################################################################
+
+:inMovie rdf:type owl:ObjectProperty ;
+    rdfs:domain :Role ;
+    rdfs:range :Movie ;
+    rdfs:label "in movie"@en ,
+               "en película"@es .
+
+#################################################################
+#    Object Properties - Relaciones Award
+#################################################################
+
+:hasAwardParticipation rdf:type owl:ObjectProperty ;
+    rdfs:domain [ rdf:type owl:Class ;
+                  owl:unionOf ( :Movie :Person )
+                ] ;
+    rdfs:range :AwardParticipation ;
+    rdfs:label "has award participation"@en ,
+               "tiene participación en premio"@es .
+
+:hasAward rdf:type owl:ObjectProperty ;
+    rdfs:domain :AwardParticipation ;
+    rdfs:range :Award ;
+    rdfs:label "has award"@en ,
+               "tiene premio"@es .
+
+:forEntity rdf:type owl:ObjectProperty ;
+    rdfs:domain :AwardParticipation ;
+    rdfs:range [ rdf:type owl:Class ;
+                 owl:unionOf ( :Movie :Person )
+               ] ;
+    rdfs:label "for entity"@en ,
+               "para entidad"@es .
+
+:receivedAward rdf:type owl:ObjectProperty ;
+    rdfs:domain [ rdf:type owl:Class ;
+                  owl:unionOf ( :Movie :Person )
+                ] ;
+    rdfs:range :Award ;
+    rdfs:label "received award"@en ,
+               "recibió premio"@es .
+
+:nominatedFor rdf:type owl:ObjectProperty ;
+    rdfs:domain [ rdf:type owl:Class ;
+                  owl:unionOf ( :Movie :Person )
+                ] ;
+    rdfs:range :Award ;
+    rdfs:label "nominated for"@en ,
+               "nominado para"@es .
+
+#################################################################
+#    Object Properties - Relaciones Movie ↔ Movie
+#################################################################
+
+:isSimilarTo rdf:type owl:ObjectProperty ,
+                      owl:SymmetricProperty ;
+    rdfs:domain :Movie ;
+    rdfs:range :Movie ;
+    rdfs:label "is similar to"@en ,
+               "es similar a"@es ;
+    rdfs:comment "Symmetric property indicating movie similarity. If A is similar to B, then B is similar to A"@en ,
+                 "Propiedad simétrica que indica similitud entre películas. Si A es similar a B, entonces B es similar a A"@es .
+
+#################################################################
+#    Object Properties - Relaciones Movie ↔ MovieCluster (GraphRAG)
+#################################################################
+
+:belongsToCluster rdf:type owl:ObjectProperty ;
+    rdfs:domain :Movie ;
+    rdfs:range :MovieCluster ;
+    owl:inverseOf :containsMovie ;
+    rdfs:label "belongs to cluster"@en ,
+               "pertenece a cluster"@es ;
+    rdfs:comment "Indica que una película pertenece a un cluster detectado por algoritmos de comunidad (Louvain/Leiden)"@es .
+
+:containsMovie rdf:type owl:ObjectProperty ;
+    rdfs:domain :MovieCluster ;
+    rdfs:range :Movie ;
+    rdfs:label "contains movie"@en ,
+               "contiene película"@es ;
+    rdfs:comment "Inversa de belongsToCluster. Permite consultar todas las películas de un cluster"@es .
+
+#################################################################
+#    Object Properties - Propiedades Contextuales (Puente)
+#################################################################
+
+:suitableForMood rdf:type owl:ObjectProperty ;
+    rdfs:domain :Movie ;
+    rdfs:label "suitable for mood"@en ,
+               "adecuado para estado de ánimo"@es ;
+    rdfs:comment "Conecta con context-ontology:Mood"@es .
+
+:suitableForViewingContext rdf:type owl:ObjectProperty ;
+    rdfs:domain :Movie ;
+    rdfs:label "suitable for viewing context"@en ,
+               "adecuado para contexto de visualización"@es ;
+    rdfs:comment "Conecta con context-ontology:ViewingContext"@es .
+
+:recommendedForCompanionType rdf:type owl:ObjectProperty ;
+    rdfs:domain :Movie ;
+    rdfs:label "recommended for companion type"@en ,
+               "recomendado para tipo de compañía"@es ;
+    rdfs:comment "Conecta con context-ontology:CompanionType"@es .
+
+#################################################################
+#    Data Properties - Movie
+#################################################################
+
+:hasTitle rdf:type owl:DatatypeProperty ;
+    rdfs:domain :Movie ;
+    rdfs:range xsd:string ;
+    rdfs:label "has title"@en ,
+               "tiene título"@es .
+
+:hasOriginalTitle rdf:type owl:DatatypeProperty ;
+    rdfs:domain :Movie ;
+    rdfs:range xsd:string ;
+    rdfs:label "has original title"@en ,
+               "tiene título original"@es .
+
+:releaseDate rdf:type owl:DatatypeProperty ;
+    rdfs:domain :Movie ;
+    rdfs:range xsd:date ;
+    rdfs:label "release date"@en ,
+               "fecha de estreno"@es ;
+    rdfs:comment "Release date in YYYY-MM-DD format"@en ,
+                 "Fecha de estreno en formato AAAA-MM-DD"@es .
+
+:hasDuration rdf:type owl:DatatypeProperty ;
+    rdfs:domain :Movie ;
+    rdfs:range xsd:duration ;
+    rdfs:label "has duration"@en ,
+               "tiene duración"@es .
+
+:hasPlotSummary rdf:type owl:DatatypeProperty ;
+    rdfs:domain :Movie ;
+    rdfs:range xsd:string ;
+    rdfs:label "has plot summary"@en ,
+               "tiene resumen de trama"@es ;
+    rdfs:comment "Plot summary text for RAG vector embeddings and hybrid search"@en ,
+                 "Texto del resumen de trama para embeddings vectoriales RAG y búsqueda híbrida"@es .
+
+:hasPlotEmbedding rdf:type owl:DatatypeProperty ;
+    rdfs:domain :Movie ;
+    rdfs:range xsd:string ;
+    rdfs:label "has plot embedding"@en ,
+               "tiene embedding de trama"@es ;
+    rdfs:comment "Vector embedding del resumen de trama para búsqueda semántica GraphRAG"@en ,
+                 "Vector embedding del resumen de trama para búsqueda semántica GraphRAG"@es .
+
+:hasSemanticTags rdf:type owl:DatatypeProperty ;
+    rdfs:domain :Movie ;
+    rdfs:range xsd:string ;
+    rdfs:label "has semantic tags"@en ,
+               "tiene etiquetas semánticas"@es ;
+    rdfs:comment "Etiquetas semánticas extraídas por LLM para enriquecer contexto de búsqueda GraphRAG"@en ,
+                 "Etiquetas semánticas extraídas por LLM para enriquecer contexto de búsqueda GraphRAG"@es .
+
+:hasContextualDescription rdf:type owl:DatatypeProperty ;
+    rdfs:domain :Movie ;
+    rdfs:range xsd:string ;
+    rdfs:label "has contextual description"@en ,
+               "tiene descripción contextual"@es ;
+    rdfs:comment "Descripción enriquecida combinando plot, tone, theme y keywords para LLM GraphRAG"@en ,
+                 "Descripción enriquecida combinando plot, tone, theme y keywords para LLM GraphRAG"@es .
+
+:hasSimilarityScore rdf:type owl:DatatypeProperty ;
+    rdfs:domain :Movie ;
+    rdfs:range xsd:decimal ;
+    rdfs:label "has similarity score"@en ,
+               "tiene puntuación de similitud"@es ;
+    rdfs:comment "Score de similitud calculado para GraphRAG (0-1)"@en ,
+                 "Score de similitud calculado para GraphRAG (0-1)"@es .
+
+:similarityMethod rdf:type owl:DatatypeProperty ;
+    rdfs:domain :Movie ;
+    rdfs:range xsd:string ;
+    rdfs:label "similarity method"@en ,
+               "método de similitud"@es ;
+    rdfs:comment "Método usado para calcular similitud: cosine, jaccard, hybrid"@en ,
+                 "Método usado para calcular similitud: cosine, jaccard, hybrid"@es .
+
+:hasTagline rdf:type owl:DatatypeProperty ;
+    rdfs:domain :Movie ;
+    rdfs:range xsd:string ;
+    rdfs:label "has tagline"@en ,
+               "tiene eslogan"@es .
+
+:hasBudget rdf:type owl:DatatypeProperty ;
+    rdfs:domain :Movie ;
+    rdfs:range xsd:decimal ;
+    rdfs:label "has budget"@en ,
+               "tiene presupuesto"@es .
+
+:hasBoxOffice rdf:type owl:DatatypeProperty ;
+    rdfs:domain :Movie ;
+    rdfs:range xsd:decimal ;
+    rdfs:label "has box office"@en ,
+               "tiene taquilla"@es .
+
+:hasIMDbID rdf:type owl:DatatypeProperty ;
+    rdfs:domain :Movie ;
+    rdfs:range xsd:string ;
+    rdfs:label "has IMDb ID"@en ,
+               "tiene ID de IMDb"@es .
+
+:hasTMDbID rdf:type owl:DatatypeProperty ;
+    rdfs:domain :Movie ;
+    rdfs:range xsd:string ;
+    rdfs:label "has TMDb ID"@en ,
+               "tiene ID de TMDb"@es .
+
+:hasPopularity rdf:type owl:DatatypeProperty ;
+    rdfs:domain :Movie ;
+    rdfs:range xsd:decimal ;
+    rdfs:label "has popularity"@en ,
+               "tiene popularidad"@es ;
+    rdfs:comment "Valor de popularidad en TMDb (0-100+)"@es .
+
+:hasVoteCount rdf:type owl:DatatypeProperty ;
+    rdfs:domain :Movie ;
+    rdfs:range xsd:integer ;
+    rdfs:label "has vote count"@en ,
+               "tiene cantidad de votos"@es .
+
+:runtime rdf:type owl:DatatypeProperty ;
+    rdfs:domain :Movie ;
+    rdfs:range xsd:integer ;
+    rdfs:label "runtime"@en ,
+               "duración"@es ;
+    rdfs:comment "Runtime in minutes"@en ,
+                 "Duración en minutos"@es .
+
+:hasTMDbRating rdf:type owl:DatatypeProperty ;
+    rdfs:domain :Movie ;
+    rdfs:range xsd:decimal ;
+    rdfs:label "has TMDb rating"@en ,
+               "tiene calificación TMDb"@es ;
+    rdfs:comment "Calificación promedio en TMDb (0-10)"@es .
+
+:hasTMDbVoteCount rdf:type owl:DatatypeProperty ;
+    rdfs:domain :Movie ;
+    rdfs:range xsd:integer ;
+    rdfs:label "has TMDb vote count"@en ,
+               "tiene cantidad de votos TMDb"@es ;
+    rdfs:comment "Número total de votos en TMDb"@es .
+
+:hasIMDbRating rdf:type owl:DatatypeProperty ;
+    rdfs:domain :Movie ;
+    rdfs:range xsd:decimal ;
+    rdfs:label "has IMDb rating"@en ,
+               "tiene calificación IMDb"@es ;
+    rdfs:comment "Calificación promedio en IMDb (0-10)"@es .
+
+:hasIMDbVoteCount rdf:type owl:DatatypeProperty ;
+    rdfs:domain :Movie ;
+    rdfs:range xsd:integer ;
+    rdfs:label "has IMDb vote count"@en ,
+               "tiene cantidad de votos IMDb"@es ;
+    rdfs:comment "Número total de votos en IMDb"@es .
+
+:hasAverageRating rdf:type owl:DatatypeProperty ;
+    rdfs:domain :Movie ;
+    rdfs:range xsd:decimal ;
+    rdfs:label "has average rating"@en ,
+               "tiene calificación promedio"@es ;
+    rdfs:comment "Calificación promedio del dataset MovieLens (0-5)"@es .
+
+:hasRatingCount rdf:type owl:DatatypeProperty ;
+    rdfs:domain :Movie ;
+    rdfs:range xsd:integer ;
+    rdfs:label "has rating count"@en ,
+               "tiene cantidad de calificaciones"@es ;
+    rdfs:comment "Número de calificaciones en el dataset MovieLens"@es .
+
+:hasMetascore rdf:type owl:DatatypeProperty ;
+    rdfs:domain :Movie ;
+    rdfs:range xsd:integer ;
+    rdfs:label "has metascore"@en ,
+               "tiene metascore"@es ;
+    rdfs:comment "Metascore de Metacritic (0-100)"@es .
+
+:hasOriginalLanguage rdf:type owl:DatatypeProperty ;
+    rdfs:domain :Movie ;
+    rdfs:range xsd:string ;
+    rdfs:label "has original language"@en ,
+               "tiene idioma original"@es ;
+    rdfs:comment "Código ISO 639-1 del idioma original de la película"@es .
+
+:hasProductionCountries rdf:type owl:DatatypeProperty ;
+    rdfs:domain :Movie ;
+    rdfs:range xsd:string ;
+    rdfs:label "has production countries"@en ,
+               "tiene países de producción"@es ;
+    rdfs:comment "Países de producción separados por |"@es .
+
+:hasSpokenLanguages rdf:type owl:DatatypeProperty ;
+    rdfs:domain :Movie ;
+    rdfs:range xsd:string ;
+    rdfs:label "has spoken languages"@en ,
+               "tiene idiomas hablados"@es ;
+    rdfs:comment "Idiomas hablados en la película separados por |"@es .
+
+:hasToneValue rdf:type owl:DatatypeProperty ;
+    rdfs:domain :Movie ;
+    rdfs:range xsd:string ;
+    rdfs:label "has tone value"@en ,
+               "tiene valor de tono"@es ;
+    rdfs:comment "Tono narrativo como string (puede contener múltiples valores separados por |)"@es .
+
+:hasThemeValue rdf:type owl:DatatypeProperty ;
+    rdfs:domain :Movie ;
+    rdfs:range xsd:string ;
+    rdfs:label "has theme value"@en ,
+               "tiene valor de tema"@es ;
+    rdfs:comment "Tema narrativo como string (puede contener múltiples valores separados por |)"@es .
+
+:hasPlotStructureValue rdf:type owl:DatatypeProperty ;
+    rdfs:domain :Movie ;
+    rdfs:range xsd:string ;
+    rdfs:label "has plot structure value"@en ,
+               "tiene valor de estructura de trama"@es ;
+    rdfs:comment "Estructura de trama: LinearNarrative, NonLinearNarrative, EpisodicNarrative"@es .
+
+:hasHistoricalPeriodValue rdf:type owl:DatatypeProperty ;
+    rdfs:domain :Movie ;
+    rdfs:range xsd:string ;
+    rdfs:label "has historical period value"@en ,
+               "tiene valor de período histórico"@es ;
+    rdfs:comment "Período histórico: Historical, Contemporary, Futuristic"@es .
+
+:hasMovieTypeValue rdf:type owl:DatatypeProperty ;
+    rdfs:domain :Movie ;
+    rdfs:range xsd:string ;
+    rdfs:label "has movie type value"@en ,
+               "tiene valor de tipo de película"@es ;
+    rdfs:comment "Tipo de película inferido: FeatureFilm, Documentary, ShortFilm, AnimatedFilm"@es .
+
+#################################################################
+#    Data Properties - Person
+#################################################################
+
+:hasName rdf:type owl:DatatypeProperty ;
+    rdfs:domain :Person ;
+    rdfs:range xsd:string ;
+    rdfs:label "has name"@en ,
+               "tiene nombre"@es .
+
+:hasBirthDate rdf:type owl:DatatypeProperty ;
+    rdfs:domain :Person ;
+    rdfs:range xsd:date ;
+    rdfs:label "has birth date"@en ,
+               "tiene fecha de nacimiento"@es .
+
+:hasNationality rdf:type owl:DatatypeProperty ;
+    rdfs:domain :Person ;
+    rdfs:range xsd:string ;
+    rdfs:label "has nationality"@en ,
+               "tiene nacionalidad"@es .
+
+:hasBiography rdf:type owl:DatatypeProperty ;
+    rdfs:domain :Person ;
+    rdfs:range xsd:string ;
+    rdfs:label "has biography"@en ,
+               "tiene biografía"@es .
+
+#################################################################
+#    Data Properties - Rating
+#################################################################
+
+:ratingValue rdf:type owl:DatatypeProperty ;
+    rdfs:domain :Rating ;
+    rdfs:range xsd:decimal ;
+    rdfs:label "rating value"@en ,
+               "valor de calificación"@es ;
+    rdfs:comment "Rating value between 0 and 10"@en ,
+                 "Valor de calificación entre 0 y 10"@es .
+
+:ratingCount rdf:type owl:DatatypeProperty ;
+    rdfs:domain :Rating ;
+    rdfs:range xsd:integer ;
+    rdfs:label "rating count"@en ,
+               "conteo de calificaciones"@es .
+
+:ratingSource rdf:type owl:DatatypeProperty ;
+    rdfs:domain :Rating ;
+    rdfs:range xsd:string ;
+    rdfs:label "rating source"@en ,
+               "fuente de calificación"@es .
+
+:ratingDate rdf:type owl:DatatypeProperty ;
+    rdfs:domain :Rating ;
+    rdfs:range xsd:date ;
+    rdfs:label "rating date"@en ,
+               "fecha de calificación"@es .
+
+#################################################################
+#    Data Properties - Genre
+#################################################################
+
+:genreName rdf:type owl:DatatypeProperty ;
+    rdfs:domain :Genre ;
+    rdfs:range xsd:Literal ;
+    rdfs:label "genre name"@en ,
+               "nombre de género"@es .
+
+:genreDescription rdf:type owl:DatatypeProperty ;
+    rdfs:domain :Genre ;
+    rdfs:range xsd:Literal ;
+    rdfs:label "genre description"@en ,
+               "descripción de género"@es .
+
+#################################################################
+#    Data Properties - Keyword
+#################################################################
+
+:keywordText rdf:type owl:DatatypeProperty ;
+    rdfs:domain :Keyword ;
+    rdfs:range xsd:string ;
+    rdfs:label "keyword text"@en ,
+               "texto de palabra clave"@es .
+
+#################################################################
+#    Data Properties - ProductionCompany
+#################################################################
+
+:companyName rdf:type owl:DatatypeProperty ;
+    rdfs:domain :ProductionCompany ;
+    rdfs:range xsd:string ;
+    rdfs:label "company name"@en ,
+               "nombre de compañía"@es .
+
+#################################################################
+#    Data Properties - Certification
+#################################################################
+
+:certificationRating rdf:type owl:DatatypeProperty ;
+    rdfs:domain :Certification ;
+    rdfs:range xsd:string ;
+    rdfs:label "certification rating"@en ,
+               "clasificación de certificación"@es ;
+    rdfs:comment "Ej: G, PG, PG-13, R, NC-17"@es .
+
+:certificationCountry rdf:type owl:DatatypeProperty ;
+    rdfs:domain :Certification ;
+    rdfs:range xsd:string ;
+    rdfs:label "certification country"@en ,
+               "país de certificación"@es ;
+    rdfs:comment "Código ISO del país"@es .
+
+#################################################################
+#    Data Properties - Theme
+#################################################################
+
+:themeName rdf:type owl:DatatypeProperty ;
+    rdfs:domain :Theme ;
+    rdfs:range xsd:string ;
+    rdfs:label "theme name"@en ,
+               "nombre de tema"@es .
+
+:themeDescription rdf:type owl:DatatypeProperty ;
+    rdfs:domain :Theme ;
+    rdfs:range xsd:Literal ;
+    rdfs:label "theme description"@en ,
+               "descripción de tema"@es .
+
+#################################################################
+#    Data Properties - Tone
+#################################################################
+
+:toneName rdf:type owl:DatatypeProperty ;
+    rdfs:domain :Tone ;
+    rdfs:range xsd:Literal ;
+    rdfs:label "tone name"@en ,
+               "nombre de tono"@es .
+
+:toneIntensity rdf:type owl:DatatypeProperty ;
+    rdfs:domain :Tone ;
+    rdfs:range xsd:float ;
+    rdfs:label "tone intensity"@en ,
+               "intensidad de tono"@es ;
+    rdfs:comment "Valor entre 0 y 1"@es .
+
+:toneDescription rdf:type owl:DatatypeProperty ;
+    rdfs:domain :Tone ;
+    rdfs:range xsd:Literal ;
+    rdfs:label "tone description"@en ,
+               "descripción de tono"@es .
+
+#################################################################
+#    Data Properties - CulturalContext
+#################################################################
+
+:countryName rdf:type owl:DatatypeProperty ;
+    rdfs:domain :CountryOfOrigin ;
+    rdfs:range xsd:Literal ;
+    rdfs:label "country name"@en ,
+               "nombre de país"@es .
+
+:countryCode rdf:type owl:DatatypeProperty ;
+    rdfs:domain :CountryOfOrigin ;
+    rdfs:range xsd:string ;
+    rdfs:label "country code"@en ,
+               "código de país"@es ;
+    rdfs:comment "ISO 3166-1 alpha-2 code"@es .
+
+:periodName rdf:type owl:DatatypeProperty ;
+    rdfs:domain :HistoricalPeriod ;
+    rdfs:range xsd:Literal ;
+    rdfs:label "period name"@en ,
+               "nombre de período"@es .
+
+:periodStartYear rdf:type owl:DatatypeProperty ;
+    rdfs:domain :HistoricalPeriod ;
+    rdfs:range xsd:gYear ;
+    rdfs:label "period start year"@en ,
+               "año de inicio del período"@es .
+
+:periodEndYear rdf:type owl:DatatypeProperty ;
+    rdfs:domain :HistoricalPeriod ;
+    rdfs:range xsd:gYear ;
+    rdfs:label "period end year"@en ,
+               "año de fin del período"@es .
+
+:languageCode rdf:type owl:DatatypeProperty ;
+    rdfs:domain :Language ;
+    rdfs:range xsd:language ;
+    rdfs:label "language code"@en ,
+               "código de idioma"@es ;
+    rdfs:comment "ISO 639-1 language code"@en ,
+                 "Código de idioma ISO 639-1"@es .
+
+:languageName rdf:type owl:DatatypeProperty ;
+    rdfs:domain :Language ;
+    rdfs:range xsd:Literal ;
+    rdfs:label "language name"@en ,
+               "nombre de idioma"@es .
+
+#################################################################
+#    Data Properties - AgeRating
+#################################################################
+
+:ratingCode rdf:type owl:DatatypeProperty ;
+    rdfs:domain :AgeRatingCategory ;
+    rdfs:range xsd:string ;
+    rdfs:label "rating code"@en ,
+               "código de clasificación"@es ;
+    rdfs:comment "Ej: G, PG, PG-13, R, NC-17"@es .
+
+:ratingDescription rdf:type owl:DatatypeProperty ;
+    rdfs:domain :AgeRatingCategory ;
+    rdfs:range xsd:Literal ;
+    rdfs:label "rating description"@en ,
+               "descripción de clasificación"@es .
+
+:minimumAge rdf:type owl:DatatypeProperty ;
+    rdfs:domain :AgeRatingCategory ;
+    rdfs:range xsd:integer ;
+    rdfs:label "minimum age"@en ,
+               "edad mínima"@es .
+
+#################################################################
+#    Data Properties - Award
+#################################################################
+
+:awardName rdf:type owl:DatatypeProperty ;
+    rdfs:domain :Award ;
+    rdfs:range xsd:Literal ;
+    rdfs:label "award name"@en ,
+               "nombre de premio"@es .
+
+:awardingBody rdf:type owl:DatatypeProperty ;
+    rdfs:domain :Award ;
+    rdfs:range xsd:string ;
+    rdfs:label "awarding body"@en ,
+               "organismo otorgante"@es ;
+    rdfs:comment "Ej: Academy of Motion Picture Arts and Sciences"@es .
+
+:awardPrestige rdf:type owl:DatatypeProperty ;
+    rdfs:domain :Award ;
+    rdfs:range xsd:float ;
+    rdfs:label "award prestige"@en ,
+               "prestigio del premio"@es ;
+    rdfs:comment "Valor entre 0 y 1"@es .
+
+#################################################################
+#    Data Properties - AwardParticipation
+#################################################################
+
+:awardYear rdf:type owl:DatatypeProperty ;
+    rdfs:domain :AwardParticipation ;
+    rdfs:range xsd:gYear ;
+    rdfs:label "award year"@en ,
+               "año del premio"@es .
+
+:awardCategory rdf:type owl:DatatypeProperty ;
+    rdfs:domain :AwardParticipation ;
+    rdfs:range xsd:string ;
+    rdfs:label "award category"@en ,
+               "categoría del premio"@es ;
+    rdfs:comment "Ej: Best Picture, Best Actor, Best Director"@es .
+
+:awardCeremony rdf:type owl:DatatypeProperty ;
+    rdfs:domain :AwardParticipation ;
+    rdfs:range xsd:string ;
+    rdfs:label "award ceremony"@en ,
+               "ceremonia de premios"@es ;
+    rdfs:comment "Ej: 95th Academy Awards, 76th Golden Globes"@es .
+
+:awardResult rdf:type owl:DatatypeProperty ;
+    rdfs:domain :AwardParticipation ;
+    rdfs:range xsd:string ;
+    rdfs:label "award result"@en ,
+               "resultado del premio"@es ;
+    rdfs:comment "Valores: Winner, Nominee, Shortlisted"@es .
+
+#################################################################
+#    Data Properties - Role
+#################################################################
+
+:roleName rdf:type owl:DatatypeProperty ;
+    rdfs:domain :Role ;
+    rdfs:range xsd:string ;
+    rdfs:label "role name"@en ,
+               "nombre del rol"@es .
+
+:characterName rdf:type owl:DatatypeProperty ;
+    rdfs:domain :ActingRole ;
+    rdfs:range xsd:string ;
+    rdfs:label "character name"@en ,
+               "nombre del personaje"@es .
+
+:screenTime rdf:type owl:DatatypeProperty ;
+    rdfs:domain :ActingRole ;
+    rdfs:range xsd:duration ;
+    rdfs:label "screen time"@en ,
+               "tiempo en pantalla"@es .
+
+:isLeadRole rdf:type owl:DatatypeProperty ;
+    rdfs:domain :ActingRole ;
+    rdfs:range xsd:boolean ;
+    rdfs:label "is lead role"@en ,
+               "es rol principal"@es .
+
+:roleDescription rdf:type owl:DatatypeProperty ;
+    rdfs:domain :Role ;
+    rdfs:range xsd:Literal ;
+    rdfs:label "role description"@en ,
+               "descripción del rol"@es .
+
+#################################################################
+#    Data Properties - MovieCluster (GraphRAG)
+#################################################################
+
+:clusterID rdf:type owl:DatatypeProperty ;
+    rdfs:domain :MovieCluster ;
+    rdfs:range xsd:string ;
+    rdfs:label "cluster ID"@en ,
+               "ID de cluster"@es ;
+    rdfs:comment "Identificador único del cluster generado por el algoritmo"@es .
+
+:clusterLabel rdf:type owl:DatatypeProperty ;
+    rdfs:domain :MovieCluster ;
+    rdfs:range xsd:string ;
+    rdfs:label "cluster label"@en ,
+               "etiqueta de cluster"@es ;
+    rdfs:comment "Nombre corto descriptivo del cluster (ej: 'Sci-Fi Épico', 'Drama Psicológico')"@es .
+
+:clusterDescription rdf:type owl:DatatypeProperty ;
+    rdfs:domain :MovieCluster ;
+    rdfs:range xsd:string ;
+    rdfs:label "cluster description"@en ,
+               "descripción de cluster"@es ;
+    rdfs:comment "Descripción generada por LLM resumiendo características comunes, temas, tonos y estilos de las películas del cluster"@es .
+
+:clusterSize rdf:type owl:DatatypeProperty ;
+    rdfs:domain :MovieCluster ;
+    rdfs:range xsd:integer ;
+    rdfs:label "cluster size"@en ,
+               "tamaño de cluster"@es ;
+    rdfs:comment "Número de películas que pertenecen al cluster"@es .
+
+:clusterCohesion rdf:type owl:DatatypeProperty ;
+    rdfs:domain :MovieCluster ;
+    rdfs:range xsd:decimal ;
+    rdfs:label "cluster cohesion"@en ,
+               "cohesión de cluster"@es ;
+    rdfs:comment "Medida de cohesión interna del cluster calculada por el algoritmo de clustering (0-1)"@es .
+
+:clusterCentrality rdf:type owl:DatatypeProperty ;
+    rdfs:domain :MovieCluster ;
+    rdfs:range xsd:decimal ;
+    rdfs:label "cluster centrality"@en ,
+               "centralidad de cluster"@es ;
+    rdfs:comment "Medida de importancia del cluster en el grafo general (0-1)"@es .
+
+#################################################################
+#    Axiomas y Restricciones
+#################################################################
+
+#================================================================
+# RESTRICCIONES DE CARDINALIDAD
+#================================================================
+
+# Una película DEBE tener al menos un director
+:Movie rdfs:subClassOf [ rdf:type owl:Restriction ;
+                         owl:onProperty :hasDirector ;
+                         owl:minCardinality "1"^^xsd:nonNegativeInteger
+                       ] .
+
+# Una película DEBE tener al menos un género principal
+:Movie rdfs:subClassOf [ rdf:type owl:Restriction ;
+                         owl:onProperty :hasMainGenre ;
+                         owl:minCardinality "1"^^xsd:nonNegativeInteger
+                       ] .
+
+# Una película DEBE tener exactamente un título
+:Movie rdfs:subClassOf [ rdf:type owl:Restriction ;
+                         owl:onProperty :hasTitle ;
+                         owl:cardinality "1"^^xsd:nonNegativeInteger
+                       ] .
+
+# Una película DEBE tener exactamente una fecha de estreno
+:Movie rdfs:subClassOf [ rdf:type owl:Restriction ;
+                         owl:onProperty :releaseDate ;
+                         owl:cardinality "1"^^xsd:nonNegativeInteger
+                       ] .
+
+# Un MovieCluster DEBE tener al menos una película
+:MovieCluster rdfs:subClassOf [ rdf:type owl:Restriction ;
+                                owl:onProperty :containsMovie ;
+                                owl:minCardinality "1"^^xsd:nonNegativeInteger
+                              ] .
+
+# Un MovieCluster DEBE tener exactamente un ID
+:MovieCluster rdfs:subClassOf [ rdf:type owl:Restriction ;
+                                owl:onProperty :clusterID ;
+                                owl:cardinality "1"^^xsd:nonNegativeInteger
+                              ] .
+
+# ---- IMPORTANTE: PATRÓN N-ARIO PARA PREMIOS ----
+# Una Movie o Person PUEDE tener MÚLTIPLES premios mediante múltiples instancias de AwardParticipation.
+# Cada AwardParticipation representa UNA participación en UN premio específico.
+# Ejemplo: Si "Oppenheimer" ganó 3 Oscars, tendrá 3 instancias de AwardParticipation.
+
+# AwardParticipation debe tener exactamente un premio (pero una película puede tener muchas AwardParticipation)
+:AwardParticipation rdfs:subClassOf [ rdf:type owl:Restriction ;
+                                      owl:onProperty :hasAward ;
+                                      owl:cardinality "1"^^xsd:nonNegativeInteger
+                                    ] .
+
+# AwardParticipation debe tener exactamente una entidad
+:AwardParticipation rdfs:subClassOf [ rdf:type owl:Restriction ;
+                                      owl:onProperty :forEntity ;
+                                      owl:cardinality "1"^^xsd:nonNegativeInteger
+                                    ] .
+
+# AwardParticipation debe tener exactamente un año
+:AwardParticipation rdfs:subClassOf [ rdf:type owl:Restriction ;
+                                      owl:onProperty :awardYear ;
+                                      owl:cardinality "1"^^xsd:nonNegativeInteger
+                                    ] .
+
+# AwardParticipation debe tener exactamente un resultado (Winner, Nominee, Shortlisted)
+:AwardParticipation rdfs:subClassOf [ rdf:type owl:Restriction ;
+                                      owl:onProperty :awardResult ;
+                                      owl:cardinality "1"^^xsd:nonNegativeInteger
+                                    ] .
+
+#================================================================
+# RESTRICCIONES DE RANGO DE VALORES
+#================================================================
+
+# Runtime debe ser positivo (mayor que 0 minutos)
+:Movie rdfs:subClassOf [ rdf:type owl:Restriction ;
+                         owl:onProperty :runtime ;
+                         owl:allValuesFrom [ rdf:type rdfs:Datatype ;
+                                           owl:onDatatype xsd:integer ;
+                                           owl:withRestrictions ( [ xsd:minInclusive "1"^^xsd:integer ]
+                                                                 [ xsd:maxInclusive "1000"^^xsd:integer ]
+                                                               )
+                                         ]
+                       ] .
+
+# Rating value debe estar entre 0 y 10
+:Rating rdfs:subClassOf [ rdf:type owl:Restriction ;
+                          owl:onProperty :ratingValue ;
+                          owl:allValuesFrom [ rdf:type rdfs:Datatype ;
+                                             owl:onDatatype xsd:decimal ;
+                                             owl:withRestrictions ( [ xsd:minInclusive "0.0"^^xsd:decimal ]
+                                                                   [ xsd:maxInclusive "10.0"^^xsd:decimal ]
+                                                                 )
+                                           ]
+                        ] .
+
+# Popularity debe ser no negativo
+:Movie rdfs:subClassOf [ rdf:type owl:Restriction ;
+                         owl:onProperty :hasPopularity ;
+                         owl:allValuesFrom [ rdf:type rdfs:Datatype ;
+                                           owl:onDatatype xsd:decimal ;
+                                           owl:withRestrictions ( [ xsd:minInclusive "0.0"^^xsd:decimal ] )
+                                         ]
+                       ] .
+
+# Similarity score debe estar entre 0 y 1
+:Movie rdfs:subClassOf [ rdf:type owl:Restriction ;
+                         owl:onProperty :hasSimilarityScore ;
+                         owl:allValuesFrom [ rdf:type rdfs:Datatype ;
+                                           owl:onDatatype xsd:decimal ;
+                                           owl:withRestrictions ( [ xsd:minInclusive "0.0"^^xsd:decimal ]
+                                                                 [ xsd:maxInclusive "1.0"^^xsd:decimal ]
+                                                               )
+                                         ]
+                       ] .
+
+# Cluster cohesion debe estar entre 0 y 1
+:MovieCluster rdfs:subClassOf [ rdf:type owl:Restriction ;
+                                owl:onProperty :clusterCohesion ;
+                                owl:allValuesFrom [ rdf:type rdfs:Datatype ;
+                                                  owl:onDatatype xsd:decimal ;
+                                                  owl:withRestrictions ( [ xsd:minInclusive "0.0"^^xsd:decimal ]
+                                                                        [ xsd:maxInclusive "1.0"^^xsd:decimal ]
+                                                                      )
+                                                ]
+                              ] .
+
+# Cluster centrality debe estar entre 0 y 1
+:MovieCluster rdfs:subClassOf [ rdf:type owl:Restriction ;
+                                owl:onProperty :clusterCentrality ;
+                                owl:allValuesFrom [ rdf:type rdfs:Datatype ;
+                                                  owl:onDatatype xsd:decimal ;
+                                                  owl:withRestrictions ( [ xsd:minInclusive "0.0"^^xsd:decimal ]
+                                                                        [ xsd:maxInclusive "1.0"^^xsd:decimal ]
+                                                                      )
+                                                ]
+                              ] .
+
+# Cluster size debe ser positivo
+:MovieCluster rdfs:subClassOf [ rdf:type owl:Restriction ;
+                                owl:onProperty :clusterSize ;
+                                owl:allValuesFrom [ rdf:type rdfs:Datatype ;
+                                                  owl:onDatatype xsd:integer ;
+                                                  owl:withRestrictions ( [ xsd:minInclusive "1"^^xsd:integer ] )
+                                                ]
+                              ] .
+
+# Minimum age debe ser no negativo
+:AgeRatingCategory rdfs:subClassOf [ rdf:type owl:Restriction ;
+                                     owl:onProperty :minimumAge ;
+                                     owl:allValuesFrom [ rdf:type rdfs:Datatype ;
+                                                       owl:onDatatype xsd:integer ;
+                                                       owl:withRestrictions ( [ xsd:minInclusive "0"^^xsd:integer ]
+                                                                             [ xsd:maxInclusive "21"^^xsd:integer ]
+                                                                           )
+                                                     ]
+                                   ] .
+
+# Award prestige debe estar entre 0 y 1
+:Award rdfs:subClassOf [ rdf:type owl:Restriction ;
+                         owl:onProperty :awardPrestige ;
+                         owl:allValuesFrom [ rdf:type rdfs:Datatype ;
+                                           owl:onDatatype xsd:float ;
+                                           owl:withRestrictions ( [ xsd:minInclusive "0.0"^^xsd:float ]
+                                                                 [ xsd:maxInclusive "1.0"^^xsd:float ]
+                                                               )
+                                         ]
+                       ] .
+
+# Tone intensity debe estar entre 0 y 1
+:Tone rdfs:subClassOf [ rdf:type owl:Restriction ;
+                        owl:onProperty :toneIntensity ;
+                        owl:allValuesFrom [ rdf:type rdfs:Datatype ;
+                                          owl:onDatatype xsd:float ;
+                                          owl:withRestrictions ( [ xsd:minInclusive "0.0"^^xsd:float ]
+                                                                [ xsd:maxInclusive "1.0"^^xsd:float ]
+                                                              )
+                                        ]
+                      ] .
+
+#================================================================
+# PROPIEDADES FUNCIONALES (VALORES ÚNICOS)
+#================================================================
+
+# Una película tiene exactamente un título
+:hasTitle rdf:type owl:FunctionalProperty .
+
+# Una película tiene exactamente un título original
+:hasOriginalTitle rdf:type owl:FunctionalProperty .
+
+# Una película tiene exactamente una fecha de estreno
+:releaseDate rdf:type owl:FunctionalProperty .
+
+# Una película tiene exactamente un runtime
+:runtime rdf:type owl:FunctionalProperty .
+
+# Una persona tiene exactamente un nombre
+:hasName rdf:type owl:FunctionalProperty .
+
+# Un cluster tiene exactamente un ID
+:clusterID rdf:type owl:FunctionalProperty .
+
+# Un cluster tiene exactamente un label
+:clusterLabel rdf:type owl:FunctionalProperty .
+
+# Un cluster tiene exactamente un tamaño
+:clusterSize rdf:type owl:FunctionalProperty .
+
+#================================================================
+# CLASES DISJUNTAS (MUTUAMENTE EXCLUYENTES)
+#================================================================
+
+# Los tipos de películas son disjuntos
+:FeatureFilm owl:disjointWith :Documentary ,
+                               :ShortFilm ,
+                               :AnimatedFilm .
+
+:Documentary owl:disjointWith :ShortFilm ,
+                               :AnimatedFilm .
+
+:ShortFilm owl:disjointWith :AnimatedFilm .
+
+# Los tipos de premios son disjuntos
+:FilmAward owl:disjointWith :PersonAward .
+
+# Los tonos son disjuntos entre sí
+:DramaticTone owl:disjointWith :ComedyTone ,
+                                :SuspensefulTone ,
+                                :RomanticTone ,
+                                :DarkTone .
+
+:ComedyTone owl:disjointWith :SuspensefulTone ,
+                              :RomanticTone ,
+                              :DarkTone .
+
+:SuspensefulTone owl:disjointWith :RomanticTone ,
+                                   :DarkTone .
+
+:RomanticTone owl:disjointWith :DarkTone .
+
+# Los roles creativos y actorales son diferentes tipos
+:ActingRole owl:disjointWith :CreativeRole .
+
+# MainGenre y Subgenre son disjuntos
+:MainGenre owl:disjointWith :Subgenre .
+
+# Períodos históricos son disjuntos
+:Contemporary owl:disjointWith :Historical ,
+                                :Futuristic .
+
+:Historical owl:disjointWith :Futuristic .
+
+# Categorías de edad son disjuntas
+:GeneralAudience owl:disjointWith :ParentalGuidance ,
+                                   :Teen ,
+                                   :Mature ,
+                                   :AdultOnly .
+
+:ParentalGuidance owl:disjointWith :Teen ,
+                                    :Mature ,
+                                    :AdultOnly .
+
+:Teen owl:disjointWith :Mature ,
+                        :AdultOnly .
+
+:Mature owl:disjointWith :AdultOnly .
+
+#================================================================
+# PROPIEDADES TRANSITIVAS (Para inferencia)
+#================================================================
+
+# Si A es similar a B, y B es similar a C, entonces A es similar a C
+# (Comentado porque puede generar demasiadas inferencias en GraphRAG)
+# :isSimilarTo rdf:type owl:TransitiveProperty .
+
+#================================================================
+# RESTRICCIONES SEMÁNTICAS COMPLEJAS
+#================================================================
+
+# Un Director debe haber dirigido al menos una película
+:Director rdfs:subClassOf [ rdf:type owl:Restriction ;
+                            owl:onProperty :isDirectorOf ;
+                            owl:minCardinality "1"^^xsd:nonNegativeInteger
+                          ] .
+
+# Un Actor debe haber actuado en al menos una película
+:Actor rdfs:subClassOf [ rdf:type owl:Restriction ;
+                         owl:onProperty :isActorIn ;
+                         owl:minCardinality "1"^^xsd:nonNegativeInteger
+                       ] .
+
+# Un ProductionCompany debe haber producido al menos una película
+:ProductionCompany rdfs:subClassOf [ rdf:type owl:Restriction ;
+                                     owl:onProperty :producedMovie ;
+                                     owl:minCardinality "1"^^xsd:nonNegativeInteger
+                                   ] .
+
+# Un Genre debe estar asociado a al menos una película
+:Genre rdfs:subClassOf [ rdf:type owl:Restriction ;
+                         owl:onProperty :isGenreOf ;
+                         owl:minCardinality "1"^^xsd:nonNegativeInteger
+                       ] .
+
+#================================================================
+# RESTRICCIONES PARA GRAPHRAG
+#================================================================
+
+# Una película con plotSummary debe tener hasContextualDescription
+# (Para asegurar que el RAG tenga contexto enriquecido)
+:Movie rdfs:subClassOf [ rdf:type owl:Restriction ;
+                         owl:onProperty :hasPlotSummary ;
+                         owl:maxCardinality "1"^^xsd:nonNegativeInteger
+                       ] .
+
+:Movie rdfs:subClassOf [ rdf:type owl:Restriction ;
+                         owl:onProperty :hasContextualDescription ;
+                         owl:maxCardinality "1"^^xsd:nonNegativeInteger
+                       ] .
+
+# Una película puede pertenecer a múltiples clusters (jerarquía multinivel)
+# Pero al menos debe estar en un cluster para GraphRAG eficiente
+# (Comentado para permitir películas sin cluster durante construcción inicial)
+# :Movie rdfs:subClassOf [ rdf:type owl:Restriction ;
+#                          owl:onProperty :belongsToCluster ;
+#                          owl:minCardinality "1"^^xsd:nonNegativeInteger
+#                        ] .
+
+#################################################################
+#    Instancias de Ejemplo (Opcional - para pruebas)
+#################################################################
+
+# Ejemplo de Géneros
+:Action rdf:type :MainGenre ;
+    :genreName "Action"@en ,
+               "Acción"@es ;
+    :genreDescription "High-energy films featuring physical stunts and chases"@en .
+
+:Drama rdf:type :MainGenre ;
+    :genreName "Drama"@en ;
+    :genreDescription "Character-driven stories with emotional depth"@en .
+
+:Comedy rdf:type :MainGenre ;
+    :genreName "Comedy"@en ,
+               "Comedia"@es ;
+    :genreDescription "Films designed to provoke laughter"@en .
+
+:SciFi rdf:type :MainGenre ;
+    :genreName "Science Fiction"@en ,
+               "Ciencia Ficción"@es ;
+    :genreDescription "Speculative fiction based on scientific concepts"@en .
+
+:Horror rdf:type :MainGenre ;
+    :genreName "Horror"@en ,
+               "Terror"@es ;
+    :genreDescription "Films designed to frighten and invoke fear"@en .
+
+# Ejemplo de Tonos
+:DramaticToneInstance rdf:type :DramaticTone ;
+    :toneName "Dramatic"@en ,
+               "Dramático"@es ;
+    :toneIntensity "0.8"^^xsd:float .
+
+:ComedyToneInstance rdf:type :ComedyTone ;
+    :toneName "Comedy"@en ,
+               "Cómico"@es ;
+    :toneIntensity "0.7"^^xsd:float .
+
+# Ejemplo de Clasificaciones por Edad
+:PG rdf:type :ParentalGuidance ;
+    :ratingCode "PG" ;
+    :ratingDescription "Parental Guidance Suggested"@en ;
+    :minimumAge "0"^^xsd:integer .
+
+:PG13 rdf:type :Teen ;
+    :ratingCode "PG-13" ;
+    :ratingDescription "Parents Strongly Cautioned"@en ;
+    :minimumAge "13"^^xsd:integer .
+
+:R rdf:type :Mature ;
+    :ratingCode "R" ;
+    :ratingDescription "Restricted"@en ;
+    :minimumAge "17"^^xsd:integer .
+
+# Ejemplo de Premios
+:Oscar_BestPicture rdf:type :BestPicture ;
+    :awardName "Academy Award for Best Picture"@en ;
+    :awardingBody "Academy of Motion Picture Arts and Sciences" ;
+    :awardPrestige "1.0"^^xsd:float .
+
+:Oscar_BestDirector rdf:type :BestDirector ;
+    :awardName "Academy Award for Best Director"@en ;
+    :awardingBody "Academy of Motion Picture Arts and Sciences" ;
+    :awardPrestige "0.95"^^xsd:float .
+
+# Ejemplo de Países
+:USA rdf:type :CountryOfOrigin ;
+    :countryName "United States"@en ,
+                 "Estados Unidos"@es ;
+    :countryCode "US" .
+
+:UK rdf:type :CountryOfOrigin ;
+    :countryName "United Kingdom"@en ,
+                 "Reino Unido"@es ;
+    :countryCode "GB" .
+
+:France rdf:type :CountryOfOrigin ;
+    :countryName "France"@en ,
+                 "Francia"@es ;
+    :countryCode "FR" .
+
+# Ejemplo de Idiomas
+:English rdf:type :Language ;
+    :languageName "English"@en ,
+                  "Inglés"@es ;
+    :languageCode "en" .
+
+:Spanish rdf:type :Language ;
+    :languageName "Spanish"@en ,
+                  "Español"@es ;
+    :languageCode "es" .
+
+:French rdf:type :Language ;
+    :languageName "French"@en ,
+                  "Francés"@es ;
+    :languageCode "fr" .
+
+# Ejemplo de Períodos Históricos
+:ModernEra rdf:type :Contemporary ;
+    :periodName "Modern Era"@en ,
+                "Era Moderna"@es ;
+    :periodStartYear "2000"^^xsd:gYear .
+
+:GoldenAgeOfHollywood rdf:type :Historical ;
+    :periodName "Golden Age of Hollywood"@en ;
+    :periodStartYear "1930"^^xsd:gYear ;
+    :periodEndYear "1960"^^xsd:gYear .
+
+#################################################################
+#    Anotaciones Adicionales
+#################################################################
+
+<http://www.semanticweb.org/movierecommendation/ontologies/2025/movie-ontology>
+    rdfs:comment """
+    Ontología de dominio cinematográfico diseñada para sistemas de recomendación contextualizada.
+    
+    Características principales:
+    - Modelado multidimensional del contenido cinematográfico
+    - Integración con vocabularios de Linked Open Data (Schema.org, DBpedia, FOAF)
+    - Soporte para elementos narrativos, culturales y técnicos
+    - Propiedades puente para integración con context-ontology.ttl
+    - Extensibilidad mediante patrones de diseño ontológico
+    
+    Autor: Luis Fernando Hernández Solís
+    Institución: Universidad del Valle - Escuela de Ingeniería de Sistemas y Computación
+    Año: 2025
+    
+    """@es .
+
+

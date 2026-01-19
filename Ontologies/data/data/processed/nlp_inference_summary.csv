@@ -1,0 +1,11 @@
+movieId,clean_title,year,tone,theme,plot_structure,historical_period,movie_type,inference_confidence
+110,Braveheart,1995,RomanticTone,Love,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+260,Star Wars: Episode IV - A New Hope,1977,SuspensefulTone,Freedom|Power,LinearNarrative,Historical,FeatureFilm,0.7333333333333334
+296,Pulp Fiction,1994,DarkTone,Redemption,NonLinearNarrative,Historical,FeatureFilm,0.7000000000000001
+318,"Shawshank Redemption, The",1994,DarkTone,Freedom|Redemption|Family,LinearNarrative,Historical,FeatureFilm,0.7666666666666666
+356,Forrest Gump,1994,RomanticTone,Family|Justice|Love,EpisodicNarrative,Historical,FeatureFilm,0.7666666666666666
+480,Jurassic Park,1993,SuspensefulTone,,LinearNarrative,Historical,FeatureFilm,0.5666666666666667
+527,Schindler's List,1993,DarkTone,Justice,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+589,Terminator 2: Judgment Day,1991,DarkTone,,LinearNarrative,Historical,FeatureFilm,0.5666666666666667
+593,"Silence of the Lambs, The",1991,DarkTone,Identity,NonLinearNarrative,Historical,FeatureFilm,0.7000000000000001
+2571,"Matrix, The",1999,SuspensefulTone,Family,LinearNarrative,Historical,FeatureFilm,0.7000000000000001

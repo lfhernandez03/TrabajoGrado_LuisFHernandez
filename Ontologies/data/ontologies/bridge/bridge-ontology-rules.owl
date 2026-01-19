@@ -1,0 +1,45 @@
+@prefix genre: <http://www.semanticweb.org/movierecommendation/data/genre/> .
+@prefix certification: <http://www.semanticweb.org/movierecommendation/ontologies/2025/movie-ontology#> .
+
+# NoHorror: si la sesión tiene NoHorror y la película es de género Horror → viola
+context:ViewingSession(?s) ^ context:hasConstraints(?s, ?c) ^ context:NoHorror(?c) ^
+movie:Movie(?m) ^ movie:hasMainGenre(?m, genre:Horror)
+→ bridge:violatesContentConstraint(?m, ?c)
+
+# NoViolence: si la sesión tiene NoViolence y el tono literal es "DarkTone" → viola
+context:ViewingSession(?s) ^ context:hasConstraints(?s, ?c) ^ context:NoViolence(?c) ^
+movie:Movie(?m) ^ movie:hasToneValue(?m, ?tone) ^ swrlb:stringEqualIgnoreCase(?tone, "DarkTone")
+→ bridge:violatesContentConstraint(?m, ?c)
+
+# KidFriendly: PG / PG-13 → cumple
+context:ViewingSession(?s) ^ context:hasConstraints(?s, ?c) ^ context:KidFriendly(?c) ^
+movie:Movie(?m) ^ movie:hasCertification(?m, movie:PG)
+→ bridge:meetsContentConstraint(?m, ?c)
+
+context:ViewingSession(?s) ^ context:hasConstraints(?s, ?c) ^ context:KidFriendly(?c) ^
+movie:Movie(?m) ^ movie:hasCertification(?m, movie:PG-13)
+→ bridge:meetsContentConstraint(?m, ?c)
+
+# KidFriendly: R / NC-17 → viola
+context:ViewingSession(?s) ^ context:hasConstraints(?s, ?c) ^ context:KidFriendly(?c) ^
+movie:Movie(?m) ^ movie:hasCertification(?m, movie:R)
+→ bridge:violatesContentConstraint(?m, ?c)
+
+context:ViewingSession(?s) ^ context:hasConstraints(?s, ?c) ^ context:KidFriendly(?c) ^
+movie:Movie(?m) ^ movie:hasCertification(?m, movie:NC-17)
+→ bridge:violatesContentConstraint(?m, ?c)
+
+# Duración > maxMinutes → viola TimeConstraint
+context:ViewingSession(?s) ^ context:hasConstraints(?s, ?tc) ^ context:TimeConstraint(?tc) ^
+movie:Movie(?m) ^ movie:hasRuntimeMinutes(?m, ?dur) ^ context:maxMinutes(?tc, ?max) ^
+swrlb:greaterThan(?dur, ?max)
+→ bridge:violatesContentConstraint(?m, ?tc)
+
+# Duración > availableTimeMinutes → viola TimeConstraint
+context:ViewingSession(?s) ^ context:hasConstraints(?s, ?tc) ^ context:TimeConstraint(?tc) ^
+movie:Movie(?m) ^ movie:hasRuntimeMinutes(?m, ?dur) ^ context:availableTimeMinutes(?tc, ?avail) ^
+swrlb:greaterThan(?dur, ?avail)
+→ bridge:violatesContentConstraint(?m, ?tc)
+
+# (Opcional) Mapea violaciones a NotRecommended
+bridge:violatesContentConstraint(?m, ?x) → NotRecommended(?m)
