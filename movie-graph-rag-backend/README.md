@@ -47,14 +47,44 @@ npm install
 ```
 
 ### 2. Configurar variables de entorno
-Crear `.env` (o `.env.local`):
+```bash
+cp .env.example .env
+```
+
+Edita `.env` con tus valores:
 ```env
 GROQ_API_KEY=tu_api_key_aqui
 GRAPHDB_URL=http://localhost:7200
 GRAPHDB_REPOSITORY=movies
 ```
 
-### 3. Ejecutar el servidor
+### 3. Iniciar GraphDB con Docker
+
+**Opción A: Comando rápido**
+```bash
+# Iniciar GraphDB + cargar ontologías
+./scripts/manage-graphdb.sh start
+
+# Ver estado
+./scripts/manage-graphdb.sh status
+
+# Detener
+./scripts/manage-graphdb.sh stop
+```
+
+**Opción B: Manual con docker-compose**
+```bash
+# Iniciar GraphDB
+docker-compose up -d
+
+# Cargar ontologías
+./scripts/load-ontologies.sh
+
+# Ver logs
+docker-compose logs -f
+```
+
+### 4. Ejecutar el servidor
 ```bash
 # Modo desarrollo (con hot-reload)
 npm run start:dev
@@ -63,7 +93,65 @@ npm run start:dev
 npm run start:prod
 ```
 
-El servidor estará disponible en `http://localhost:3000`
+El servidor estará disponible en `http://localhost:3000`  
+GraphDB estará disponible en `http://localhost:7200`
+
+---
+
+## 🔄 Gestión de GraphDB
+
+### Scripts Disponibles
+
+```bash
+# Iniciar GraphDB + cargar ontologías
+./scripts/manage-graphdb.sh start
+
+# Cargar/recargar ontologías
+./scripts/load-ontologies.sh              # Carga normal
+./scripts/load-ontologies.sh --force      # Recarga (elimina y vuelve a cargar)
+./scripts/load-ontologies.sh --check      # Verifica conectividad
+
+# Monitorear cambios en ontologías (recarga automática)
+./scripts/watch-ontologies.sh             # Monitoreo continuo
+./scripts/watch-ontologies.sh --once      # Ejecuta una vez
+
+# Gestión general
+./scripts/manage-graphdb.sh start         # Inicia GraphDB
+./scripts/manage-graphdb.sh stop          # Detiene GraphDB
+./scripts/manage-graphdb.sh restart       # Reinicia
+./scripts/manage-graphdb.sh logs          # Ver logs
+./scripts/manage-graphdb.sh status        # Estado
+./scripts/manage-graphdb.sh clean         # Elimina volúmenes (¡cuidado!)
+./scripts/manage-graphdb.sh shell         # Shell en el contenedor
+```
+
+### Docker Compose
+
+**Archivo: `docker-compose.yml`**
+- GraphDB 10.6 SE
+- Puerto: 7200
+- Volumen persistente: `graphdb-data`
+- Health check automático
+
+### Actualizar Ontologías
+
+**Cuando cambien los archivos TTL:**
+
+1. **Opción 1: Recarga manual**
+   ```bash
+   ./scripts/load-ontologies.sh --force
+   ```
+
+2. **Opción 2: Monitoreo automático** (requiere `fswatch`)
+   ```bash
+   ./scripts/watch-ontologies.sh
+   # Los cambios se cargan automáticamente
+   ```
+
+3. **Opción 3: Desde la UI de GraphDB**
+   - Accede a http://localhost:7200
+   - Repositorio: `movies`
+   - Sube archivos TTL manualmente
 
 ---
 
@@ -105,6 +193,7 @@ Content-Type: application/json
 
 - **[USAGE.md](USAGE.md)** - Guía de uso rápida y ejemplos con curl/Postman
 - **[MULTI_ONTOLOGY_GUIDE.md](MULTI_ONTOLOGY_GUIDE.md)** - Documentación técnica detallada
+- **[DOCKER.md](DOCKER.md)** - Guía completa de Docker & GraphDB (NEW!)
 - **[TEST_EXAMPLES.js](TEST_EXAMPLES.js)** - 8 casos de prueba documentados
 
 ---

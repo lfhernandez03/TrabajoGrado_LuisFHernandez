@@ -3,13 +3,51 @@ import { ConfigService } from '@nestjs/config';
 import { ChatGroq } from '@langchain/groq';
 import { ChatPromptTemplate } from '@langchain/core/prompts';
 import { StringOutputParser } from '@langchain/core/output_parsers';
+import { Parser } from 'n3';
+import { z } from 'zod';
 import {
   ExtractedContext,
   ContextSnapshot,
   MovieWithScore,
   SocialContext,
-  EmotionalContext,
 } from './interfaces/context.interface';
+
+/**
+ * Schema de validación Zod para contextos extraídos del RDF.
+ * Mejora la robustez frente a cambios de formato del LLM.
+ */
+const contextSchema = z.object({
+  social: z
+    .object({
+      companionType: z
+        .enum([
+          'solo',
+          'pareja',
+          'familia',
+          'familia con niños',
+          'amigos',
+          'compañeros de trabajo',
+          'grupo grande',
+        ])
+        .optional(),
+      hasChildren: z.boolean().optional(),
+      numberOfPeople: z.number().int().nonnegative().optional(),
+    })
+    .optional(),
+  emotional: z
+    .object({
+      moodDescription: z.string().optional(),
+      desiredEnergyLevel: z.enum(['bajo', 'medio', 'alto']).optional(),
+    })
+    .optional(),
+  requirement: z
+    .object({
+      availableTime: z.number().int().positive().optional(),
+      excludedGenre: z.array(z.string()).optional(),
+      negativeConstraint: z.array(z.string()).optional(),
+    })
+    .optional(),
+});
 
 @Injectable()
 export class LlmService {
@@ -127,7 +165,8 @@ export class LlmService {
   }
 
   /**
-   * Parsea el RDF generado para extraer el contexto estructurado.
+   * Parsea el RDF generado usando N3.js y valida con Zod.
+   * Mejora la robustez frente a variaciones de formato del LLM.
    */
   private parseContextFromRDF(
     rdfTriples: string,
@@ -135,69 +174,134 @@ export class LlmService {
     hourOfDay: number,
     dayOfWeek: string,
   ): ContextSnapshot {
-    const snapshot: ContextSnapshot = {
-      snapshotID: `snapshot_${Date.now()}`,
-      requestTimestamp: new Date(),
-      userIntent: query,
-      hourOfDay,
-      dayOfWeek,
-    };
+    /* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return */
+    try {
+      // Parser robusto de RDF Turtle con N3.js
+      const parser = new Parser({ format: 'text/turtle' });
+      const quads = parser.parse(rdfTriples);
 
-    // Extraer contexto social
-    const companionTypeMatch = rdfTriples.match(
-      /context:companionType\s+"([^"]+)"/,
-    );
-    const hasChildrenMatch = rdfTriples.match(/context:hasChildren\s+(\w+)/);
-    const numberOfPeopleMatch = rdfTriples.match(
-      /context:numberOfPeople\s+(\d+)/,
-    );
+      // Helper para buscar valores por predicado
+      const getObjectValue = (
+        subjectSuffix: string,
+        predicateSuffix: string,
+      ): string | undefined => {
+        const quad = quads.find(
+          (q) =>
+            q.subject.value.endsWith(subjectSuffix) &&
+            q.predicate.value.endsWith(predicateSuffix),
+        );
+        return quad?.object.value;
+      };
 
-    if (companionTypeMatch || hasChildrenMatch) {
-      const companionType = companionTypeMatch?.[1] || 'solo';
-      snapshot.socialContext = {
-        companionType: companionType as SocialContext['companionType'],
-        hasChildren: hasChildrenMatch?.[1] === 'true',
-        numberOfPeople: numberOfPeopleMatch
-          ? parseInt(numberOfPeopleMatch[1])
+      // Extraer datos del RDF parseado
+      const rawContext = {
+        social: {
+          companionType: getObjectValue('social1', 'companionType'),
+          hasChildren: getObjectValue('social1', 'hasChildren') === 'true',
+          numberOfPeople: getObjectValue('social1', 'numberOfPeople')
+            ? Number(getObjectValue('social1', 'numberOfPeople'))
+            : undefined,
+        },
+        emotional: {
+          moodDescription: getObjectValue('emotion1', 'moodDescription'),
+          desiredEnergyLevel: getObjectValue(
+            'emotion1',
+            'desiredEnergyLevel',
+          ) as 'bajo' | 'medio' | 'alto' | undefined,
+        },
+        requirement: {
+          availableTime: getObjectValue('req1', 'availableTime')
+            ? Number(getObjectValue('req1', 'availableTime'))
+            : undefined,
+          excludedGenre: quads
+            .filter(
+              (q) =>
+                q.subject.value.endsWith('req1') &&
+                q.predicate.value.endsWith('excludedGenre'),
+            )
+            .map((q) => q.object.value),
+          negativeConstraint: quads
+            .filter(
+              (q) =>
+                q.subject.value.endsWith('req1') &&
+                q.predicate.value.endsWith('negativeConstraint'),
+            )
+            .map((q) => q.object.value),
+        },
+      };
+      /* eslint-enable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return */
+
+      // Validar con Zod para asegurar vocabulario controlado
+      const validationResult = contextSchema.safeParse(rawContext);
+
+      if (!validationResult.success) {
+        this.logger.warn(
+          `RDF válido pero datos inválidos: ${validationResult.error.message}`,
+        );
+        this.logger.debug(`RDF recibido: ${rdfTriples}`);
+        // Continuar con snapshot vacío en lugar de fallar
+      }
+
+      const validatedData = validationResult.success
+        ? validationResult.data
+        : {};
+
+      // Construir snapshot con datos validados
+      return {
+        snapshotID: `snapshot_${Date.now()}`,
+        requestTimestamp: new Date(),
+        userIntent: query,
+        hourOfDay,
+        dayOfWeek,
+        socialContext: validatedData.social
+          ? {
+              companionType:
+                validatedData.social.companionType ||
+                ('solo' as SocialContext['companionType']),
+              hasChildren: validatedData.social.hasChildren || false,
+              numberOfPeople: validatedData.social.numberOfPeople,
+            }
+          : undefined,
+        emotionalContext: validatedData.emotional
+          ? {
+              moodDescription:
+                validatedData.emotional.moodDescription || 'neutral',
+              desiredEnergyLevel:
+                validatedData.emotional.desiredEnergyLevel || 'medio',
+            }
+          : undefined,
+        requirementContext: validatedData.requirement
+          ? {
+              availableTime: validatedData.requirement.availableTime,
+              excludedGenre:
+                validatedData.requirement.excludedGenre &&
+                validatedData.requirement.excludedGenre.length > 0
+                  ? validatedData.requirement.excludedGenre
+                  : undefined,
+              negativeConstraint:
+                validatedData.requirement.negativeConstraint &&
+                validatedData.requirement.negativeConstraint.length > 0
+                  ? validatedData.requirement.negativeConstraint
+                  : undefined,
+            }
           : undefined,
       };
-    }
+    } catch (error) {
+      // Fallback robusto en caso de error de parsing
+      this.logger.error(
+        `Error parseando RDF con N3.js: ${error instanceof Error ? error.message : String(error)}`,
+      );
+      this.logger.debug(`RDF que falló: ${rdfTriples}`);
 
-    // Extraer contexto emocional
-    const moodMatch = rdfTriples.match(/context:moodDescription\s+"([^"]+)"/);
-    const energyMatch = rdfTriples.match(
-      /context:desiredEnergyLevel\s+"([^"]+)"/,
-    );
-
-    if (moodMatch || energyMatch) {
-      const energyLevel = energyMatch?.[1] || 'medio';
-      snapshot.emotionalContext = {
-        moodDescription: moodMatch?.[1] || 'neutral',
-        desiredEnergyLevel:
-          energyLevel as EmotionalContext['desiredEnergyLevel'],
+      // Retornar snapshot básico sin contexto extraído
+      return {
+        snapshotID: `snapshot_${Date.now()}`,
+        requestTimestamp: new Date(),
+        userIntent: query,
+        hourOfDay,
+        dayOfWeek,
       };
     }
-
-    // Extraer requisitos
-    const availableTimeMatch = rdfTriples.match(
-      /context:availableTime\s+(\d+)/,
-    );
-    const excludedGenreMatches = rdfTriples.match(
-      /context:excludedGenre\s+"([^"]+)"/g,
-    );
-
-    if (availableTimeMatch || excludedGenreMatches) {
-      snapshot.requirementContext = {
-        availableTime: availableTimeMatch
-          ? parseInt(availableTimeMatch[1])
-          : undefined,
-        excludedGenre: excludedGenreMatches
-          ? excludedGenreMatches.map((m) => m.match(/"([^"]+)"/)?.[1] || '')
-          : undefined,
-      };
-    }
-
-    return snapshot;
   }
 
   /**
@@ -261,22 +365,25 @@ export class LlmService {
       Genera una consulta SPARQL SELECT que:
       1. Busque películas (movie:Movie)
       2. Aplique filtros basados en el CONTEXTO:
-         - Si availableTime existe: FILTER(?runtime <= {availableTime})
+         - Si availableTime existe: FILTER(?runtime <= {availableTime} + 30) (permite 30 min extra de flexibilidad)
          - Si hasChildren = true: EXCLUIR Horror, Thriller, War (contenido familiar)
          - Si excludedGenre existe: FILTER(NOT CONTAINS(?genreName, "Horror"))
          - Si desiredEnergyLevel = "bajo": preferir Drama, Romance, Documentary
-         - Si desiredEnergyLevel = "alto": preferir Action, Adventure, Sci-Fi, Thriller
-         - Si desiredEnergyLevel = "medio": preferir Comedy, Mystery, Fantasy
+         - Si desiredEnergyLevel = "alto": preferir Action, Adventure, Sci-Fi, Comedy
+         - Si desiredEnergyLevel = "medio": preferir Comedy, Mystery, Fantasy, Animation
       3. Retorne: ?title ?runtime ?genreName ?releaseYear ?averageRating
       4. Ordene por relevancia (usa averageRating si existe)
-      5. LIMITE a 10 resultados (LIMIT 10)
+      5. LIMITE a 20 resultados (LIMIT 20)
       
       REGLAS CRÍTICAS:
-      - Si hasChildren = true, SIEMPRE excluir: Horror, Thriller, Crime, War
-      - Si availableTime existe, SIEMPRE aplicar FILTER(?runtime <= availableTime)
-      - Usa OPTIONAL para propiedades que pueden no existir
-      - Usa FILTER con CONTAINS para búsqueda flexible de géneros
+      - Los géneros están en ESPAÑOL E INGLÉS: "Comedia"/"Comedy", "Acción"/"Action", "Terror"/"Horror", "Aventura"/"Adventure", "Animación"/"Animation"
+      - Si hasChildren = true, SIEMPRE excluir: Horror, Terror, Thriller, Crime, War
+      - Si availableTime existe, aplicar FILTER(?runtime <= availableTime + 30) para dar flexibilidad
+      - Usa OPTIONAL para propiedades que pueden no existir (releaseYear, averageRating)
+      - Usa FILTER con CONTAINS para búsqueda flexible de géneros (tanto español como inglés)
       - NO inventes propiedades que no existen en las ontologías
+      - Prioriza resultados con averageRating alto cuando existe
+      - Para filtros de género, usa AMBOS idiomas: CONTAINS(?genreName, "Comedy") || CONTAINS(?genreName, "Comedia")
       
       EJEMPLO (usuario con niños, 90 minutos, quiere algo divertido):
       PREFIX movie: <http://www.semanticweb.org/movierecommendation/ontologies/2025/movie-ontology#>
@@ -292,13 +399,21 @@ export class LlmService {
         OPTIONAL {{ ?m movie:releaseYear ?releaseYear }}
         OPTIONAL {{ ?m movie:averageRating ?averageRating }}
         
-        # FILTROS DE CONTEXTO
-        FILTER(?runtime <= 90)
-        FILTER(?genreName IN ("Animation", "Comedy", "Family", "Adventure"))
-        FILTER(?genreName NOT IN ("Horror", "Thriller", "Crime", "War"))
+        # FILTROS (bilingües español/inglés)
+        FILTER(?runtime <= 120)
+        FILTER(
+          CONTAINS(?genreName, "Animation") || CONTAINS(?genreName, "Animación") ||
+          CONTAINS(?genreName, "Comedy") || CONTAINS(?genreName, "Comedia") ||
+          CONTAINS(?genreName, "Family") || CONTAINS(?genreName, "Familia") ||
+          CONTAINS(?genreName, "Adventure") || CONTAINS(?genreName, "Aventura")
+        )
+        FILTER(
+          !CONTAINS(?genreName, "Horror") && !CONTAINS(?genreName, "Terror") &&
+          !CONTAINS(?genreName, "Thriller") && !CONTAINS(?genreName, "Crime")
+        )
       }}
-      ORDER BY DESC(?averageRating) ?runtime
-      LIMIT 10
+      ORDER BY DESC(?averageRating)
+      LIMIT 20
       
       Responde SOLO con la consulta SPARQL, sin explicaciones, sin markdown.
     `);

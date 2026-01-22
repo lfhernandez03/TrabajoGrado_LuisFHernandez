@@ -1,11 +1,1001 @@
 movieId,clean_title,year,tone,theme,plot_structure,historical_period,movie_type,inference_confidence
+1,Toy Story,1995,DramaticTone,,LinearNarrative,Historical,FeatureFilm,0.5666666666666667
+2,Jumanji,1995,DramaticTone,,LinearNarrative,Historical,FeatureFilm,0.5666666666666667
+3,Grumpier Old Men,1995,RomanticTone,,EpisodicNarrative,Historical,FeatureFilm,0.5666666666666667
+5,Father of the Bride Part II,1995,RomanticTone,Family|Love,EpisodicNarrative,Historical,FeatureFilm,0.7333333333333334
+6,Heat,1995,DarkTone,Betrayal,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+7,Sabrina,1995,RomanticTone,Family|Love,EpisodicNarrative,Historical,FeatureFilm,0.7333333333333334
+10,GoldenEye,1995,SuspensefulTone,Identity,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+11,"American President, The",1995,RomanticTone,Family|Love,EpisodicNarrative,Historical,FeatureFilm,0.7333333333333334
+16,Casino,1995,DarkTone,Power|Love,LinearNarrative,Historical,FeatureFilm,0.7333333333333334
+17,Sense and Sensibility,1995,DramaticTone|RomanticTone,Love,LinearNarrative,Historical,FeatureFilm,0.6666666666666666
+19,Ace Ventura: When Nature Calls,1995,ComedyTone,Family|Love,EpisodicNarrative,Historical,FeatureFilm,0.7333333333333334
+21,Get Shorty,1995,ComedyTone,,EpisodicNarrative,Historical,FeatureFilm,0.5666666666666667
+22,Copycat,1995,DarkTone,Family,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+24,Powder,1995,RomanticTone,Power|Love,LinearNarrative,Historical,FeatureFilm,0.7333333333333334
+25,Leaving Las Vegas,1995,DramaticTone,Family|Love,LinearNarrative,Historical,FeatureFilm,0.7333333333333334
+29,"City of Lost Children, The (Cité des enfants perdus, La)",1995,DramaticTone,Family,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+31,Dangerous Minds,1995,DramaticTone,,LinearNarrative,Historical,FeatureFilm,0.5666666666666667
+32,Twelve Monkeys (a.k.a. 12 Monkeys),1995,SuspensefulTone,Identity|Family|Freedom,NonLinearNarrative,Historical,FeatureFilm,0.7666666666666666
+34,Babe,1995,DramaticTone,Identity|Family,NonLinearNarrative,Historical,AnimatedFilm,0.7333333333333334
+36,Dead Man Walking,1995,DramaticTone,Justice|Family|Identity,LinearNarrative,Historical,FeatureFilm,0.7666666666666666
+39,Clueless,1995,RomanticTone,,EpisodicNarrative,Historical,FeatureFilm,0.5666666666666667
+44,Mortal Kombat,1995,DarkTone,Power,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+45,To Die For,1995,DramaticTone,Justice|Family,EpisodicNarrative,Historical,FeatureFilm,0.7333333333333334
+47,Seven (a.k.a. Se7en),1995,SuspensefulTone|DarkTone,,NonLinearNarrative,Historical,FeatureFilm,0.5333333333333333
+48,Pocahontas,1995,RomanticTone,Love,LinearNarrative,Historical,AnimatedFilm,0.7000000000000001
+50,"Usual Suspects, The",1995,DarkTone|SuspensefulTone,Power,NonLinearNarrative,Historical,FeatureFilm,0.6666666666666666
+52,Mighty Aphrodite,1995,ComedyTone,Family,EpisodicNarrative,Historical,FeatureFilm,0.7000000000000001
+58,"Postman, The (Postino, Il)",1994,RomanticTone,Love,EpisodicNarrative,Historical,FeatureFilm,0.7000000000000001
+60,"Indian in the Cupboard, The",1995,DramaticTone,,LinearNarrative,Historical,FeatureFilm,0.5666666666666667
+62,Mr. Holland's Opus,1995,RomanticTone,Family|Love,LinearNarrative,Historical,FeatureFilm,0.7333333333333334
+65,Bio-Dome,1996,ComedyTone,,EpisodicNarrative,Historical,FeatureFilm,0.5666666666666667
+70,From Dusk Till Dawn,1996,RomanticTone,Justice|Identity|Family,NonLinearNarrative,Historical,FeatureFilm,0.7666666666666666
+95,Broken Arrow,1996,SuspensefulTone,Betrayal|Family,LinearNarrative,Historical,FeatureFilm,0.7333333333333334
+104,Happy Gilmore,1996,RomanticTone,Family|Love,EpisodicNarrative,Historical,FeatureFilm,0.7333333333333334
+107,Muppet Treasure Island,1996,DramaticTone,,LinearNarrative,Historical,FeatureFilm,0.5666666666666667
 110,Braveheart,1995,RomanticTone,Love,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+111,Taxi Driver,1976,DarkTone,,LinearNarrative,Historical,FeatureFilm,0.5666666666666667
+112,Rumble in the Bronx (Hont faan kui),1995,RomanticTone,Revenge,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+135,Down Periscope,1996,ComedyTone,,EpisodicNarrative,Historical,FeatureFilm,0.5666666666666667
+141,"Birdcage, The",1996,DramaticTone,,EpisodicNarrative,Historical,FeatureFilm,0.5666666666666667
+145,Bad Boys,1995,SuspensefulTone,Power,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+150,Apollo 13,1995,DramaticTone,Survival,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+151,Rob Roy,1995,DarkTone,,LinearNarrative,Historical,FeatureFilm,0.5666666666666667
+153,Batman Forever,1995,DarkTone,Family|Power,LinearNarrative,Historical,FeatureFilm,0.7333333333333334
+158,Casper,1995,ComedyTone,Justice|Family|Power,LinearNarrative,Historical,FeatureFilm,0.7666666666666666
+160,Congo,1995,SuspensefulTone,Survival,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+161,Crimson Tide,1995,SuspensefulTone,Power|Family,LinearNarrative,Historical,FeatureFilm,0.7333333333333334
+163,Desperado,1995,DarkTone|DramaticTone,Revenge,LinearNarrative,Historical,FeatureFilm,0.6666666666666666
+165,Die Hard: With a Vengeance,1995,SuspensefulTone,Revenge,NonLinearNarrative,Historical,FeatureFilm,0.7000000000000001
+168,First Knight,1995,RomanticTone,Betrayal|Love,LinearNarrative,Historical,FeatureFilm,0.7333333333333334
+170,Hackers,1995,SuspensefulTone,Family,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+172,Johnny Mnemonic,1995,SuspensefulTone,,LinearNarrative,Historical,FeatureFilm,0.5666666666666667
+173,Judge Dredd,1995,DarkTone,Justice|Revenge|Power,LinearNarrative,Historical,FeatureFilm,0.7666666666666666
+180,Mallrats,1995,RomanticTone,Love,EpisodicNarrative,Historical,FeatureFilm,0.7000000000000001
+185,"Net, The",1995,SuspensefulTone,Family|Identity|Power,LinearNarrative,Historical,FeatureFilm,0.7666666666666666
+186,Nine Months,1995,RomanticTone,Love|Family,EpisodicNarrative,Historical,FeatureFilm,0.7333333333333334
+193,Showgirls,1995,DramaticTone,,LinearNarrative,Historical,FeatureFilm,0.5666666666666667
+196,Species,1995,RomanticTone,Love,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+198,Strange Days,1995,DarkTone,Family,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+204,Under Siege 2: Dark Territory,1995,DarkTone,Family|Power,LinearNarrative,Historical,FeatureFilm,0.7333333333333334
+208,Waterworld,1995,SuspensefulTone,Survival,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+216,Billy Madison,1995,DramaticTone,Family,EpisodicNarrative,Historical,FeatureFilm,0.7000000000000001
+223,Clerks,1994,ComedyTone,Family,EpisodicNarrative,Historical,FeatureFilm,0.7000000000000001
+224,Don Juan DeMarco,1995,RomanticTone,Love,EpisodicNarrative,Historical,FeatureFilm,0.7000000000000001
+225,Disclosure,1994,SuspensefulTone,Family,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+231,Dumb & Dumber (Dumb and Dumber),1994,RomanticTone,Love,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+235,Ed Wood,1994,ComedyTone,Family,EpisodicNarrative,Historical,FeatureFilm,0.7000000000000001
+236,French Kiss,1995,RomanticTone,Love,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+246,Hoop Dreams,1994,DramaticTone,,LinearNarrative,Historical,Documentary,0.5666666666666667
+252,I.Q.,1994,RomanticTone,,LinearNarrative,Historical,FeatureFilm,0.5666666666666667
+253,Interview with the Vampire: The Vampire Chronicles,1994,DramaticTone,Family,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+256,Junior,1994,ComedyTone,Family,EpisodicNarrative,Historical,FeatureFilm,0.7000000000000001
 260,Star Wars: Episode IV - A New Hope,1977,SuspensefulTone,Freedom|Power,LinearNarrative,Historical,FeatureFilm,0.7333333333333334
+261,Little Women,1994,RomanticTone,Love,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+265,Like Water for Chocolate (Como agua para chocolate),1992,RomanticTone,Love|Family,LinearNarrative,Historical,FeatureFilm,0.7333333333333334
+266,Legends of the Fall,1994,RomanticTone,Family|Love|Justice,LinearNarrative,Historical,FeatureFilm,0.7666666666666666
+272,"Madness of King George, The",1994,RomanticTone,Love,EpisodicNarrative,Historical,FeatureFilm,0.7000000000000001
+273,Mary Shelley's Frankenstein (Frankenstein),1994,DarkTone|RomanticTone,,LinearNarrative,Historical,FeatureFilm,0.5333333333333333
+277,Miracle on 34th Street,1994,RomanticTone,Family|Love,LinearNarrative,Historical,FeatureFilm,0.7333333333333334
+282,Nell,1994,DramaticTone,Family|Love,LinearNarrative,Historical,FeatureFilm,0.7333333333333334
+288,Natural Born Killers,1994,RomanticTone,Family|Love,LinearNarrative,Historical,FeatureFilm,0.7333333333333334
+292,Outbreak,1995,SuspensefulTone,,LinearNarrative,Historical,FeatureFilm,0.5666666666666667
+293,Léon: The Professional (a.k.a. The Professional) (Léon),1994,DarkTone|RomanticTone,Love|Revenge|Family,LinearNarrative,Historical,FeatureFilm,0.7333333333333334
 296,Pulp Fiction,1994,DarkTone,Redemption,NonLinearNarrative,Historical,FeatureFilm,0.7000000000000001
+300,Quiz Show,1994,SuspensefulTone,Justice|Family,LinearNarrative,Historical,FeatureFilm,0.7333333333333334
+303,"Quick and the Dead, The",1995,SuspensefulTone,Revenge|Family|Power,LinearNarrative,Historical,FeatureFilm,0.7666666666666666
+315,"Specialist, The",1994,DarkTone,Revenge,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+316,Stargate,1994,SuspensefulTone,Family,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+317,"Santa Clause, The",1994,RomanticTone,Family|Love,EpisodicNarrative,Historical,FeatureFilm,0.7333333333333334
 318,"Shawshank Redemption, The",1994,DarkTone,Freedom|Redemption|Family,LinearNarrative,Historical,FeatureFilm,0.7666666666666666
-356,Forrest Gump,1994,RomanticTone,Family|Justice|Love,EpisodicNarrative,Historical,FeatureFilm,0.7666666666666666
+327,Tank Girl,1995,SuspensefulTone,Power,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+329,Star Trek: Generations,1994,DramaticTone,Love,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+333,Tommy Boy,1995,ComedyTone,,EpisodicNarrative,Historical,FeatureFilm,0.5666666666666667
+337,What's Eating Gilbert Grape,1993,DramaticTone|RomanticTone,Family|Love,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+339,While You Were Sleeping,1995,RomanticTone,Family|Love,EpisodicNarrative,Historical,FeatureFilm,0.7333333333333334
+342,Muriel's Wedding,1994,RomanticTone,Family|Power|Love,EpisodicNarrative,Historical,FeatureFilm,0.7666666666666666
+344,Ace Ventura: Pet Detective,1994,ComedyTone,Love,EpisodicNarrative,Historical,FeatureFilm,0.7000000000000001
+345,"Adventures of Priscilla, Queen of the Desert, The",1994,ComedyTone,Identity|Family,NonLinearNarrative,Historical,FeatureFilm,0.7333333333333334
+348,Bullets Over Broadway,1994,RomanticTone,Love,EpisodicNarrative,Historical,FeatureFilm,0.7000000000000001
+349,Clear and Present Danger,1994,SuspensefulTone,Family|Power,LinearNarrative,Historical,FeatureFilm,0.7333333333333334
+350,"Client, The",1994,SuspensefulTone,Justice|Family|Love,LinearNarrative,Historical,FeatureFilm,0.7666666666666666
+353,"Crow, The",1994,DarkTone,Revenge|Justice|Family,LinearNarrative,Historical,FeatureFilm,0.7666666666666666
+355,"Flintstones, The",1994,DramaticTone,Family|Justice,LinearNarrative,Historical,AnimatedFilm,0.7333333333333334
+356,Forrest Gump,1994,ComedyTone|RomanticTone,Family|Justice|Love,EpisodicNarrative,Historical,FeatureFilm,0.7333333333333334
+357,Four Weddings and a Funeral,1994,RomanticTone,Love,EpisodicNarrative,Historical,FeatureFilm,0.7000000000000001
+362,"Jungle Book, The",1994,RomanticTone,Family|Love,LinearNarrative,Historical,FeatureFilm,0.7333333333333334
+364,"Lion King, The",1994,DramaticTone,Family|Redemption|Power,LinearNarrative,Historical,FeatureFilm,0.7666666666666666
+367,"Mask, The",1994,ComedyTone,Identity|Power,LinearNarrative,Historical,FeatureFilm,0.7333333333333334
+368,Maverick,1994,ComedyTone,Family,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+370,Naked Gun 33 1/3: The Final Insult,1994,ComedyTone,Family,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+376,"River Wild, The",1994,SuspensefulTone|RomanticTone,Family|Love|Freedom,LinearNarrative,Historical,FeatureFilm,0.7333333333333334
+377,Speed,1994,SuspensefulTone,,LinearNarrative,Historical,FeatureFilm,0.5666666666666667
+380,True Lies,1994,SuspensefulTone,,LinearNarrative,Historical,FeatureFilm,0.5666666666666667
+410,Addams Family Values,1993,RomanticTone,Family|Love,LinearNarrative,Historical,AnimatedFilm,0.7333333333333334
+413,Airheads,1994,ComedyTone,Family,EpisodicNarrative,Historical,FeatureFilm,0.7000000000000001
+420,Beverly Hills Cop III,1994,SuspensefulTone,,LinearNarrative,Historical,FeatureFilm,0.5666666666666667
+431,Carlito's Way,1993,DarkTone|RomanticTone,Justice|Identity|Family,NonLinearNarrative,Historical,FeatureFilm,0.7333333333333334
+432,City Slickers II: The Legend of Curly's Gold,1994,DramaticTone,,LinearNarrative,Historical,FeatureFilm,0.5666666666666667
+434,Cliffhanger,1993,SuspensefulTone,Family,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+435,Coneheads,1993,ComedyTone,Justice|Family,EpisodicNarrative,Historical,FeatureFilm,0.7333333333333334
+440,Dave,1993,ComedyTone,Family,EpisodicNarrative,Historical,FeatureFilm,0.7000000000000001
+441,Dazed and Confused,1993,DramaticTone,,EpisodicNarrative,Historical,FeatureFilm,0.5666666666666667
+442,Demolition Man,1993,SuspensefulTone,Betrayal|Family|Power,LinearNarrative,Historical,FeatureFilm,0.7666666666666666
+454,"Firm, The",1993,SuspensefulTone,Justice|Love,LinearNarrative,Historical,FeatureFilm,0.7333333333333334
+455,Free Willy,1993,RomanticTone,Freedom|Love,LinearNarrative,Historical,FeatureFilm,0.7333333333333334
+457,"Fugitive, The",1993,SuspensefulTone,Betrayal|Family|Power,NonLinearNarrative,Historical,FeatureFilm,0.7666666666666666
+466,Hot Shots! Part Deux,1993,ComedyTone,Family|Freedom,LinearNarrative,Historical,FeatureFilm,0.7333333333333334
+471,"Hudsucker Proxy, The",1994,ComedyTone,Power,EpisodicNarrative,Historical,FeatureFilm,0.7000000000000001
+474,In the Line of Fire,1993,SuspensefulTone,Family,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
 480,Jurassic Park,1993,SuspensefulTone,,LinearNarrative,Historical,FeatureFilm,0.5666666666666667
+485,Last Action Hero,1993,DarkTone,,LinearNarrative,Historical,FeatureFilm,0.5666666666666667
+494,Executive Decision,1996,SuspensefulTone,Survival|Betrayal|Power,NonLinearNarrative,Historical,FeatureFilm,0.7666666666666666
+497,Much Ado About Nothing,1993,RomanticTone,Family|Love,EpisodicNarrative,Historical,FeatureFilm,0.7333333333333334
+500,Mrs. Doubtfire,1993,RomanticTone,Love|Identity,EpisodicNarrative,Historical,FeatureFilm,0.7333333333333334
+508,Philadelphia,1993,DramaticTone,Justice,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+509,"Piano, The",1993,RomanticTone|DramaticTone,Love|Family|Survival,LinearNarrative,Historical,FeatureFilm,0.7333333333333334
+520,Robin Hood: Men in Tights,1993,ComedyTone,,EpisodicNarrative,Historical,FeatureFilm,0.5666666666666667
+524,Rudy,1993,DramaticTone|RomanticTone,Family|Love,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
 527,Schindler's List,1993,DarkTone,Justice,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+529,Searching for Bobby Fischer,1993,DramaticTone,,LinearNarrative,Historical,FeatureFilm,0.5666666666666667
+539,Sleepless in Seattle,1993,RomanticTone,Love,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+541,Blade Runner,1982,DarkTone,,LinearNarrative,Historical,FeatureFilm,0.5666666666666667
+543,So I Married an Axe Murderer,1993,ComedyTone,Family,EpisodicNarrative,Historical,FeatureFilm,0.7000000000000001
+551,"Nightmare Before Christmas, The",1993,DramaticTone,,LinearNarrative,Historical,AnimatedFilm,0.5666666666666667
+552,"Three Musketeers, The",1993,SuspensefulTone,,LinearNarrative,Historical,FeatureFilm,0.5666666666666667
+553,Tombstone,1993,SuspensefulTone,Justice,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+555,True Romance,1993,RomanticTone|SuspensefulTone,Love,LinearNarrative,Historical,FeatureFilm,0.6666666666666666
+585,"Brady Bunch Movie, The",1995,ComedyTone,Family,EpisodicNarrative,Historical,FeatureFilm,0.7000000000000001
+586,Home Alone,1990,ComedyTone,Family|Love,LinearNarrative,Historical,AnimatedFilm,0.7333333333333334
+587,Ghost,1990,RomanticTone,Power|Love,EpisodicNarrative,Historical,FeatureFilm,0.7333333333333334
+588,Aladdin,1992,RomanticTone,Love,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
 589,Terminator 2: Judgment Day,1991,DarkTone,,LinearNarrative,Historical,FeatureFilm,0.5666666666666667
+590,Dances with Wolves,1990,DramaticTone,Identity|Family|Power,LinearNarrative,Historical,FeatureFilm,0.7666666666666666
+592,Batman,1989,DarkTone,Identity|Power,LinearNarrative,Historical,FeatureFilm,0.7333333333333334
 593,"Silence of the Lambs, The",1991,DarkTone,Identity,NonLinearNarrative,Historical,FeatureFilm,0.7000000000000001
+594,Snow White and the Seven Dwarfs,1937,DarkTone,Family,LinearNarrative,Historical,AnimatedFilm,0.7000000000000001
+595,Beauty and the Beast,1991,SuspensefulTone|RomanticTone,,LinearNarrative,Historical,AnimatedFilm,0.5333333333333333
+596,Pinocchio,1940,DramaticTone,Freedom,LinearNarrative,Historical,AnimatedFilm,0.7000000000000001
+597,Pretty Woman,1990,RomanticTone,Freedom|Love,EpisodicNarrative,Historical,FeatureFilm,0.7333333333333334
+608,Fargo,1996,DarkTone,,EpisodicNarrative,Historical,FeatureFilm,0.5666666666666667
+610,Heavy Metal,1981,SuspensefulTone,Family,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+616,"Aristocats, The",1970,DramaticTone,,LinearNarrative,Historical,AnimatedFilm,0.5666666666666667
+628,Primal Fear,1996,SuspensefulTone,Justice|Power,LinearNarrative,Historical,FeatureFilm,0.7333333333333334
+637,Sgt. Bilko,1996,ComedyTone,Revenge,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+647,Courage Under Fire,1996,SuspensefulTone,Power,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+648,Mission: Impossible,1996,SuspensefulTone,Identity,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+653,Dragonheart,1996,DarkTone,Revenge,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+661,James and the Giant Peach,1996,RomanticTone,Family|Love,LinearNarrative,Historical,FeatureFilm,0.7333333333333334
+671,Mystery Science Theater 3000: The Movie,1996,ComedyTone,,LinearNarrative,Historical,FeatureFilm,0.5666666666666667
+673,Space Jam,1996,ComedyTone,,LinearNarrative,Historical,FeatureFilm,0.5666666666666667
+708,"Truth About Cats & Dogs, The",1996,ComedyTone,,EpisodicNarrative,Historical,FeatureFilm,0.5666666666666667
+719,Multiplicity,1996,ComedyTone,Family,EpisodicNarrative,Historical,FeatureFilm,0.7000000000000001
+720,Wallace & Gromit: The Best of Aardman Animation,1996,DramaticTone,,EpisodicNarrative,Historical,FeatureFilm,0.5666666666666667
+724,"Craft, The",1996,DramaticTone|RomanticTone,Love,LinearNarrative,Historical,FeatureFilm,0.6666666666666666
+733,"Rock, The",1996,SuspensefulTone,Family|Freedom,LinearNarrative,Historical,FeatureFilm,0.7333333333333334
+736,Twister,1996,RomanticTone,Love,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+741,Ghost in the Shell (Kôkaku kidôtai),1995,DarkTone,,LinearNarrative,Historical,AnimatedFilm,0.5666666666666667
+743,Spy Hard,1996,ComedyTone,,EpisodicNarrative,Historical,FeatureFilm,0.5666666666666667
+745,Wallace & Gromit: A Close Shave,1995,RomanticTone,Love|Family,LinearNarrative,Historical,ShortFilm,0.7333333333333334
+750,Dr. Strangelove or: How I Learned to Stop Worrying and Love the Bomb,1964,ComedyTone,Love,EpisodicNarrative,Historical,FeatureFilm,0.7000000000000001
+762,Striptease,1996,ComedyTone|RomanticTone,Family|Justice|Love,EpisodicNarrative,Historical,FeatureFilm,0.7333333333333334
+778,Trainspotting,1996,DarkTone|ComedyTone,,EpisodicNarrative,Historical,FeatureFilm,0.5333333333333333
+780,Independence Day (a.k.a. ID4),1996,SuspensefulTone|DramaticTone,Justice|Power,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+783,"Hunchback of Notre Dame, The",1996,DramaticTone,,LinearNarrative,Historical,AnimatedFilm,0.5666666666666667
+784,"Cable Guy, The",1996,ComedyTone|DarkTone,Family,EpisodicNarrative,Historical,FeatureFilm,0.6666666666666666
+785,Kingpin,1996,RomanticTone,Family|Love,EpisodicNarrative,Historical,FeatureFilm,0.7333333333333334
+786,Eraser,1996,DramaticTone,Betrayal|Identity|Family,LinearNarrative,Historical,FeatureFilm,0.7666666666666666
+788,"Nutty Professor, The",1996,ComedyTone,Family|Love,EpisodicNarrative,Historical,FeatureFilm,0.7333333333333334
+802,Phenomenon,1996,DramaticTone,Power,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+805,"Time to Kill, A",1996,DramaticTone|SuspensefulTone,Justice|Redemption|Family,LinearNarrative,Historical,FeatureFilm,0.7333333333333334
+832,Ransom,1996,RomanticTone,Power|Love,LinearNarrative,Historical,FeatureFilm,0.7333333333333334
+837,Matilda,1996,ComedyTone|RomanticTone,Family|Love,LinearNarrative,Historical,AnimatedFilm,0.7000000000000001
+838,Emma,1996,ComedyTone,Justice,EpisodicNarrative,Historical,FeatureFilm,0.7000000000000001
+849,Escape from L.A.,1996,SuspensefulTone,Family|Freedom,LinearNarrative,Historical,FeatureFilm,0.7333333333333334
+852,Tin Cup,1996,RomanticTone,Family|Love,EpisodicNarrative,Historical,FeatureFilm,0.7333333333333334
+858,"Godfather, The",1972,DramaticTone|DarkTone,Family|Revenge|Justice,LinearNarrative,Historical,FeatureFilm,0.7333333333333334
+880,"Island of Dr. Moreau, The",1996,DramaticTone,Survival,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+898,"Philadelphia Story, The",1940,RomanticTone,Love|Family,EpisodicNarrative,Historical,FeatureFilm,0.7333333333333334
+899,Singin' in the Rain,1952,RomanticTone,Family,EpisodicNarrative,Historical,FeatureFilm,0.7000000000000001
+902,Breakfast at Tiffany's,1961,RomanticTone,Love,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+903,Vertigo,1958,DarkTone|SuspensefulTone,Family|Love,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+904,Rear Window,1954,SuspensefulTone,,NonLinearNarrative,Historical,FeatureFilm,0.5666666666666667
+908,North by Northwest,1959,RomanticTone,Love|Identity|Betrayal,LinearNarrative,Historical,FeatureFilm,0.7666666666666666
+909,"Apartment, The",1960,RomanticTone,Love,EpisodicNarrative,Historical,FeatureFilm,0.7000000000000001
+910,Some Like It Hot,1959,ComedyTone,Identity|Betrayal|Family,LinearNarrative,Historical,FeatureFilm,0.7666666666666666
+912,Casablanca,1942,DarkTone|RomanticTone,Power|Freedom|Love,LinearNarrative,Historical,FeatureFilm,0.7333333333333334
+913,"Maltese Falcon, The",1941,DarkTone|RomanticTone,Love,LinearNarrative,Historical,FeatureFilm,0.6666666666666666
+914,My Fair Lady,1964,ComedyTone,,LinearNarrative,Historical,FeatureFilm,0.5666666666666667
+915,Sabrina,1954,RomanticTone,Family|Love,EpisodicNarrative,Historical,FeatureFilm,0.7333333333333334
+916,Roman Holiday,1953,RomanticTone,Identity|Love,EpisodicNarrative,Historical,FeatureFilm,0.7333333333333334
+919,"Wizard of Oz, The",1939,DramaticTone,Identity,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+920,Gone with the Wind,1939,RomanticTone,Love|Power|Freedom,LinearNarrative,Historical,FeatureFilm,0.7666666666666666
+922,Sunset Blvd. (a.k.a. Sunset Boulevard),1950,DramaticTone,,LinearNarrative,Historical,FeatureFilm,0.5666666666666667
+923,Citizen Kane,1941,DramaticTone,Family,NonLinearNarrative,Historical,FeatureFilm,0.7000000000000001
+924,2001: A Space Odyssey,1968,DramaticTone,,LinearNarrative,Historical,FeatureFilm,0.5666666666666667
+953,It's a Wonderful Life,1946,DramaticTone,Family,NonLinearNarrative,Historical,AnimatedFilm,0.7000000000000001
+968,Night of the Living Dead,1968,RomanticTone,Love|Family,LinearNarrative,Historical,FeatureFilm,0.7333333333333334
+969,"African Queen, The",1951,RomanticTone,Family|Love,LinearNarrative,Historical,FeatureFilm,0.7333333333333334
+1020,Cool Runnings,1993,ComedyTone,Family,EpisodicNarrative,Historical,FeatureFilm,0.7000000000000001
+1021,Angels in the Outfield,1994,DramaticTone,,LinearNarrative,Historical,AnimatedFilm,0.5666666666666667
+1022,Cinderella,1950,DramaticTone|RomanticTone,Family|Love,LinearNarrative,Historical,AnimatedFilm,0.7000000000000001
+1027,Robin Hood: Prince of Thieves,1991,DramaticTone,,LinearNarrative,Historical,FeatureFilm,0.5666666666666667
+1028,Mary Poppins,1964,RomanticTone,Family|Love,LinearNarrative,Historical,AnimatedFilm,0.7333333333333334
+1029,Dumbo,1941,DramaticTone,Family,LinearNarrative,Historical,AnimatedFilm,0.7000000000000001
+1032,Alice in Wonderland,1951,DramaticTone,Family,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+1035,"Sound of Music, The",1965,RomanticTone,Freedom|Love,LinearNarrative,Historical,FeatureFilm,0.7333333333333334
+1036,Die Hard,1988,RomanticTone,Love,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+1042,That Thing You Do!,1996,ComedyTone,Family,EpisodicNarrative,Historical,FeatureFilm,0.7000000000000001
+1047,"Long Kiss Goodnight, The",1996,SuspensefulTone,Identity|Family|Freedom,LinearNarrative,Historical,FeatureFilm,0.7666666666666666
+1059,William Shakespeare's Romeo + Juliet,1996,RomanticTone,Love,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+1060,Swingers,1996,ComedyTone,,EpisodicNarrative,Historical,FeatureFilm,0.5666666666666667
+1061,Sleepers,1996,SuspensefulTone,Justice|Identity|Family,NonLinearNarrative,Historical,FeatureFilm,0.7666666666666666
+1073,Willy Wonka & the Chocolate Factory,1971,RomanticTone|DramaticTone,Family|Love,LinearNarrative,Historical,AnimatedFilm,0.7000000000000001
+1077,Sleeper,1973,ComedyTone,Power,EpisodicNarrative,Historical,FeatureFilm,0.7000000000000001
+1079,"Fish Called Wanda, A",1988,ComedyTone,Justice,EpisodicNarrative,Historical,FeatureFilm,0.7000000000000001
+1080,Monty Python's Life of Brian,1979,ComedyTone,Family|Love,EpisodicNarrative,Historical,FeatureFilm,0.7333333333333334
+1084,Bonnie and Clyde,1967,RomanticTone,Love|Family,LinearNarrative,Historical,FeatureFilm,0.7333333333333334
+1088,Dirty Dancing,1987,RomanticTone,Family|Love,LinearNarrative,Historical,FeatureFilm,0.7333333333333334
+1089,Reservoir Dogs,1992,SuspensefulTone,Betrayal|Freedom,NonLinearNarrative,Historical,FeatureFilm,0.7333333333333334
+1090,Platoon,1986,DramaticTone|SuspensefulTone,Family,LinearNarrative,Historical,FeatureFilm,0.6666666666666666
+1092,Basic Instinct,1992,DarkTone,Love,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+1093,"Doors, The",1991,DramaticTone,Survival|Family,LinearNarrative,Historical,FeatureFilm,0.7333333333333334
+1094,"Crying Game, The",1992,RomanticTone,Love,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+1097,E.T. the Extra-Terrestrial,1982,RomanticTone,Justice|Family|Love,LinearNarrative,Historical,AnimatedFilm,0.7666666666666666
+1101,Top Gun,1986,RomanticTone,Identity|Family|Love,LinearNarrative,Historical,FeatureFilm,0.7666666666666666
+1120,"People vs. Larry Flynt, The",1996,RomanticTone,Justice|Freedom|Love,EpisodicNarrative,Historical,FeatureFilm,0.7666666666666666
+1127,"Abyss, The",1989,SuspensefulTone,Justice,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+1129,Escape from New York,1981,SuspensefulTone,Freedom|Family,LinearNarrative,Historical,FeatureFilm,0.7333333333333334
+1136,Monty Python and the Holy Grail,1975,ComedyTone,Family,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+1148,Wallace & Gromit: The Wrong Trousers,1993,RomanticTone,Betrayal|Power|Love,LinearNarrative,Historical,ShortFilm,0.7666666666666666
+1172,Cinema Paradiso (Nuovo cinema Paradiso),1989,RomanticTone,Identity|Family|Love,NonLinearNarrative,Historical,FeatureFilm,0.7666666666666666
+1179,"Grifters, The",1990,DarkTone,,LinearNarrative,Historical,FeatureFilm,0.5666666666666667
+1183,"English Patient, The",1996,RomanticTone,Identity|Family|Love,LinearNarrative,Historical,FeatureFilm,0.7666666666666666
+1193,One Flew Over the Cuckoo's Nest,1975,DramaticTone,Family,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+1196,Star Wars: Episode V - The Empire Strikes Back,1980,SuspensefulTone,,LinearNarrative,Historical,FeatureFilm,0.5666666666666667
+1197,"Princess Bride, The",1987,RomanticTone,Family|Revenge|Identity,LinearNarrative,Historical,FeatureFilm,0.7666666666666666
+1198,Raiders of the Lost Ark (Indiana Jones and the Raiders of the Lost Ark),1981,DramaticTone,,LinearNarrative,Historical,FeatureFilm,0.5666666666666667
+1199,Brazil,1985,ComedyTone,,LinearNarrative,Historical,FeatureFilm,0.5666666666666667
+1200,Aliens,1986,ComedyTone,Justice,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+1201,"Good, the Bad and the Ugly, The (Buono, il brutto, il cattivo, Il)",1966,SuspensefulTone,Justice,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+1203,12 Angry Men,1957,DramaticTone,Justice,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+1204,Lawrence of Arabia,1962,DramaticTone,Justice,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+1206,"Clockwork Orange, A",1971,ComedyTone|DarkTone,Love,LinearNarrative,Historical,FeatureFilm,0.6666666666666666
+1207,To Kill a Mockingbird,1962,DramaticTone|RomanticTone,Justice|Family|Love,LinearNarrative,Historical,FeatureFilm,0.7333333333333334
+1208,Apocalypse Now,1979,DarkTone,,LinearNarrative,Historical,FeatureFilm,0.5666666666666667
+1210,Star Wars: Episode VI - Return of the Jedi,1983,RomanticTone,Family|Love,LinearNarrative,Historical,FeatureFilm,0.7333333333333334
+1213,Goodfellas,1990,DarkTone,Family,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+1214,Alien,1979,DarkTone,,LinearNarrative,Historical,FeatureFilm,0.5666666666666667
+1215,Army of Darkness,1993,ComedyTone,Love,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+1219,Psycho,1960,SuspensefulTone,Family|Justice|Identity,LinearNarrative,Historical,FeatureFilm,0.7666666666666666
+1220,"Blues Brothers, The",1980,SuspensefulTone,Family,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+1221,"Godfather: Part II, The",1974,DarkTone,Revenge|Justice|Betrayal,LinearNarrative,Historical,FeatureFilm,0.7666666666666666
+1222,Full Metal Jacket,1987,SuspensefulTone,,LinearNarrative,Historical,FeatureFilm,0.5666666666666667
+1223,"Grand Day Out with Wallace and Gromit, A",1989,RomanticTone,Love,LinearNarrative,Historical,ShortFilm,0.7000000000000001
+1225,Amadeus,1984,DramaticTone,Love,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+1228,Raging Bull,1980,DramaticTone,,LinearNarrative,Historical,FeatureFilm,0.5666666666666667
+1230,Annie Hall,1977,RomanticTone|ComedyTone,Family|Love,EpisodicNarrative,Historical,FeatureFilm,0.7000000000000001
+1233,"Boot, Das (Boat, The)",1981,SuspensefulTone,,LinearNarrative,Historical,FeatureFilm,0.5666666666666667
+1234,"Sting, The",1973,ComedyTone,,EpisodicNarrative,Historical,FeatureFilm,0.5666666666666667
+1235,Harold and Maude,1971,RomanticTone,Love,EpisodicNarrative,Historical,FeatureFilm,0.7000000000000001
+1240,"Terminator, The",1984,DarkTone,,LinearNarrative,Historical,FeatureFilm,0.5666666666666667
+1242,Glory,1989,DramaticTone,,LinearNarrative,Historical,FeatureFilm,0.5666666666666667
+1244,Manhattan,1979,RomanticTone,Love,EpisodicNarrative,Historical,FeatureFilm,0.7000000000000001
+1246,Dead Poets Society,1989,DramaticTone|SuspensefulTone,,LinearNarrative,Historical,FeatureFilm,0.5333333333333333
+1247,"Graduate, The",1967,RomanticTone,Family|Love,EpisodicNarrative,Historical,FeatureFilm,0.7333333333333334
+1249,"Femme Nikita, La (Nikita)",1990,RomanticTone,Identity|Love,LinearNarrative,Historical,FeatureFilm,0.7333333333333334
+1250,"Bridge on the River Kwai, The",1957,DramaticTone,Family,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+1252,Chinatown,1974,DarkTone,Family,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+1257,Better Off Dead...,1985,ComedyTone,,EpisodicNarrative,Historical,FeatureFilm,0.5666666666666667
+1258,"Shining, The",1980,DarkTone,Family|Power|Love,LinearNarrative,Historical,FeatureFilm,0.7666666666666666
+1259,Stand by Me,1986,DramaticTone,,NonLinearNarrative,Historical,FeatureFilm,0.5666666666666667
+1261,Evil Dead II (Dead by Dawn),1987,ComedyTone,Justice|Love,LinearNarrative,Historical,FeatureFilm,0.7333333333333334
+1262,"Great Escape, The",1963,SuspensefulTone,Freedom|Family,LinearNarrative,Historical,FeatureFilm,0.7333333333333334
+1263,"Deer Hunter, The",1978,RomanticTone,Justice|Family|Freedom,LinearNarrative,Historical,FeatureFilm,0.7666666666666666
+1265,Groundhog Day,1993,ComedyTone,,EpisodicNarrative,Historical,FeatureFilm,0.5666666666666667
+1266,Unforgiven,1992,DramaticTone,Revenge|Justice,LinearNarrative,Historical,FeatureFilm,0.7333333333333334
+1267,"Manchurian Candidate, The",1962,SuspensefulTone,,LinearNarrative,Historical,FeatureFilm,0.5666666666666667
+1269,Arsenic and Old Lace,1944,RomanticTone,Family|Love,EpisodicNarrative,Historical,FeatureFilm,0.7333333333333334
+1270,Back to the Future,1985,RomanticTone,Identity|Love,LinearNarrative,Historical,FeatureFilm,0.7333333333333334
+1271,Fried Green Tomatoes,1991,ComedyTone,,EpisodicNarrative,Historical,FeatureFilm,0.5666666666666667
+1272,Patton,1970,DramaticTone,,LinearNarrative,Historical,FeatureFilm,0.5666666666666667
+1274,Akira,1988,SuspensefulTone,Power,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+1275,Highlander,1986,SuspensefulTone,Family|Power,LinearNarrative,Historical,FeatureFilm,0.7333333333333334
+1276,Cool Hand Luke,1967,DramaticTone|RomanticTone,Family|Freedom|Love,LinearNarrative,Historical,FeatureFilm,0.7333333333333334
+1278,Young Frankenstein,1974,ComedyTone,,EpisodicNarrative,Historical,FeatureFilm,0.5666666666666667
+1282,Fantasia,1940,DramaticTone,Family,LinearNarrative,Historical,AnimatedFilm,0.7000000000000001
+1285,Heathers,1989,ComedyTone|DarkTone,,EpisodicNarrative,Historical,FeatureFilm,0.5333333333333333
+1287,Ben-Hur,1959,DramaticTone,Family|Revenge|Redemption,LinearNarrative,Historical,FeatureFilm,0.7666666666666666
+1288,This Is Spinal Tap,1984,ComedyTone,,EpisodicNarrative,Historical,FeatureFilm,0.5666666666666667
+1291,Indiana Jones and the Last Crusade,1989,RomanticTone,Family|Love,LinearNarrative,Historical,FeatureFilm,0.7333333333333334
+1293,Gandhi,1982,DarkTone,Family|Freedom,LinearNarrative,Historical,FeatureFilm,0.7333333333333334
+1299,"Killing Fields, The",1984,DarkTone,,LinearNarrative,Historical,FeatureFilm,0.5666666666666667
+1302,Field of Dreams,1989,DramaticTone,,LinearNarrative,Historical,AnimatedFilm,0.5666666666666667
+1304,Butch Cassidy and the Sundance Kid,1969,SuspensefulTone,Freedom,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+1307,When Harry Met Sally...,1989,RomanticTone,Love|Family,EpisodicNarrative,Historical,FeatureFilm,0.7333333333333334
+1320,Alien³ (a.k.a. Alien 3),1992,DramaticTone,Redemption|Family,LinearNarrative,Historical,FeatureFilm,0.7333333333333334
+1333,"Birds, The",1963,SuspensefulTone,Love,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+1339,Dracula (Bram Stoker's Dracula),1992,DramaticTone,,LinearNarrative,Historical,FeatureFilm,0.5666666666666667
+1345,Carrie,1976,RomanticTone,Family|Love|Revenge,LinearNarrative,Historical,FeatureFilm,0.7666666666666666
+1347,"Nightmare on Elm Street, A",1984,SuspensefulTone,Family,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+1356,Star Trek: First Contact,1996,SuspensefulTone,,LinearNarrative,Historical,FeatureFilm,0.5666666666666667
+1358,Sling Blade,1996,DramaticTone,Family,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+1367,101 Dalmatians,1996,DramaticTone,,LinearNarrative,Historical,FeatureFilm,0.5666666666666667
+1370,Die Hard 2,1990,SuspensefulTone,Power,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+1371,Star Trek: The Motion Picture,1979,DramaticTone,,LinearNarrative,Historical,FeatureFilm,0.5666666666666667
+1372,Star Trek VI: The Undiscovered Country,1991,RomanticTone,Justice|Love,LinearNarrative,Historical,FeatureFilm,0.7333333333333334
+1373,Star Trek V: The Final Frontier,1989,RomanticTone,Freedom|Love,LinearNarrative,Historical,FeatureFilm,0.7333333333333334
+1374,Star Trek II: The Wrath of Khan,1982,DarkTone|RomanticTone,Revenge|Love,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+1375,Star Trek III: The Search for Spock,1984,RomanticTone,Family|Love,LinearNarrative,Historical,FeatureFilm,0.7333333333333334
+1376,Star Trek IV: The Voyage Home,1986,RomanticTone,,LinearNarrative,Historical,FeatureFilm,0.5666666666666667
+1377,Batman Returns,1992,DarkTone,Power|Revenge,LinearNarrative,Historical,FeatureFilm,0.7333333333333334
+1380,Grease,1978,RomanticTone,Love,EpisodicNarrative,Historical,FeatureFilm,0.7000000000000001
+1387,Jaws,1975,SuspensefulTone,Family,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+1391,Mars Attacks!,1996,ComedyTone,,LinearNarrative,Historical,FeatureFilm,0.5666666666666667
+1393,Jerry Maguire,1996,DramaticTone,Family,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+1394,Raising Arizona,1987,DramaticTone,Family|Love,EpisodicNarrative,Historical,FeatureFilm,0.7333333333333334
+1396,Sneakers,1992,SuspensefulTone,Family,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+1405,Beavis and Butt-Head Do America,1996,ComedyTone,,LinearNarrative,Historical,FeatureFilm,0.5666666666666667
+1407,Scream,1996,DarkTone,,EpisodicNarrative,Historical,FeatureFilm,0.5666666666666667
+1408,"Last of the Mohicans, The",1992,RomanticTone,Love|Revenge|Family,LinearNarrative,Historical,FeatureFilm,0.7666666666666666
+1466,Donnie Brasco,1997,RomanticTone,Love,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+1476,Private Parts,1997,ComedyTone,Family,EpisodicNarrative,Historical,FeatureFilm,0.7000000000000001
+1479,"Saint, The",1997,SuspensefulTone,Power,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+1485,Liar Liar,1997,RomanticTone,Justice|Family|Love,EpisodicNarrative,Historical,FeatureFilm,0.7666666666666666
+1499,Anaconda,1997,SuspensefulTone,,LinearNarrative,Historical,FeatureFilm,0.5666666666666667
+1500,Grosse Pointe Blank,1997,ComedyTone,,EpisodicNarrative,Historical,FeatureFilm,0.5666666666666667
+1513,Romy and Michele's High School Reunion,1997,ComedyTone,Family|Love,EpisodicNarrative,Historical,FeatureFilm,0.7333333333333334
+1517,Austin Powers: International Man of Mystery,1997,ComedyTone,Power,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+1527,"Fifth Element, The",1997,ComedyTone,,LinearNarrative,Historical,FeatureFilm,0.5666666666666667
+1544,"Lost World: Jurassic Park, The",1997,SuspensefulTone|RomanticTone,Family|Love,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+1552,Con Air,1997,DarkTone,Family,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+1562,Batman & Robin,1997,DarkTone,Identity|Power,LinearNarrative,Historical,FeatureFilm,0.7333333333333334
+1566,Hercules,1997,DramaticTone,,LinearNarrative,Historical,FeatureFilm,0.5666666666666667
+1569,My Best Friend's Wedding,1997,RomanticTone,Love,EpisodicNarrative,Historical,FeatureFilm,0.7000000000000001
+1573,Face/Off,1997,SuspensefulTone,Family|Revenge|Freedom,NonLinearNarrative,Historical,FeatureFilm,0.7666666666666666
+1580,Men in Black (a.k.a. MIB),1997,SuspensefulTone,Identity|Power,LinearNarrative,Historical,FeatureFilm,0.7333333333333334
+1584,Contact,1997,DramaticTone,Justice,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+1587,Conan the Barbarian,1982,DarkTone,Family,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+1591,Spawn,1997,SuspensefulTone,,LinearNarrative,Historical,FeatureFilm,0.5666666666666667
+1597,Conspiracy Theory,1997,SuspensefulTone,Power,NonLinearNarrative,Historical,FeatureFilm,0.7000000000000001
+1608,Air Force One,1997,SuspensefulTone,Family,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+1610,"Hunt for Red October, The",1990,SuspensefulTone,,LinearNarrative,Historical,FeatureFilm,0.5666666666666667
+1614,In & Out,1997,ComedyTone,,EpisodicNarrative,Historical,FeatureFilm,0.5666666666666667
+1617,L.A. Confidential,1997,DarkTone,Power,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+1625,"Game, The",1997,SuspensefulTone,Power,NonLinearNarrative,Historical,FeatureFilm,0.7000000000000001
+1639,Chasing Amy,1997,RomanticTone,Love,EpisodicNarrative,Historical,FeatureFilm,0.7000000000000001
+1641,"Full Monty, The",1997,ComedyTone,Family,EpisodicNarrative,Historical,FeatureFilm,0.7000000000000001
+1644,I Know What You Did Last Summer,1997,DarkTone,Revenge,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+1645,The Devil's Advocate,1997,DramaticTone|SuspensefulTone,Justice|Family|Love,LinearNarrative,Historical,FeatureFilm,0.7333333333333334
+1653,Gattaca,1997,RomanticTone,Identity|Love,LinearNarrative,Historical,FeatureFilm,0.7333333333333334
+1663,Stripes,1981,ComedyTone,,EpisodicNarrative,Historical,FeatureFilm,0.5666666666666667
+1673,Boogie Nights,1997,DramaticTone|RomanticTone,Family|Love,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+1674,Witness,1985,DarkTone,Family|Power,LinearNarrative,Historical,FeatureFilm,0.7333333333333334
+1676,Starship Troopers,1997,ComedyTone,Family,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+1682,"Truman Show, The",1998,SuspensefulTone,Betrayal|Family|Freedom,EpisodicNarrative,Historical,FeatureFilm,0.7666666666666666
+1690,Alien: Resurrection,1997,SuspensefulTone,Betrayal,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+1704,Good Will Hunting,1997,ComedyTone,Justice,NonLinearNarrative,Historical,FeatureFilm,0.7000000000000001
+1717,Scream 2,1997,ComedyTone,,EpisodicNarrative,Historical,FeatureFilm,0.5666666666666667
+1721,Titanic,1997,RomanticTone,Love,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+1722,Tomorrow Never Dies,1997,SuspensefulTone,,LinearNarrative,Historical,FeatureFilm,0.5666666666666667
+1729,Jackie Brown,1997,DarkTone,,LinearNarrative,Historical,FeatureFilm,0.5666666666666667
+1732,"Big Lebowski, The",1998,SuspensefulTone,Family,EpisodicNarrative,Historical,FeatureFilm,0.7000000000000001
+1747,Wag the Dog,1997,RomanticTone,Power,EpisodicNarrative,Historical,FeatureFilm,0.7000000000000001
+1748,Dark City,1998,SuspensefulTone|DarkTone,Identity|Love,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+1777,"Wedding Singer, The",1998,RomanticTone,Love|Family,EpisodicNarrative,Historical,FeatureFilm,0.7333333333333334
+1784,As Good as It Gets,1997,RomanticTone,Family|Love|Justice,EpisodicNarrative,Historical,FeatureFilm,0.7666666666666666
+1805,Wild Things,1998,SuspensefulTone,Justice,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+1831,Lost in Space,1998,SuspensefulTone,Family,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+1876,Deep Impact,1998,DramaticTone,Family,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+1882,Godzilla,1998,SuspensefulTone,,LinearNarrative,Historical,FeatureFilm,0.5666666666666667
+1884,Fear and Loathing in Las Vegas,1998,ComedyTone|DarkTone,Justice|Identity,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+1907,Mulan,1998,ComedyTone|RomanticTone,Family|Love,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+1909,"X-Files: Fight the Future, The",1998,SuspensefulTone,Justice|Family,LinearNarrative,Historical,FeatureFilm,0.7333333333333334
+1911,Dr. Dolittle,1998,RomanticTone,Family|Love,EpisodicNarrative,Historical,FeatureFilm,0.7333333333333334
+1912,Out of Sight,1998,SuspensefulTone,Family|Freedom,EpisodicNarrative,Historical,FeatureFilm,0.7333333333333334
+1917,Armageddon,1998,RomanticTone,Family|Love,LinearNarrative,Historical,FeatureFilm,0.7333333333333334
+1918,Lethal Weapon 4,1998,SuspensefulTone,,LinearNarrative,Historical,FeatureFilm,0.5666666666666667
+1921,Pi,1998,SuspensefulTone,Redemption,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+1923,There's Something About Mary,1998,ComedyTone,,EpisodicNarrative,Historical,FeatureFilm,0.5666666666666667
+1947,West Side Story,1961,RomanticTone,Love,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+1953,"French Connection, The",1971,SuspensefulTone,Family,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+1954,Rocky,1976,RomanticTone,Love,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+1960,"Last Emperor, The",1987,RomanticTone,Love,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+1961,Rain Man,1988,DramaticTone,Identity|Love,NonLinearNarrative,Historical,FeatureFilm,0.7333333333333334
+1967,Labyrinth,1986,DramaticTone,Family,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+1968,"Breakfast Club, The",1985,ComedyTone,Family,EpisodicNarrative,Historical,FeatureFilm,0.7000000000000001
+1982,Halloween,1978,DarkTone,Family|Freedom,LinearNarrative,Historical,FeatureFilm,0.7333333333333334
+1994,Poltergeist,1982,DramaticTone,Family|Power|Love,LinearNarrative,Historical,FeatureFilm,0.7666666666666666
+1997,"Exorcist, The",1973,DramaticTone,,LinearNarrative,Historical,FeatureFilm,0.5666666666666667
+2000,Lethal Weapon,1987,SuspensefulTone|ComedyTone,,LinearNarrative,Historical,FeatureFilm,0.5333333333333333
+2001,Lethal Weapon 2,1989,RomanticTone,Love,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+2002,Lethal Weapon 3,1992,SuspensefulTone,Family,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+2003,Gremlins,1984,RomanticTone,Family|Love,EpisodicNarrative,Historical,FeatureFilm,0.7333333333333334
+2005,"Goonies, The",1985,SuspensefulTone,,LinearNarrative,Historical,FeatureFilm,0.5666666666666667
+2006,"Mask of Zorro, The",1998,SuspensefulTone,Revenge|Justice,LinearNarrative,Historical,FeatureFilm,0.7333333333333334
+2011,Back to the Future Part II,1989,DramaticTone,,LinearNarrative,Historical,FeatureFilm,0.5666666666666667
+2012,Back to the Future Part III,1990,SuspensefulTone|DramaticTone,Justice,LinearNarrative,Historical,FeatureFilm,0.6666666666666666
+2018,Bambi,1942,RomanticTone,Love,LinearNarrative,Historical,AnimatedFilm,0.7000000000000001
+2019,Seven Samurai (Shichinin no samurai),1954,DarkTone|RomanticTone,Love,LinearNarrative,Historical,FeatureFilm,0.6666666666666666
+2021,Dune,1984,SuspensefulTone,,LinearNarrative,Historical,FeatureFilm,0.5666666666666667
+2023,"Godfather: Part III, The",1990,DarkTone,Family|Revenge|Justice,LinearNarrative,Historical,FeatureFilm,0.7666666666666666
+2028,Saving Private Ryan,1998,SuspensefulTone,Power,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+2054,"Honey, I Shrunk the Kids",1989,RomanticTone,Love,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+2058,"Negotiator, The",1998,SuspensefulTone,Power,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+2064,Roger & Me,1989,DramaticTone,Justice,EpisodicNarrative,Historical,Documentary,0.7000000000000001
+2076,Blue Velvet,1986,DarkTone|SuspensefulTone,,LinearNarrative,Historical,FeatureFilm,0.5333333333333333
+2078,"Jungle Book, The",1967,RomanticTone,Love,LinearNarrative,Historical,AnimatedFilm,0.7000000000000001
+2080,Lady and the Tramp,1955,RomanticTone,Love,LinearNarrative,Historical,AnimatedFilm,0.7000000000000001
+2081,"Little Mermaid, The",1989,RomanticTone,Family|Love,LinearNarrative,Historical,AnimatedFilm,0.7333333333333334
+2082,"Mighty Ducks, The",1992,DramaticTone,,LinearNarrative,Historical,AnimatedFilm,0.5666666666666667
+2085,101 Dalmatians (One Hundred and One Dalmatians),1961,DramaticTone,Family,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+2087,Peter Pan,1953,RomanticTone,Family|Love,LinearNarrative,Historical,AnimatedFilm,0.7333333333333334
+2094,"Rocketeer, The",1991,SuspensefulTone,,LinearNarrative,Historical,FeatureFilm,0.5666666666666667
+2100,Splash,1984,ComedyTone,,EpisodicNarrative,Historical,FeatureFilm,0.5666666666666667
+2105,Tron,1982,SuspensefulTone,Power,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+2109,"Jerk, The",1979,ComedyTone,Justice|Family,EpisodicNarrative,Historical,FeatureFilm,0.7333333333333334
+2115,Indiana Jones and the Temple of Doom,1984,SuspensefulTone,,LinearNarrative,Historical,FeatureFilm,0.5666666666666667
+2124,"Addams Family, The",1991,ComedyTone,Family,LinearNarrative,Historical,AnimatedFilm,0.7000000000000001
+2140,"Dark Crystal, The",1982,DramaticTone,Freedom,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+2144,Sixteen Candles,1984,RomanticTone,Love,EpisodicNarrative,Historical,FeatureFilm,0.7000000000000001
+2145,Pretty in Pink,1986,RomanticTone,Family|Love,EpisodicNarrative,Historical,FeatureFilm,0.7333333333333334
+2150,"Gods Must Be Crazy, The",1980,DramaticTone,Family,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+2160,Rosemary's Baby,1968,RomanticTone,Family|Love,LinearNarrative,Historical,FeatureFilm,0.7333333333333334
+2161,"NeverEnding Story, The",1984,RomanticTone,Family|Love,LinearNarrative,Historical,FeatureFilm,0.7333333333333334
+2167,Blade,1998,DramaticTone,Revenge|Power,LinearNarrative,Historical,FeatureFilm,0.7333333333333334
+2174,Beetlejuice,1988,ComedyTone,,EpisodicNarrative,Historical,FeatureFilm,0.5666666666666667
+2193,Willow,1988,SuspensefulTone,,LinearNarrative,Historical,FeatureFilm,0.5666666666666667
+2194,"Untouchables, The",1987,SuspensefulTone,,LinearNarrative,Historical,FeatureFilm,0.5666666666666667
+2231,Rounders,1998,DarkTone,Justice,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+2232,Cube,1997,SuspensefulTone,Justice|Survival|Family,LinearNarrative,Historical,FeatureFilm,0.7666666666666666
+2243,Broadcast News,1987,RomanticTone,Power|Love,EpisodicNarrative,Historical,FeatureFilm,0.7333333333333334
+2248,Say Anything...,1989,RomanticTone,Justice|Love,EpisodicNarrative,Historical,FeatureFilm,0.7333333333333334
+2268,"Few Good Men, A",1992,SuspensefulTone,Justice,NonLinearNarrative,Historical,FeatureFilm,0.7000000000000001
+2273,Rush Hour,1998,ComedyTone,Family,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+2278,Ronin,1998,SuspensefulTone,,LinearNarrative,Historical,FeatureFilm,0.5666666666666667
+2288,"Thing, The",1982,RomanticTone,Survival|Love,LinearNarrative,Historical,FeatureFilm,0.7333333333333334
+2289,"Player, The",1992,DarkTone,,EpisodicNarrative,Historical,FeatureFilm,0.5666666666666667
+2291,Edward Scissorhands,1990,DramaticTone|RomanticTone,Love,NonLinearNarrative,Historical,FeatureFilm,0.6666666666666666
+2294,Antz,1998,DramaticTone,,LinearNarrative,Historical,FeatureFilm,0.5666666666666667
+2300,"Producers, The",1968,ComedyTone,,EpisodicNarrative,Historical,FeatureFilm,0.5666666666666667
+2302,My Cousin Vinny,1992,ComedyTone,Justice|Family|Love,EpisodicNarrative,Historical,FeatureFilm,0.7666666666666666
+2321,Pleasantville,1998,ComedyTone|RomanticTone,Family|Love,EpisodicNarrative,Historical,FeatureFilm,0.7000000000000001
+2324,Life Is Beautiful (La Vita è bella),1997,ComedyTone|DarkTone,Family|Love,EpisodicNarrative,Historical,FeatureFilm,0.7000000000000001
+2329,American History X,1998,RomanticTone,Family|Power|Love,LinearNarrative,Historical,FeatureFilm,0.7666666666666666
+2335,"Waterboy, The",1998,ComedyTone,,EpisodicNarrative,Historical,FeatureFilm,0.5666666666666667
+2353,Enemy of the State,1998,SuspensefulTone,Justice,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+2355,"Bug's Life, A",1998,DramaticTone,,LinearNarrative,Historical,FeatureFilm,0.5666666666666667
+2359,Waking Ned Devine (a.k.a. Waking Ned),1998,ComedyTone,Identity,EpisodicNarrative,Historical,FeatureFilm,0.7000000000000001
+2384,Babe: Pig in the City,1998,DramaticTone,Identity,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+2393,Star Trek: Insurrection,1998,SuspensefulTone,Revenge|Family,LinearNarrative,Historical,FeatureFilm,0.7333333333333334
+2395,Rushmore,1998,ComedyTone,Family,EpisodicNarrative,Historical,FeatureFilm,0.7000000000000001
+2396,Shakespeare in Love,1998,RomanticTone,Love,EpisodicNarrative,Historical,FeatureFilm,0.7000000000000001
+2403,First Blood (Rambo: First Blood),1982,DarkTone,Survival|Family|Freedom,LinearNarrative,Historical,FeatureFilm,0.7666666666666666
+2406,Romancing the Stone,1984,RomanticTone,Betrayal|Love,LinearNarrative,Historical,FeatureFilm,0.7333333333333334
+2407,Cocoon,1985,DramaticTone,Family,EpisodicNarrative,Historical,FeatureFilm,0.7000000000000001
+2409,Rocky II,1979,RomanticTone,Love|Power,LinearNarrative,Historical,FeatureFilm,0.7333333333333334
+2411,Rocky IV,1985,RomanticTone|DramaticTone,Revenge|Family|Power,LinearNarrative,Historical,FeatureFilm,0.7333333333333334
+2420,"Karate Kid, The",1984,RomanticTone,Love|Family,LinearNarrative,Historical,FeatureFilm,0.7333333333333334
+2421,"Karate Kid, Part II, The",1986,RomanticTone,Family|Revenge|Love,LinearNarrative,Historical,FeatureFilm,0.7666666666666666
+2423,Christmas Vacation (National Lampoon's Christmas Vacation),1989,RomanticTone,Family,EpisodicNarrative,Historical,FeatureFilm,0.7000000000000001
+2424,You've Got Mail,1998,RomanticTone,Love,EpisodicNarrative,Historical,FeatureFilm,0.7000000000000001
+2427,"Thin Red Line, The",1998,DramaticTone,Power,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+2431,Patch Adams,1998,DramaticTone,Family,EpisodicNarrative,Historical,FeatureFilm,0.7000000000000001
+2455,"Fly, The",1986,DramaticTone,,LinearNarrative,Historical,FeatureFilm,0.5666666666666667
+2470,Crocodile Dundee,1986,DramaticTone,Survival,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+2478,¡Three Amigos!,1986,ComedyTone,Justice,EpisodicNarrative,Historical,FeatureFilm,0.7000000000000001
+2485,She's All That,1999,RomanticTone,Family|Love,EpisodicNarrative,Historical,FeatureFilm,0.7333333333333334
+2490,Payback,1999,DarkTone,Revenge|Family,LinearNarrative,Historical,FeatureFilm,0.7333333333333334
+2501,October Sky,1999,RomanticTone,Love,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+2502,Office Space,1999,ComedyTone|RomanticTone,Family|Love,EpisodicNarrative,Historical,FeatureFilm,0.7000000000000001
+2529,Planet of the Apes,1968,SuspensefulTone,Survival|Freedom,LinearNarrative,Historical,FeatureFilm,0.7333333333333334
+2539,Analyze This,1999,RomanticTone,,EpisodicNarrative,Historical,FeatureFilm,0.5666666666666667
+2541,Cruel Intentions,1999,RomanticTone,Family|Love,LinearNarrative,Historical,FeatureFilm,0.7333333333333334
+2542,"Lock, Stock & Two Smoking Barrels",1998,ComedyTone,,EpisodicNarrative,Historical,FeatureFilm,0.5666666666666667
 2571,"Matrix, The",1999,SuspensefulTone,Family,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+2572,10 Things I Hate About You,1999,RomanticTone,Family|Betrayal|Love,EpisodicNarrative,Historical,FeatureFilm,0.7666666666666666
+2580,Go,1999,ComedyTone,,EpisodicNarrative,Historical,FeatureFilm,0.5666666666666667
+2581,Never Been Kissed,1999,RomanticTone,Love,EpisodicNarrative,Historical,FeatureFilm,0.7000000000000001
+2599,Election,1999,ComedyTone,Betrayal|Power,EpisodicNarrative,Historical,FeatureFilm,0.7333333333333334
+2605,Entrapment,1999,RomanticTone,Betrayal|Love,LinearNarrative,Historical,FeatureFilm,0.7333333333333334
+2616,Dick Tracy,1990,SuspensefulTone,Power|Family,LinearNarrative,Historical,FeatureFilm,0.7333333333333334
+2617,"Mummy, The",1999,SuspensefulTone,Identity,NonLinearNarrative,Historical,FeatureFilm,0.7000000000000001
+2628,Star Wars: Episode I - The Phantom Menace,1999,SuspensefulTone,Power,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+2640,Superman,1978,DarkTone,Identity|Power,LinearNarrative,Historical,FeatureFilm,0.7333333333333334
+2641,Superman II,1980,RomanticTone|DramaticTone,Family|Power|Love,LinearNarrative,Historical,FeatureFilm,0.7333333333333334
+2657,"Rocky Horror Picture Show, The",1975,DarkTone,Identity,EpisodicNarrative,Historical,FeatureFilm,0.7000000000000001
+2671,Notting Hill,1999,RomanticTone,Love,EpisodicNarrative,Historical,FeatureFilm,0.7000000000000001
+2683,Austin Powers: The Spy Who Shagged Me,1999,ComedyTone,Power,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+2692,Run Lola Run (Lola rennt),1998,SuspensefulTone,Family,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+2694,Big Daddy,1999,ComedyTone,Justice|Family,EpisodicNarrative,Historical,FeatureFilm,0.7333333333333334
+2699,Arachnophobia,1990,ComedyTone,,EpisodicNarrative,Historical,FeatureFilm,0.5666666666666667
+2700,"South Park: Bigger, Longer and Uncut",1999,DarkTone,,LinearNarrative,Historical,AnimatedFilm,0.5666666666666667
+2701,Wild Wild West,1999,RomanticTone,Family|Power|Love,LinearNarrative,Historical,FeatureFilm,0.7666666666666666
+2706,American Pie,1999,ComedyTone,,EpisodicNarrative,Historical,FeatureFilm,0.5666666666666667
+2710,"Blair Witch Project, The",1999,DarkTone,Survival,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+2712,Eyes Wide Shut,1999,RomanticTone,Love,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+2716,Ghostbusters (a.k.a. Ghost Busters),1984,ComedyTone,Family|Power,LinearNarrative,Historical,FeatureFilm,0.7333333333333334
+2717,Ghostbusters II,1989,ComedyTone,Justice|Family,LinearNarrative,Historical,FeatureFilm,0.7333333333333334
+2722,Deep Blue Sea,1999,SuspensefulTone|DramaticTone,,LinearNarrative,Historical,FeatureFilm,0.5333333333333333
+2723,Mystery Men,1999,DarkTone,Family,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+2724,Runaway Bride,1999,RomanticTone,Identity|Love,EpisodicNarrative,Historical,FeatureFilm,0.7333333333333334
+2746,Little Shop of Horrors,1986,ComedyTone,,EpisodicNarrative,Historical,FeatureFilm,0.5666666666666667
+2761,"Iron Giant, The",1999,RomanticTone,Family|Love,LinearNarrative,Historical,FeatureFilm,0.7333333333333334
+2762,"Sixth Sense, The",1999,DramaticTone,Love|Family,LinearNarrative,Historical,FeatureFilm,0.7333333333333334
+2763,"Thomas Crown Affair, The",1999,SuspensefulTone,,LinearNarrative,Historical,FeatureFilm,0.5666666666666667
+2770,Bowfinger,1999,ComedyTone,,EpisodicNarrative,Historical,FeatureFilm,0.5666666666666667
+2788,Monty Python's And Now for Something Completely Different,1971,ComedyTone,Family,EpisodicNarrative,Historical,FeatureFilm,0.7000000000000001
+2791,Airplane!,1980,ComedyTone,Justice|Family|Power,EpisodicNarrative,Historical,FeatureFilm,0.7666666666666666
+2795,National Lampoon's Vacation,1983,DramaticTone,Family,EpisodicNarrative,Historical,FeatureFilm,0.7000000000000001
+2797,Big,1988,RomanticTone,Love,EpisodicNarrative,Historical,FeatureFilm,0.7000000000000001
+2804,"Christmas Story, A",1983,ComedyTone,Family,LinearNarrative,Historical,AnimatedFilm,0.7000000000000001
+2826,"13th Warrior, The",1999,DarkTone,Betrayal,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+2858,American Beauty,1999,RomanticTone,Love|Justice|Family,LinearNarrative,Historical,FeatureFilm,0.7666666666666666
+2871,Deliverance,1972,DramaticTone,Survival,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+2890,Three Kings,1999,ComedyTone|RomanticTone,Love,LinearNarrative,Historical,FeatureFilm,0.6666666666666666
+2908,Boys Don't Cry,1999,RomanticTone,Love|Identity,LinearNarrative,Historical,FeatureFilm,0.7333333333333334
+2915,Risky Business,1983,ComedyTone,,EpisodicNarrative,Historical,FeatureFilm,0.5666666666666667
+2916,Total Recall,1990,SuspensefulTone,Identity,NonLinearNarrative,Historical,FeatureFilm,0.7000000000000001
+2918,Ferris Bueller's Day Off,1986,ComedyTone,,EpisodicNarrative,Historical,FeatureFilm,0.5666666666666667
+2944,"Dirty Dozen, The",1967,SuspensefulTone,,LinearNarrative,Historical,FeatureFilm,0.5666666666666667
+2947,Goldfinger,1964,SuspensefulTone,,LinearNarrative,Historical,FeatureFilm,0.5666666666666667
+2948,From Russia with Love,1963,SuspensefulTone,,LinearNarrative,Historical,FeatureFilm,0.5666666666666667
+2949,Dr. No,1962,ComedyTone,,LinearNarrative,Historical,FeatureFilm,0.5666666666666667
+2951,"Fistful of Dollars, A (Per un pugno di dollari)",1964,SuspensefulTone,Power,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+2953,Home Alone 2: Lost in New York,1992,ComedyTone,Family|Love,LinearNarrative,Historical,AnimatedFilm,0.7333333333333334
+2959,Fight Club,1999,DramaticTone,Justice|Identity|Family,LinearNarrative,Historical,FeatureFilm,0.7666666666666666
+2968,Time Bandits,1981,ComedyTone,Family,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+2985,RoboCop,1987,SuspensefulTone|DramaticTone,Justice,LinearNarrative,Historical,FeatureFilm,0.6666666666666666
+2987,Who Framed Roger Rabbit?,1988,DarkTone|RomanticTone,Love,LinearNarrative,Historical,FeatureFilm,0.6666666666666666
+2997,Being John Malkovich,1999,RomanticTone,Identity|Power|Love,EpisodicNarrative,Historical,FeatureFilm,0.7666666666666666
+3000,Princess Mononoke (Mononoke-hime),1997,SuspensefulTone,Justice,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+3006,"Insider, The",1999,SuspensefulTone,Family|Power,LinearNarrative,Historical,FeatureFilm,0.7333333333333334
+3033,Spaceballs,1987,ComedyTone,,LinearNarrative,Historical,FeatureFilm,0.5666666666666667
+3034,Robin Hood,1973,RomanticTone,Justice|Love,LinearNarrative,Historical,FeatureFilm,0.7333333333333334
+3039,Trading Places,1983,ComedyTone|DramaticTone,Family,EpisodicNarrative,Historical,FeatureFilm,0.6666666666666666
+3052,Dogma,1999,ComedyTone,,LinearNarrative,Historical,FeatureFilm,0.5666666666666667
+3072,Moonstruck,1987,RomanticTone,Love|Family,EpisodicNarrative,Historical,FeatureFilm,0.7333333333333334
+3081,Sleepy Hollow,1999,DramaticTone,,LinearNarrative,Historical,FeatureFilm,0.5666666666666667
+3082,"World Is Not Enough, The",1999,SuspensefulTone,,LinearNarrative,Historical,FeatureFilm,0.5666666666666667
+3101,Fatal Attraction,1987,RomanticTone,Love|Justice,LinearNarrative,Historical,FeatureFilm,0.7333333333333334
+3108,"Fisher King, The",1991,RomanticTone,Identity|Redemption|Family,NonLinearNarrative,Historical,FeatureFilm,0.7666666666666666
+3114,Toy Story 2,1999,DramaticTone,Identity|Family,LinearNarrative,Historical,FeatureFilm,0.7333333333333334
+3147,"Green Mile, The",1999,DramaticTone|DarkTone,Family|Power,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+3148,"Cider House Rules, The",1999,DramaticTone,,LinearNarrative,Historical,FeatureFilm,0.5666666666666667
+3160,Magnolia,1999,RomanticTone,Family|Love,LinearNarrative,Historical,FeatureFilm,0.7333333333333334
+3168,Easy Rider,1969,DramaticTone,Justice|Family,LinearNarrative,Historical,FeatureFilm,0.7333333333333334
+3174,Man on the Moon,1999,ComedyTone,Family,EpisodicNarrative,Historical,FeatureFilm,0.7000000000000001
+3175,Galaxy Quest,1999,ComedyTone,,LinearNarrative,Historical,FeatureFilm,0.5666666666666667
+3176,"Talented Mr. Ripley, The",1999,DramaticTone|SuspensefulTone,Justice|Identity|Family,LinearNarrative,Historical,FeatureFilm,0.7333333333333334
+3186,"Girl, Interrupted",1999,DramaticTone,Justice|Identity|Family,LinearNarrative,Historical,FeatureFilm,0.7666666666666666
+3210,Fast Times at Ridgemont High,1982,ComedyTone,,EpisodicNarrative,Historical,FeatureFilm,0.5666666666666667
+3247,Sister Act,1992,ComedyTone,Family,EpisodicNarrative,Historical,FeatureFilm,0.7000000000000001
+3252,Scent of a Woman,1992,ComedyTone,,LinearNarrative,Historical,FeatureFilm,0.5666666666666667
+3253,Wayne's World,1992,ComedyTone|RomanticTone,,EpisodicNarrative,Historical,FeatureFilm,0.5333333333333333
+3254,Wayne's World 2,1993,ComedyTone|RomanticTone,Love,EpisodicNarrative,Historical,FeatureFilm,0.6666666666666666
+3255,"League of Their Own, A",1992,ComedyTone,,EpisodicNarrative,Historical,FeatureFilm,0.5666666666666667
+3256,Patriot Games,1992,SuspensefulTone,Revenge|Family,LinearNarrative,Historical,FeatureFilm,0.7333333333333334
+3257,"Bodyguard, The",1992,RomanticTone,Family|Love,LinearNarrative,Historical,FeatureFilm,0.7333333333333334
+3264,Buffy the Vampire Slayer,1992,RomanticTone,Family,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+3269,Forever Young,1992,DramaticTone,Family,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+3273,Scream 3,2000,ComedyTone,,EpisodicNarrative,Contemporary,FeatureFilm,0.5666666666666667
+3275,"Boondock Saints, The",2000,ComedyTone|RomanticTone,Love,LinearNarrative,Contemporary,FeatureFilm,0.6666666666666666
+3285,"Beach, The",2000,RomanticTone,,LinearNarrative,Contemporary,FeatureFilm,0.5666666666666667
+3300,Pitch Black,2000,DarkTone|SuspensefulTone,Survival,LinearNarrative,Contemporary,FeatureFilm,0.6666666666666666
+3301,"Whole Nine Yards, The",2000,ComedyTone,,EpisodicNarrative,Contemporary,FeatureFilm,0.5666666666666667
+3361,Bull Durham,1988,RomanticTone,Love,EpisodicNarrative,Historical,FeatureFilm,0.7000000000000001
+3362,Dog Day Afternoon,1975,RomanticTone,Love,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+3363,American Graffiti,1973,RomanticTone,Family|Love,EpisodicNarrative,Historical,FeatureFilm,0.7333333333333334
+3386,JFK,1991,SuspensefulTone,Justice|Family|Power,LinearNarrative,Historical,FeatureFilm,0.7666666666666666
+3396,"Muppet Movie, The",1979,DramaticTone,,LinearNarrative,Historical,FeatureFilm,0.5666666666666667
+3408,Erin Brockovich,2000,DramaticTone,Family|Justice,LinearNarrative,Contemporary,FeatureFilm,0.7333333333333334
+3409,Final Destination,2000,DarkTone,Family,LinearNarrative,Contemporary,FeatureFilm,0.7000000000000001
+3418,Thelma & Louise,1991,DramaticTone,Justice|Betrayal|Family,LinearNarrative,Historical,FeatureFilm,0.7666666666666666
+3421,Animal House,1978,ComedyTone,Family,EpisodicNarrative,Historical,FeatureFilm,0.7000000000000001
+3424,Do the Right Thing,1989,DarkTone|RomanticTone,Family|Love,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+3448,"Good Morning, Vietnam",1987,ComedyTone,Justice,EpisodicNarrative,Historical,FeatureFilm,0.7000000000000001
+3450,Grumpy Old Men,1993,ComedyTone,Family,EpisodicNarrative,Historical,FeatureFilm,0.7000000000000001
+3471,Close Encounters of the Third Kind,1977,DramaticTone,Family|Justice,LinearNarrative,Historical,FeatureFilm,0.7333333333333334
+3476,Jacob's Ladder,1990,SuspensefulTone,Justice|Identity,NonLinearNarrative,Historical,FeatureFilm,0.7333333333333334
+3481,High Fidelity,2000,RomanticTone,Love,NonLinearNarrative,Contemporary,FeatureFilm,0.7000000000000001
+3489,Hook,1991,DramaticTone,Family|Identity,NonLinearNarrative,Historical,FeatureFilm,0.7333333333333334
+3499,Misery,1990,SuspensefulTone,Survival|Family|Power,LinearNarrative,Historical,FeatureFilm,0.7666666666666666
+3510,Frequency,2000,SuspensefulTone|DramaticTone,Family|Freedom|Love,NonLinearNarrative,Contemporary,FeatureFilm,0.7333333333333334
+3527,Predator,1987,SuspensefulTone,Survival,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+3535,American Psycho,2000,ComedyTone|DarkTone,Family|Power,LinearNarrative,Contemporary,FeatureFilm,0.7000000000000001
+3552,Caddyshack,1980,ComedyTone,,EpisodicNarrative,Historical,FeatureFilm,0.5666666666666667
+3555,U-571,2000,SuspensefulTone,Family,LinearNarrative,Contemporary,FeatureFilm,0.7000000000000001
+3556,"Virgin Suicides, The",1999,DramaticTone,Family,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+3578,Gladiator,2000,RomanticTone,Revenge|Freedom|Love,LinearNarrative,Historical,FeatureFilm,0.7666666666666666
+3617,Road Trip,2000,ComedyTone,Power,EpisodicNarrative,Contemporary,FeatureFilm,0.7000000000000001
+3623,Mission: Impossible II,2000,RomanticTone,Identity|Love,LinearNarrative,Contemporary,FeatureFilm,0.7333333333333334
+3624,Shanghai Noon,2000,DarkTone,Family,LinearNarrative,Contemporary,FeatureFilm,0.7000000000000001
+3638,Moonraker,1979,SuspensefulTone,,LinearNarrative,Historical,FeatureFilm,0.5666666666666667
+3671,Blazing Saddles,1974,ComedyTone,,EpisodicNarrative,Historical,FeatureFilm,0.5666666666666667
+3681,For a Few Dollars More (Per qualche dollaro in più),1965,DarkTone,Family,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+3698,"Running Man, The",1987,DarkTone,Family,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+3702,Mad Max,1979,DarkTone,Family,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+3703,"Road Warrior, The (Mad Max 2)",1981,DarkTone,,LinearNarrative,Historical,FeatureFilm,0.5666666666666667
+3717,Gone in 60 Seconds,2000,SuspensefulTone,Betrayal|Family|Love,LinearNarrative,Contemporary,FeatureFilm,0.7666666666666666
+3740,Big Trouble in Little China,1986,ComedyTone,,LinearNarrative,Historical,FeatureFilm,0.5666666666666667
+3745,Titan A.E.,2000,SuspensefulTone,Power,LinearNarrative,Contemporary,FeatureFilm,0.7000000000000001
+3751,Chicken Run,2000,SuspensefulTone,Freedom|Love,LinearNarrative,Contemporary,AnimatedFilm,0.7333333333333334
+3752,"Me, Myself & Irene",2000,ComedyTone,Family,LinearNarrative,Contemporary,FeatureFilm,0.7000000000000001
+3753,"Patriot, The",2000,RomanticTone,Family|Love,LinearNarrative,Contemporary,FeatureFilm,0.7333333333333334
+3755,"Perfect Storm, The",2000,DramaticTone,,LinearNarrative,Contemporary,FeatureFilm,0.5666666666666667
+3785,Scary Movie,2000,ComedyTone,,EpisodicNarrative,Contemporary,FeatureFilm,0.5666666666666667
+3793,X-Men,2000,SuspensefulTone,,LinearNarrative,Contemporary,FeatureFilm,0.5666666666666667
+3809,What About Bob?,1991,DramaticTone,Family,EpisodicNarrative,Historical,FeatureFilm,0.7000000000000001
+3825,Coyote Ugly,2000,ComedyTone,,EpisodicNarrative,Contemporary,FeatureFilm,0.5666666666666667
+3826,Hollow Man,2000,DarkTone,Survival|Family,LinearNarrative,Contemporary,FeatureFilm,0.7333333333333334
+3863,"Cell, The",2000,SuspensefulTone,,LinearNarrative,Contemporary,FeatureFilm,0.5666666666666667
+3868,"Naked Gun: From the Files of Police Squad!, The",1988,ComedyTone,,LinearNarrative,Historical,FeatureFilm,0.5666666666666667
+3869,"Naked Gun 2 1/2: The Smell of Fear, The",1991,ComedyTone,,EpisodicNarrative,Historical,FeatureFilm,0.5666666666666667
+3882,Bring It On,2000,DramaticTone,Love,EpisodicNarrative,Contemporary,FeatureFilm,0.7000000000000001
+3897,Almost Famous,2000,DramaticTone,Family,LinearNarrative,Contemporary,FeatureFilm,0.7000000000000001
+3911,Best in Show,2000,ComedyTone,Family|Power,EpisodicNarrative,Contemporary,FeatureFilm,0.7333333333333334
+3916,Remember the Titans,2000,DramaticTone,Power,LinearNarrative,Contemporary,FeatureFilm,0.7000000000000001
+3948,Meet the Parents,2000,ComedyTone,Justice|Family,EpisodicNarrative,Contemporary,FeatureFilm,0.7333333333333334
+3949,Requiem for a Dream,2000,DramaticTone|RomanticTone,Justice|Power|Love,LinearNarrative,Contemporary,FeatureFilm,0.7333333333333334
+3967,Billy Elliot,2000,DramaticTone|RomanticTone,Family|Love,LinearNarrative,Contemporary,FeatureFilm,0.7000000000000001
+3968,Bedazzled,2000,RomanticTone,Family|Love,LinearNarrative,Contemporary,FeatureFilm,0.7333333333333334
+3969,Pay It Forward,2000,DramaticTone,Family,LinearNarrative,Contemporary,FeatureFilm,0.7000000000000001
+3977,Charlie's Angels,2000,SuspensefulTone|DramaticTone,,LinearNarrative,Contemporary,FeatureFilm,0.5333333333333333
+3988,How the Grinch Stole Christmas (a.k.a. The Grinch),2000,RomanticTone,Love,LinearNarrative,Contemporary,AnimatedFilm,0.7000000000000001
+3994,Unbreakable,2000,RomanticTone,Family|Love|Power,LinearNarrative,Contemporary,FeatureFilm,0.7666666666666666
+3996,"Crouching Tiger, Hidden Dragon (Wo hu cang long)",2000,SuspensefulTone,Revenge,LinearNarrative,Contemporary,FeatureFilm,0.7000000000000001
+4002,"Planes, Trains & Automobiles",1987,ComedyTone,Family,EpisodicNarrative,Historical,FeatureFilm,0.7000000000000001
+4011,Snatch,2000,ComedyTone,Power,EpisodicNarrative,Contemporary,FeatureFilm,0.7000000000000001
+4014,Chocolat,2000,RomanticTone,Love,LinearNarrative,Contemporary,FeatureFilm,0.7000000000000001
+4015,"Dude, Where's My Car?",2000,ComedyTone,,EpisodicNarrative,Contemporary,FeatureFilm,0.5666666666666667
+4016,"Emperor's New Groove, The",2000,DramaticTone,,LinearNarrative,Contemporary,FeatureFilm,0.5666666666666667
+4018,What Women Want,2000,RomanticTone,Family|Power,EpisodicNarrative,Contemporary,FeatureFilm,0.7333333333333334
+4019,Finding Forrester,2000,RomanticTone,Family|Love,LinearNarrative,Contemporary,FeatureFilm,0.7333333333333334
+4022,Cast Away,2000,DramaticTone,Survival|Love,LinearNarrative,Contemporary,FeatureFilm,0.7333333333333334
+4025,Miss Congeniality,2000,SuspensefulTone,,EpisodicNarrative,Contemporary,FeatureFilm,0.5666666666666667
+4027,"O Brother, Where Art Thou?",2000,DramaticTone,Family,LinearNarrative,Contemporary,FeatureFilm,0.7000000000000001
+4034,Traffic,2000,RomanticTone,Family|Justice|Love,LinearNarrative,Contemporary,FeatureFilm,0.7666666666666666
+4085,Beverly Hills Cop,1984,ComedyTone|SuspensefulTone,,LinearNarrative,Historical,FeatureFilm,0.5333333333333333
+4128,"Lost Boys, The",1987,RomanticTone,Family|Love,EpisodicNarrative,Historical,FeatureFilm,0.7333333333333334
+4148,Hannibal,2001,DarkTone,Family,LinearNarrative,Contemporary,FeatureFilm,0.7000000000000001
+4223,Enemy at the Gates,2001,DramaticTone,Identity,NonLinearNarrative,Contemporary,FeatureFilm,0.7000000000000001
+4226,Memento,2000,SuspensefulTone,Revenge|Identity,NonLinearNarrative,Contemporary,FeatureFilm,0.7333333333333334
+4232,Spy Kids,2001,RomanticTone,Family|Love,LinearNarrative,Contemporary,FeatureFilm,0.7333333333333334
+4239,Blow,2001,SuspensefulTone|DramaticTone,,LinearNarrative,Contemporary,FeatureFilm,0.5333333333333333
+4246,Bridget Jones's Diary,2001,RomanticTone,Family|Love|Justice,EpisodicNarrative,Contemporary,FeatureFilm,0.7666666666666666
+4262,Scarface,1983,RomanticTone|DramaticTone,Power|Love|Family,LinearNarrative,Historical,FeatureFilm,0.7333333333333334
+4270,"Mummy Returns, The",2001,ComedyTone,Family,LinearNarrative,Contemporary,FeatureFilm,0.7000000000000001
+4299,"Knight's Tale, A",2001,SuspensefulTone,,LinearNarrative,Contemporary,FeatureFilm,0.5666666666666667
+4306,Shrek,2001,ComedyTone,Family|Freedom,LinearNarrative,Contemporary,FeatureFilm,0.7333333333333334
+4308,Moulin Rouge,2001,RomanticTone,Justice|Love,LinearNarrative,Contemporary,FeatureFilm,0.7333333333333334
+4310,Pearl Harbor,2001,RomanticTone|DramaticTone,Family|Love,LinearNarrative,Contemporary,FeatureFilm,0.7000000000000001
+4321,City Slickers,1991,DramaticTone,Family,EpisodicNarrative,Historical,FeatureFilm,0.7000000000000001
+4343,Evolution,2001,ComedyTone,Family,EpisodicNarrative,Contemporary,FeatureFilm,0.7000000000000001
+4344,Swordfish,2001,SuspensefulTone,Family,LinearNarrative,Contemporary,FeatureFilm,0.7000000000000001
+4361,Tootsie,1982,ComedyTone|RomanticTone,Love,EpisodicNarrative,Historical,FeatureFilm,0.6666666666666666
+4367,Lara Croft: Tomb Raider,2001,SuspensefulTone,Family,LinearNarrative,Contemporary,FeatureFilm,0.7000000000000001
+4369,"Fast and the Furious, The",2001,SuspensefulTone,,LinearNarrative,Contemporary,FeatureFilm,0.5666666666666667
+4370,A.I. Artificial Intelligence,2001,RomanticTone,Love|Justice,LinearNarrative,Contemporary,FeatureFilm,0.7333333333333334
+4388,Scary Movie 2,2001,ComedyTone,,EpisodicNarrative,Contemporary,FeatureFilm,0.5666666666666667
+4446,Final Fantasy: The Spirits Within,2001,DramaticTone,,LinearNarrative,Contemporary,FeatureFilm,0.5666666666666667
+4447,Legally Blonde,2001,DarkTone,Justice|Family|Power,EpisodicNarrative,Contemporary,FeatureFilm,0.7666666666666666
+4571,Bill & Ted's Excellent Adventure,1989,DramaticTone,Identity|Family,LinearNarrative,Historical,FeatureFilm,0.7333333333333334
+4638,Jurassic Park III,2001,SuspensefulTone,,LinearNarrative,Contemporary,FeatureFilm,0.5666666666666667
+4641,Ghost World,2001,DramaticTone,Family,EpisodicNarrative,Contemporary,FeatureFilm,0.7000000000000001
+4643,Planet of the Apes,2001,SuspensefulTone,Family|Power|Freedom,LinearNarrative,Contemporary,FeatureFilm,0.7666666666666666
+4700,"Princess Diaries, The",2001,RomanticTone,Love,LinearNarrative,Contemporary,AnimatedFilm,0.7000000000000001
+4701,Rush Hour 2,2001,SuspensefulTone,,LinearNarrative,Contemporary,FeatureFilm,0.5666666666666667
+4718,American Pie 2,2001,ComedyTone,Family,EpisodicNarrative,Contemporary,FeatureFilm,0.7000000000000001
+4720,"Others, The",2001,SuspensefulTone,,LinearNarrative,Contemporary,FeatureFilm,0.5666666666666667
+4734,Jay and Silent Bob Strike Back,2001,DramaticTone,,LinearNarrative,Contemporary,FeatureFilm,0.5666666666666667
+4776,Training Day,2001,DarkTone,Power,LinearNarrative,Contemporary,FeatureFilm,0.7000000000000001
+4816,Zoolander,2001,ComedyTone,Family,EpisodicNarrative,Contemporary,FeatureFilm,0.7000000000000001
+4848,Mulholland Drive,2001,DarkTone,Identity,NonLinearNarrative,Contemporary,FeatureFilm,0.7000000000000001
+4874,K-PAX,2001,SuspensefulTone,,LinearNarrative,Contemporary,FeatureFilm,0.5666666666666667
+4878,Donnie Darko,2001,DramaticTone|RomanticTone,Family|Love,LinearNarrative,Contemporary,FeatureFilm,0.7000000000000001
+4886,"Monsters, Inc.",2001,DramaticTone,Family,LinearNarrative,Contemporary,FeatureFilm,0.7000000000000001
+4890,Shallow Hal,2001,RomanticTone,Family|Love,EpisodicNarrative,Contemporary,FeatureFilm,0.7333333333333334
+4896,Harry Potter and the Sorcerer's Stone (a.k.a. Harry Potter and the Philosopher's Stone),2001,DramaticTone,Family,LinearNarrative,Contemporary,FeatureFilm,0.7000000000000001
+4901,Spy Game,2001,DramaticTone,,NonLinearNarrative,Contemporary,FeatureFilm,0.5666666666666667
+4963,Ocean's Eleven,2001,DarkTone,,LinearNarrative,Contemporary,FeatureFilm,0.5666666666666667
+4973,"Amelie (Fabuleux destin d'Amélie Poulain, Le)",2001,RomanticTone,Love|Family|Identity,LinearNarrative,Contemporary,FeatureFilm,0.7666666666666666
+4975,Vanilla Sky,2001,RomanticTone|DramaticTone,Love|Identity,NonLinearNarrative,Contemporary,FeatureFilm,0.7000000000000001
+4979,"Royal Tenenbaums, The",2001,DramaticTone,Redemption|Family,EpisodicNarrative,Contemporary,FeatureFilm,0.7333333333333334
+4993,"Lord of the Rings: The Fellowship of the Ring, The",2001,RomanticTone,Love,LinearNarrative,Contemporary,FeatureFilm,0.7000000000000001
+4995,"Beautiful Mind, A",2001,DramaticTone,Identity|Family|Love,LinearNarrative,Contemporary,FeatureFilm,0.7666666666666666
+5010,Black Hawk Down,2001,SuspensefulTone,Family,LinearNarrative,Contemporary,FeatureFilm,0.7000000000000001
+5013,Gosford Park,2001,DarkTone|RomanticTone,Justice|Family|Love,EpisodicNarrative,Contemporary,FeatureFilm,0.7333333333333334
+5060,M*A*S*H (a.k.a. MASH),1970,ComedyTone|DarkTone,,EpisodicNarrative,Historical,FeatureFilm,0.5333333333333333
+5064,The Count of Monte Cristo,2002,DramaticTone,Betrayal|Family|Freedom,LinearNarrative,Contemporary,FeatureFilm,0.7666666666666666
+5218,Ice Age,2002,RomanticTone,Love,LinearNarrative,Contemporary,FeatureFilm,0.7000000000000001
+5219,Resident Evil,2002,SuspensefulTone,Power,LinearNarrative,Contemporary,FeatureFilm,0.7000000000000001
+5254,Blade II,2002,DramaticTone,Revenge|Power,LinearNarrative,Contemporary,FeatureFilm,0.7333333333333334
+5266,Panic Room,2002,SuspensefulTone,Family|Power,NonLinearNarrative,Contemporary,FeatureFilm,0.7333333333333334
+5299,My Big Fat Greek Wedding,2002,RomanticTone|DramaticTone,Family|Justice|Love,EpisodicNarrative,Contemporary,FeatureFilm,0.7333333333333334
+5349,Spider-Man,2002,RomanticTone,Identity|Love,LinearNarrative,Contemporary,FeatureFilm,0.7333333333333334
+5377,About a Boy,2002,ComedyTone,,EpisodicNarrative,Contemporary,FeatureFilm,0.5666666666666667
+5378,Star Wars: Episode II - Attack of the Clones,2002,RomanticTone|DarkTone,Power,LinearNarrative,Contemporary,FeatureFilm,0.6666666666666666
+5388,Insomnia,2002,DarkTone,Love,NonLinearNarrative,Contemporary,FeatureFilm,0.7000000000000001
+5418,"Bourne Identity, The",2002,SuspensefulTone,Identity|Family|Power,LinearNarrative,Contemporary,FeatureFilm,0.7666666666666666
+5444,Lilo & Stitch,2002,RomanticTone,Justice|Family|Love,LinearNarrative,Contemporary,FeatureFilm,0.7666666666666666
+5445,Minority Report,2002,SuspensefulTone,Family|Love,LinearNarrative,Contemporary,FeatureFilm,0.7333333333333334
+5459,Men in Black II (a.k.a. MIIB) (a.k.a. MIB 2),2002,SuspensefulTone,Identity,LinearNarrative,Contemporary,FeatureFilm,0.7000000000000001
+5464,Road to Perdition,2002,DarkTone,Revenge|Family,LinearNarrative,Contemporary,FeatureFilm,0.7333333333333334
+5481,Austin Powers in Goldmember,2002,ComedyTone|RomanticTone,Family|Identity|Power,LinearNarrative,Contemporary,FeatureFilm,0.7333333333333334
+5502,Signs,2002,DramaticTone|SuspensefulTone,Identity|Family|Love,NonLinearNarrative,Contemporary,FeatureFilm,0.7333333333333334
+5618,Spirited Away (Sen to Chihiro no kamikakushi),2001,DarkTone|RomanticTone,Love,LinearNarrative,Contemporary,FeatureFilm,0.6666666666666666
+5620,Sweet Home Alabama,2002,RomanticTone,Love,EpisodicNarrative,Contemporary,FeatureFilm,0.7000000000000001
+5630,Red Dragon,2002,DarkTone,,LinearNarrative,Contemporary,FeatureFilm,0.5666666666666667
+5669,Bowling for Columbine,2002,ComedyTone,Family|Power,EpisodicNarrative,Contemporary,Documentary,0.7333333333333334
+5673,Punch-Drunk Love,2002,RomanticTone|DramaticTone,Family|Love,EpisodicNarrative,Contemporary,FeatureFilm,0.7000000000000001
+5679,"Ring, The",2002,SuspensefulTone,,LinearNarrative,Contemporary,FeatureFilm,0.5666666666666667
+5810,8 Mile,2002,DramaticTone,,LinearNarrative,Contemporary,FeatureFilm,0.5666666666666667
+5816,Harry Potter and the Chamber of Secrets,2002,DramaticTone,,LinearNarrative,Contemporary,FeatureFilm,0.5666666666666667
+5872,Die Another Day,2002,DramaticTone,Justice|Family,LinearNarrative,Contemporary,FeatureFilm,0.7333333333333334
+5902,Adaptation,2002,DramaticTone,Love,EpisodicNarrative,Contemporary,FeatureFilm,0.7000000000000001
+5903,Equilibrium,2002,SuspensefulTone,Justice,LinearNarrative,Contemporary,FeatureFilm,0.7000000000000001
+5952,"Lord of the Rings: The Two Towers, The",2002,DarkTone,Family,LinearNarrative,Contemporary,FeatureFilm,0.7000000000000001
+5956,Gangs of New York,2002,DarkTone,Family,LinearNarrative,Contemporary,FeatureFilm,0.7000000000000001
+5971,My Neighbor Totoro (Tonari no Totoro),1988,RomanticTone,Family|Power|Love,LinearNarrative,Historical,AnimatedFilm,0.7666666666666666
+5989,Catch Me If You Can,2002,RomanticTone,Betrayal,LinearNarrative,Contemporary,FeatureFilm,0.7000000000000001
+5991,Chicago,2002,ComedyTone,Justice|Family,EpisodicNarrative,Contemporary,FeatureFilm,0.7333333333333334
+5995,"Pianist, The",2002,RomanticTone,Justice|Survival|Family,LinearNarrative,Contemporary,FeatureFilm,0.7666666666666666
+6016,City of God (Cidade de Deus),2002,SuspensefulTone,,LinearNarrative,Contemporary,FeatureFilm,0.5666666666666667
+6155,How to Lose a Guy in 10 Days,2003,RomanticTone,Family|Love,EpisodicNarrative,Contemporary,FeatureFilm,0.7333333333333334
+6157,Daredevil,2003,SuspensefulTone|DarkTone,,LinearNarrative,Contemporary,FeatureFilm,0.5333333333333333
+6188,Old School,2003,ComedyTone,Family,EpisodicNarrative,Contemporary,FeatureFilm,0.7000000000000001
+6218,Bend It Like Beckham,2002,DramaticTone|ComedyTone,Family,EpisodicNarrative,Contemporary,FeatureFilm,0.6666666666666666
+6281,Phone Booth,2002,RomanticTone,,LinearNarrative,Contemporary,FeatureFilm,0.5666666666666667
+6287,Anger Management,2003,ComedyTone,Power,EpisodicNarrative,Contemporary,FeatureFilm,0.7000000000000001
+6333,X2: X-Men United,2003,SuspensefulTone,Family,LinearNarrative,Contemporary,FeatureFilm,0.7000000000000001
+6365,"Matrix Reloaded, The",2003,RomanticTone,,LinearNarrative,Futuristic,FeatureFilm,0.5666666666666667
+6373,Bruce Almighty,2003,RomanticTone,Love|Power,EpisodicNarrative,Contemporary,FeatureFilm,0.7333333333333334
+6377,Finding Nemo,2003,SuspensefulTone|RomanticTone,Family|Identity|Love,NonLinearNarrative,Contemporary,FeatureFilm,0.7333333333333334
+6378,"Italian Job, The",2003,SuspensefulTone,Revenge|Family|Freedom,LinearNarrative,Contemporary,FeatureFilm,0.7666666666666666
+6502,28 Days Later,2002,DarkTone,Survival|Family,LinearNarrative,Contemporary,FeatureFilm,0.7333333333333334
+6503,Charlie's Angels: Full Throttle,2003,ComedyTone|DramaticTone,Identity|Family,LinearNarrative,Contemporary,FeatureFilm,0.7000000000000001
+6534,Hulk,2003,DarkTone,Identity,NonLinearNarrative,Contemporary,FeatureFilm,0.7000000000000001
+6537,Terminator 3: Rise of the Machines,2003,DarkTone,,LinearNarrative,Contemporary,FeatureFilm,0.5666666666666667
+6539,Pirates of the Caribbean: The Curse of the Black Pearl,2003,ComedyTone,Family,LinearNarrative,Contemporary,FeatureFilm,0.7000000000000001
+6541,"League of Extraordinary Gentlemen, The (a.k.a. LXG)",2003,DarkTone,Family|Power,LinearNarrative,Contemporary,FeatureFilm,0.7333333333333334
+6708,Matchstick Men,2003,RomanticTone,Family|Justice|Love,EpisodicNarrative,Contemporary,FeatureFilm,0.7666666666666666
+6711,Lost in Translation,2003,RomanticTone,Family|Love,EpisodicNarrative,Contemporary,FeatureFilm,0.7333333333333334
+6754,Underworld,2003,DarkTone|RomanticTone,Family|Power|Love,LinearNarrative,Contemporary,FeatureFilm,0.7333333333333334
+6787,All the President's Men,1976,SuspensefulTone,Power,LinearNarrative,Historical,FeatureFilm,0.7000000000000001
+6807,Monty Python's The Meaning of Life,1983,ComedyTone,,EpisodicNarrative,Historical,FeatureFilm,0.5666666666666667
+6863,School of Rock,2003,ComedyTone,,EpisodicNarrative,Contemporary,FeatureFilm,0.5666666666666667
+6870,Mystic River,2003,RomanticTone,Revenge|Justice|Identity,NonLinearNarrative,Contemporary,FeatureFilm,0.7666666666666666
+6874,Kill Bill: Vol. 1,2003,SuspensefulTone,Revenge,LinearNarrative,Contemporary,FeatureFilm,0.7000000000000001
+6934,"Matrix Revolutions, The",2003,SuspensefulTone,,LinearNarrative,Futuristic,FeatureFilm,0.5666666666666667
+6936,Elf,2003,RomanticTone,Family|Love,LinearNarrative,Contemporary,AnimatedFilm,0.7333333333333334
+6942,Love Actually,2003,RomanticTone,Family|Love,EpisodicNarrative,Contemporary,FeatureFilm,0.7333333333333334
+6947,Master and Commander: The Far Side of the World,2003,DramaticTone,,LinearNarrative,Contemporary,FeatureFilm,0.5666666666666667
+7022,Battle Royale (Batoru rowaiaru),2000,SuspensefulTone,Survival|Family|Power,LinearNarrative,Contemporary,FeatureFilm,0.7666666666666666
+7090,Hero (Ying xiong),2002,RomanticTone,Justice|Love,LinearNarrative,Contemporary,FeatureFilm,0.7333333333333334
+7143,"Last Samurai, The",2003,DramaticTone,Identity|Family|Love,LinearNarrative,Contemporary,FeatureFilm,0.7666666666666666
+7147,Big Fish,2003,RomanticTone,Love,LinearNarrative,Contemporary,FeatureFilm,0.7000000000000001
+7153,"Lord of the Rings: The Return of the King, The",2003,DarkTone,Family|Power,LinearNarrative,Contemporary,FeatureFilm,0.7333333333333334
+7254,The Butterfly Effect,2004,DramaticTone|RomanticTone,Identity|Family|Power,NonLinearNarrative,Contemporary,FeatureFilm,0.7333333333333334
+7293,50 First Dates,2004,RomanticTone,Identity|Betrayal|Love,NonLinearNarrative,Contemporary,FeatureFilm,0.7666666666666666
+7361,Eternal Sunshine of the Spotless Mind,2004,RomanticTone,Love|Identity,NonLinearNarrative,Contemporary,FeatureFilm,0.7333333333333334
+7373,Hellboy,2004,RomanticTone,Survival|Family|Power,LinearNarrative,Contemporary,FeatureFilm,0.7666666666666666
+7438,Kill Bill: Vol. 2,2004,RomanticTone,Family|Revenge|Justice,LinearNarrative,Contemporary,FeatureFilm,0.7666666666666666
+7445,Man on Fire,2004,SuspensefulTone,Justice|Revenge|Family,LinearNarrative,Contemporary,FeatureFilm,0.7666666666666666
+7451,Mean Girls,2004,ComedyTone,,EpisodicNarrative,Contemporary,FeatureFilm,0.5666666666666667
+7458,Troy,2004,RomanticTone,Family|Power|Love,LinearNarrative,Historical,FeatureFilm,0.7666666666666666
+8360,Shrek 2,2004,ComedyTone,Family|Justice|Freedom,LinearNarrative,Contemporary,FeatureFilm,0.7666666666666666
+8361,"Day After Tomorrow, The",2004,DramaticTone,,LinearNarrative,Contemporary,FeatureFilm,0.5666666666666667
+8368,Harry Potter and the Prisoner of Azkaban,2004,DramaticTone,,LinearNarrative,Contemporary,FeatureFilm,0.5666666666666667
+8376,Napoleon Dynamite,2004,RomanticTone,Family|Love,EpisodicNarrative,Contemporary,FeatureFilm,0.7333333333333334
+8464,Super Size Me,2004,ComedyTone,,EpisodicNarrative,Contemporary,FeatureFilm,0.5666666666666667
+8528,Dodgeball: A True Underdog Story,2004,RomanticTone,Love,EpisodicNarrative,Contemporary,FeatureFilm,0.7000000000000001
+8529,"Terminal, The",2004,RomanticTone,Justice|Love,EpisodicNarrative,Contemporary,FeatureFilm,0.7333333333333334
+8533,"Notebook, The",2004,RomanticTone,Family|Love,LinearNarrative,Contemporary,FeatureFilm,0.7333333333333334
+8622,Fahrenheit 9/11,2004,SuspensefulTone,Power,EpisodicNarrative,Contemporary,Documentary,0.7000000000000001
+8636,Spider-Man 2,2004,RomanticTone,Love|Identity|Family,LinearNarrative,Contemporary,FeatureFilm,0.7666666666666666
+8641,Anchorman: The Legend of Ron Burgundy,2004,ComedyTone,,EpisodicNarrative,Contemporary,FeatureFilm,0.5666666666666667
+8644,"I, Robot",2004,SuspensefulTone,Family|Love,LinearNarrative,Contemporary,FeatureFilm,0.7333333333333334
+8665,"Bourne Supremacy, The",2004,SuspensefulTone,Identity|Family,NonLinearNarrative,Contemporary,FeatureFilm,0.7333333333333334
+8784,Garden State,2004,RomanticTone,Love,EpisodicNarrative,Contemporary,FeatureFilm,0.7000000000000001
+8798,Collateral,2004,SuspensefulTone,,LinearNarrative,Contemporary,FeatureFilm,0.5666666666666667
+8807,Harold and Kumar Go to White Castle,2004,ComedyTone|RomanticTone,Family|Love,LinearNarrative,Contemporary,FeatureFilm,0.7000000000000001
+8873,"Motorcycle Diaries, The (Diarios de motocicleta)",2004,DramaticTone,,LinearNarrative,Contemporary,FeatureFilm,0.5666666666666667
+8874,Shaun of the Dead,2004,ComedyTone,Survival|Love,EpisodicNarrative,Contemporary,FeatureFilm,0.7333333333333334
+8917,Team America: World Police,2004,RomanticTone,Power|Love,LinearNarrative,Contemporary,FeatureFilm,0.7333333333333334
+8949,Sideways,2004,ComedyTone,,EpisodicNarrative,Contemporary,FeatureFilm,0.5666666666666667
+8950,The Machinist,2004,DramaticTone,Family,LinearNarrative,Contemporary,FeatureFilm,0.7000000000000001
+8957,Saw,2004,DarkTone,Survival|Family,NonLinearNarrative,Contemporary,FeatureFilm,0.7333333333333334
+8961,"Incredibles, The",2004,RomanticTone,Identity|Family|Power,LinearNarrative,Contemporary,FeatureFilm,0.7666666666666666
+8970,Finding Neverland,2004,RomanticTone,Love,LinearNarrative,Contemporary,FeatureFilm,0.7000000000000001
+8972,National Treasure,2004,DramaticTone|RomanticTone,Family|Love,LinearNarrative,Contemporary,FeatureFilm,0.7000000000000001
+8984,Ocean's Twelve,2004,SuspensefulTone,,LinearNarrative,Contemporary,FeatureFilm,0.5666666666666667
+27773,Old Boy,2003,DarkTone,Family|Revenge|Love,NonLinearNarrative,Contemporary,FeatureFilm,0.7666666666666666
+30707,Million Dollar Baby,2004,DarkTone,,LinearNarrative,Contemporary,FeatureFilm,0.5666666666666667
+30749,Hotel Rwanda,2004,ComedyTone,,LinearNarrative,Contemporary,FeatureFilm,0.5666666666666667
+30793,Charlie and the Chocolate Factory,2005,RomanticTone,Love,LinearNarrative,Contemporary,FeatureFilm,0.7000000000000001
+30810,"Life Aquatic with Steve Zissou, The",2004,ComedyTone|RomanticTone,Family|Love,LinearNarrative,Contemporary,FeatureFilm,0.7000000000000001
+30812,"Aviator, The",2004,DramaticTone,Justice,LinearNarrative,Contemporary,FeatureFilm,0.7000000000000001
+30825,Meet the Fockers,2004,RomanticTone,Family|Justice|Love,EpisodicNarrative,Contemporary,FeatureFilm,0.7666666666666666
+31658,Howl's Moving Castle (Hauru no ugoku shiro),2004,RomanticTone,,LinearNarrative,Contemporary,FeatureFilm,0.5666666666666667
+31685,Hitch,2005,RomanticTone,Family,EpisodicNarrative,Contemporary,FeatureFilm,0.7000000000000001
+31696,Constantine,2005,DarkTone,Redemption|Power,LinearNarrative,Contemporary,FeatureFilm,0.7333333333333334
+32587,Sin City,2005,DarkTone,Family,EpisodicNarrative,Contemporary,FeatureFilm,0.7000000000000001
+33004,"Hitchhiker's Guide to the Galaxy, The",2005,SuspensefulTone,Survival,LinearNarrative,Contemporary,FeatureFilm,0.7000000000000001
+33166,Crash,2004,DarkTone,Family|Power,EpisodicNarrative,Contemporary,FeatureFilm,0.7333333333333334
+33493,Star Wars: Episode III - Revenge of the Sith,2005,SuspensefulTone|RomanticTone,Family|Power|Love,LinearNarrative,Contemporary,FeatureFilm,0.7333333333333334
+33615,Madagascar,2005,ComedyTone,Freedom,LinearNarrative,Contemporary,FeatureFilm,0.7000000000000001
+33679,Mr. & Mrs. Smith,2005,RomanticTone,Love|Identity|Family,LinearNarrative,Contemporary,FeatureFilm,0.7666666666666666
+33794,Batman Begins,2005,DramaticTone,Identity|Justice|Power,NonLinearNarrative,Contemporary,FeatureFilm,0.7666666666666666
+34048,War of the Worlds,2005,SuspensefulTone,Survival|Justice|Family,LinearNarrative,Contemporary,FeatureFilm,0.7666666666666666
+34150,Fantastic Four,2005,RomanticTone,Love|Family|Power,LinearNarrative,Contemporary,FeatureFilm,0.7666666666666666
+34162,Wedding Crashers,2005,RomanticTone,Identity|Family,EpisodicNarrative,Contemporary,FeatureFilm,0.7333333333333334
+34319,"Island, The",2005,RomanticTone,Freedom|Identity|Power,NonLinearNarrative,Contemporary,FeatureFilm,0.7666666666666666
+34405,Serenity,2005,SuspensefulTone,Family,LinearNarrative,Contemporary,FeatureFilm,0.7000000000000001
+35836,"40-Year-Old Virgin, The",2005,ComedyTone|RomanticTone,Love,EpisodicNarrative,Contemporary,FeatureFilm,0.6666666666666666
+36529,Lord of War,2005,SuspensefulTone,,LinearNarrative,Contemporary,FeatureFilm,0.5666666666666667
+37729,Corpse Bride,2005,RomanticTone,Love,LinearNarrative,Contemporary,AnimatedFilm,0.7000000000000001
+37733,"History of Violence, A",2005,RomanticTone,Love|Revenge|Justice,LinearNarrative,Contemporary,FeatureFilm,0.7666666666666666
+38038,Wallace & Gromit in The Curse of the Were-Rabbit,2005,ComedyTone,Power,LinearNarrative,Contemporary,FeatureFilm,0.7000000000000001
+38061,Kiss Kiss Bang Bang,2005,DarkTone,,EpisodicNarrative,Contemporary,FeatureFilm,0.5666666666666667
+39183,Brokeback Mountain,2005,RomanticTone,Love,LinearNarrative,Contemporary,FeatureFilm,0.7000000000000001
+40629,Pride & Prejudice,2005,DramaticTone,Family|Love,LinearNarrative,Contemporary,FeatureFilm,0.7333333333333334
+40815,Harry Potter and the Goblet of Fire,2005,DramaticTone,,LinearNarrative,Contemporary,FeatureFilm,0.5666666666666667
+40819,Walk the Line,2005,RomanticTone,Love|Family,LinearNarrative,Contemporary,FeatureFilm,0.7333333333333334
+41566,"Chronicles of Narnia: The Lion, the Witch and the Wardrobe, The",2005,RomanticTone,Family|Love,LinearNarrative,Contemporary,FeatureFilm,0.7333333333333334
+41569,King Kong,2005,RomanticTone,Love,LinearNarrative,Contemporary,FeatureFilm,0.7000000000000001
+44191,V for Vendetta,2006,SuspensefulTone,Revenge|Family,LinearNarrative,Contemporary,FeatureFilm,0.7333333333333334
+44195,Thank You for Smoking,2006,ComedyTone|RomanticTone,Family|Power|Love,LinearNarrative,Contemporary,FeatureFilm,0.7333333333333334
+44199,Inside Man,2006,DarkTone,Family,LinearNarrative,Contemporary,FeatureFilm,0.7000000000000001
+44555,"Lives of Others, The (Das leben der Anderen)",2006,SuspensefulTone,Freedom|Power,LinearNarrative,Contemporary,FeatureFilm,0.7333333333333334
+44665,Lucky Number Slevin,2006,DarkTone,Identity|Family,LinearNarrative,Contemporary,FeatureFilm,0.7333333333333334
+45186,Mission: Impossible III,2006,SuspensefulTone,Revenge|Identity,LinearNarrative,Contemporary,FeatureFilm,0.7333333333333334
+45447,"Da Vinci Code, The",2006,DramaticTone,Family|Power,LinearNarrative,Contemporary,FeatureFilm,0.7333333333333334
+45499,X-Men: The Last Stand,2006,DramaticTone,,LinearNarrative,Contemporary,FeatureFilm,0.5666666666666667
+45517,Cars,2006,RomanticTone,Love,LinearNarrative,Contemporary,AnimatedFilm,0.7000000000000001
+45720,"Devil Wears Prada, The",2006,ComedyTone,,EpisodicNarrative,Contemporary,FeatureFilm,0.5666666666666667
+45722,Pirates of the Caribbean: Dead Man's Chest,2006,SuspensefulTone,Family,LinearNarrative,Contemporary,FeatureFilm,0.7000000000000001
+46578,Little Miss Sunshine,2006,RomanticTone|DramaticTone,Family|Love,LinearNarrative,Contemporary,FeatureFilm,0.7000000000000001
+46723,Babel,2006,DramaticTone|RomanticTone,Family|Love,LinearNarrative,Contemporary,FeatureFilm,0.7000000000000001
+46970,Talladega Nights: The Ballad of Ricky Bobby,2006,DramaticTone,Family|Betrayal,LinearNarrative,Contemporary,FeatureFilm,0.7333333333333334
+46976,Stranger than Fiction,2006,RomanticTone,Family|Love,EpisodicNarrative,Contemporary,FeatureFilm,0.7333333333333334
+47099,"Pursuit of Happyness, The",2006,DramaticTone,Family,LinearNarrative,Contemporary,FeatureFilm,0.7000000000000001
+47610,"Illusionist, The",2006,RomanticTone,Power|Love,LinearNarrative,Contemporary,FeatureFilm,0.7333333333333334
+48385,Borat: Cultural Learnings of America for Make Benefit Glorious Nation of Kazakhstan,2006,ComedyTone,,EpisodicNarrative,Contemporary,FeatureFilm,0.5666666666666667
+48394,"Pan's Labyrinth (Laberinto del fauno, El)",2006,DarkTone,,LinearNarrative,Contemporary,FeatureFilm,0.5666666666666667
+48516,"Departed, The",2006,SuspensefulTone|DramaticTone,,LinearNarrative,Contemporary,FeatureFilm,0.5333333333333333
+48774,Children of Men,2006,SuspensefulTone,Survival|Family,LinearNarrative,Contemporary,FeatureFilm,0.7333333333333334
+48780,"Prestige, The",2006,DramaticTone,,LinearNarrative,Contemporary,FeatureFilm,0.5666666666666667
+49272,Casino Royale,2006,SuspensefulTone,,LinearNarrative,Contemporary,FeatureFilm,0.5666666666666667
+49530,Blood Diamond,2006,DarkTone|RomanticTone,Freedom|Family|Love,LinearNarrative,Contemporary,FeatureFilm,0.7333333333333334
+50872,Ratatouille,2007,RomanticTone,Family|Love,LinearNarrative,Contemporary,AnimatedFilm,0.7333333333333334
+51255,Hot Fuzz,2007,SuspensefulTone,,LinearNarrative,Contemporary,FeatureFilm,0.5666666666666667
+51540,Zodiac,2007,SuspensefulTone,Family,LinearNarrative,Contemporary,FeatureFilm,0.7000000000000001
+51662,300,2007,DramaticTone,,LinearNarrative,Contemporary,FeatureFilm,0.5666666666666667
+52281,Grindhouse,2007,SuspensefulTone,,LinearNarrative,Contemporary,FeatureFilm,0.5666666666666667
+52722,Spider-Man 3,2007,RomanticTone|DramaticTone,Revenge|Identity|Redemption,LinearNarrative,Contemporary,FeatureFilm,0.7333333333333334
+52973,Knocked Up,2007,ComedyTone,Family,EpisodicNarrative,Contemporary,FeatureFilm,0.7000000000000001
+53125,Pirates of the Caribbean: At World's End,2007,RomanticTone,Power|Love,LinearNarrative,Contemporary,FeatureFilm,0.7333333333333334
+53322,Ocean's Thirteen,2007,DarkTone,Revenge,LinearNarrative,Contemporary,FeatureFilm,0.7000000000000001
+53972,Live Free or Die Hard,2007,RomanticTone,Family|Power|Love,LinearNarrative,Contemporary,FeatureFilm,0.7666666666666666
+53996,Transformers,2007,SuspensefulTone,,LinearNarrative,Contemporary,FeatureFilm,0.5666666666666667
+54001,Harry Potter and the Order of the Phoenix,2007,RomanticTone,Justice|Love,LinearNarrative,Contemporary,FeatureFilm,0.7333333333333334
+54259,Stardust,2007,RomanticTone,Love,LinearNarrative,Contemporary,FeatureFilm,0.7000000000000001
+54272,"Simpsons Movie, The",2007,RomanticTone,Love|Family,LinearNarrative,Contemporary,AnimatedFilm,0.7333333333333334
+54286,"Bourne Ultimatum, The",2007,SuspensefulTone,Identity|Family|Power,NonLinearNarrative,Contemporary,FeatureFilm,0.7666666666666666
+54503,Superbad,2007,ComedyTone,,EpisodicNarrative,Contemporary,FeatureFilm,0.5666666666666667
+55247,Into the Wild,2007,RomanticTone,Survival|Identity|Love,LinearNarrative,Contemporary,FeatureFilm,0.7666666666666666
+55765,American Gangster,2007,SuspensefulTone|DramaticTone,Family|Justice|Power,LinearNarrative,Contemporary,FeatureFilm,0.7333333333333334
+55820,No Country for Old Men,2007,DarkTone|DramaticTone,Justice,LinearNarrative,Contemporary,FeatureFilm,0.6666666666666666
+56174,I Am Legend,2007,DarkTone,,LinearNarrative,Contemporary,FeatureFilm,0.5666666666666667
+56367,Juno,2007,ComedyTone,Family,EpisodicNarrative,Contemporary,FeatureFilm,0.7000000000000001
+56757,Sweeney Todd: The Demon Barber of Fleet Street,2007,DramaticTone,Family|Justice|Love,LinearNarrative,Contemporary,FeatureFilm,0.7666666666666666
+56782,There Will Be Blood,2007,DramaticTone|RomanticTone,Family|Identity|Love,NonLinearNarrative,Contemporary,FeatureFilm,0.7333333333333334
+57368,Cloverfield,2008,SuspensefulTone,Survival,LinearNarrative,Contemporary,FeatureFilm,0.7000000000000001
+57669,In Bruges,2008,DarkTone,,EpisodicNarrative,Contemporary,FeatureFilm,0.5666666666666667
+58559,"Dark Knight, The",2008,DarkTone|DramaticTone,Identity|Power,LinearNarrative,Contemporary,FeatureFilm,0.7000000000000001
+58998,Forgetting Sarah Marshall,2008,ComedyTone,,EpisodicNarrative,Contemporary,FeatureFilm,0.5666666666666667
+59315,Iron Man,2008,SuspensefulTone,,LinearNarrative,Contemporary,FeatureFilm,0.5666666666666667
+59369,Taken,2008,SuspensefulTone,Family,LinearNarrative,Contemporary,FeatureFilm,0.7000000000000001
+59615,Indiana Jones and the Kingdom of the Crystal Skull,2008,RomanticTone,Family|Love,LinearNarrative,Contemporary,FeatureFilm,0.7333333333333334
+59784,Kung Fu Panda,2008,SuspensefulTone,,LinearNarrative,Contemporary,FeatureFilm,0.5666666666666667
+60040,"Incredible Hulk, The",2008,DarkTone,,LinearNarrative,Contemporary,FeatureFilm,0.5666666666666667
+60069,WALL·E,2008,RomanticTone,,LinearNarrative,Contemporary,FeatureFilm,0.5666666666666667
+60074,Hancock,2008,RomanticTone,Love,LinearNarrative,Contemporary,FeatureFilm,0.7000000000000001
+60684,Watchmen,2009,SuspensefulTone,Identity|Family,LinearNarrative,Contemporary,FeatureFilm,0.7333333333333334
+60756,Step Brothers,2008,ComedyTone,,EpisodicNarrative,Contemporary,FeatureFilm,0.5666666666666667
+61024,Pineapple Express,2008,SuspensefulTone,,LinearNarrative,Contemporary,FeatureFilm,0.5666666666666667
+61132,Tropic Thunder,2008,ComedyTone,,LinearNarrative,Contemporary,FeatureFilm,0.5666666666666667
+61323,Burn After Reading,2008,ComedyTone,Identity|Family,NonLinearNarrative,Contemporary,FeatureFilm,0.7333333333333334
+63082,Slumdog Millionaire,2008,DarkTone,,LinearNarrative,Contemporary,FeatureFilm,0.5666666666666667
+63113,Quantum of Solace,2008,DramaticTone|SuspensefulTone,Family|Power,LinearNarrative,Contemporary,FeatureFilm,0.7000000000000001
+64614,Gran Torino,2008,DarkTone,,LinearNarrative,Contemporary,FeatureFilm,0.5666666666666667
+64839,"Wrestler, The",2008,DramaticTone,Family|Redemption,LinearNarrative,Contemporary,FeatureFilm,0.7333333333333334
+64957,"Curious Case of Benjamin Button, The",2008,DramaticTone,,LinearNarrative,Contemporary,FeatureFilm,0.5666666666666667
+64969,Yes Man,2008,RomanticTone,Love,EpisodicNarrative,Contemporary,FeatureFilm,0.7000000000000001
+66097,Coraline,2009,DramaticTone,,LinearNarrative,Contemporary,AnimatedFilm,0.5666666666666667
+68157,Inglourious Basterds,2009,SuspensefulTone,,LinearNarrative,Contemporary,FeatureFilm,0.5666666666666667
+68237,Moon,2009,SuspensefulTone|DramaticTone,,LinearNarrative,Contemporary,FeatureFilm,0.5333333333333333
+68358,Star Trek,2009,SuspensefulTone,,LinearNarrative,Contemporary,FeatureFilm,0.5666666666666667
+68954,Up,2009,DramaticTone,Family,LinearNarrative,Contemporary,FeatureFilm,0.7000000000000001
+69122,"Hangover, The",2009,DramaticTone|ComedyTone,Identity,NonLinearNarrative,Contemporary,FeatureFilm,0.6666666666666666
+69481,"Hurt Locker, The",2008,DramaticTone,Family,LinearNarrative,Contemporary,FeatureFilm,0.7000000000000001
+69757,(500) Days of Summer,2009,RomanticTone,Love,EpisodicNarrative,Contemporary,FeatureFilm,0.7000000000000001
+69844,Harry Potter and the Half-Blood Prince,2009,RomanticTone,Identity|Family|Love,NonLinearNarrative,Contemporary,FeatureFilm,0.7666666666666666
+70286,District 9,2009,SuspensefulTone|DramaticTone,,NonLinearNarrative,Contemporary,FeatureFilm,0.5333333333333333
+71535,Zombieland,2009,ComedyTone,Survival|Family|Love,LinearNarrative,Contemporary,FeatureFilm,0.7666666666666666
+72011,Up in the Air,2009,RomanticTone,Family|Love,LinearNarrative,Contemporary,FeatureFilm,0.7333333333333334
+72641,"Blind Side, The",2009,DramaticTone,Family,LinearNarrative,Contemporary,FeatureFilm,0.7000000000000001
+72998,Avatar,2009,RomanticTone,Power|Love,LinearNarrative,Contemporary,FeatureFilm,0.7333333333333334
+73017,Sherlock Holmes,2009,SuspensefulTone,,LinearNarrative,Contemporary,FeatureFilm,0.5666666666666667
+74458,Shutter Island,2010,SuspensefulTone,Family,LinearNarrative,Contemporary,FeatureFilm,0.7000000000000001
+74789,Alice in Wonderland,2010,DramaticTone,,LinearNarrative,Contemporary,FeatureFilm,0.5666666666666667
+76093,How to Train Your Dragon,2010,RomanticTone|ComedyTone,Power,LinearNarrative,Contemporary,FeatureFilm,0.6666666666666666
+76251,Kick-Ass,2010,DramaticTone|SuspensefulTone,Identity|Family|Power,LinearNarrative,Contemporary,FeatureFilm,0.7333333333333334
+77561,Iron Man 2,2010,SuspensefulTone,Revenge,LinearNarrative,Contemporary,FeatureFilm,0.7000000000000001
+78499,Toy Story 3,2010,SuspensefulTone,Family|Freedom,LinearNarrative,Contemporary,FeatureFilm,0.7333333333333334
+79091,Despicable Me,2010,RomanticTone,Family|Love,LinearNarrative,Contemporary,AnimatedFilm,0.7333333333333334
+79132,Inception,2010,SuspensefulTone,Identity,LinearNarrative,Contemporary,FeatureFilm,0.7000000000000001
+79702,Scott Pilgrim vs. the World,2010,RomanticTone,,LinearNarrative,Contemporary,FeatureFilm,0.5666666666666667
+80463,"Social Network, The",2010,DramaticTone,Family,LinearNarrative,Contemporary,FeatureFilm,0.7000000000000001
+80549,Easy A,2010,DramaticTone,Love,EpisodicNarrative,Contemporary,FeatureFilm,0.7000000000000001
+81591,Black Swan,2010,SuspensefulTone|RomanticTone,Family|Power|Love,LinearNarrative,Contemporary,FeatureFilm,0.7333333333333334
+81834,Harry Potter and the Deathly Hallows: Part 1,2010,SuspensefulTone,Power|Freedom,LinearNarrative,Contemporary,FeatureFilm,0.7333333333333334
+81845,"King's Speech, The",2010,DramaticTone,Family|Love,LinearNarrative,Contemporary,FeatureFilm,0.7333333333333334
+82459,True Grit,2010,RomanticTone,Betrayal|Family|Love,LinearNarrative,Contemporary,FeatureFilm,0.7666666666666666
+84152,Limitless,2011,DramaticTone,,LinearNarrative,Contemporary,FeatureFilm,0.5666666666666667
+85414,Source Code,2011,SuspensefulTone,Identity,LinearNarrative,Contemporary,FeatureFilm,0.7000000000000001
+86332,Thor,2011,DramaticTone,Redemption,LinearNarrative,Contemporary,FeatureFilm,0.7000000000000001
+87232,X-Men: First Class,2011,DramaticTone,Power,LinearNarrative,Contemporary,FeatureFilm,0.7000000000000001
+88125,Harry Potter and the Deathly Hallows: Part 2,2011,DarkTone,,LinearNarrative,Contemporary,FeatureFilm,0.5666666666666667
+88129,Drive,2011,DarkTone,Revenge,LinearNarrative,Contemporary,FeatureFilm,0.7000000000000001
+88140,Captain America: The First Avenger,2011,SuspensefulTone,,LinearNarrative,Contemporary,FeatureFilm,0.5666666666666667
+88163,"Crazy, Stupid, Love.",2011,RomanticTone,Love|Justice|Family,EpisodicNarrative,Contemporary,FeatureFilm,0.7666666666666666
+88744,Rise of the Planet of the Apes,2011,RomanticTone,Family|Justice|Love,LinearNarrative,Contemporary,FeatureFilm,0.7666666666666666
+89745,"Avengers, The",2012,SuspensefulTone,,LinearNarrative,Contemporary,FeatureFilm,0.5666666666666667
+91500,The Hunger Games,2012,RomanticTone,Survival|Family|Power,LinearNarrative,Contemporary,FeatureFilm,0.7666666666666666
+91529,"Dark Knight Rises, The",2012,DramaticTone,Identity,LinearNarrative,Contemporary,FeatureFilm,0.7000000000000001
+91542,Sherlock Holmes: A Game of Shadows,2011,SuspensefulTone,Family,LinearNarrative,Contemporary,FeatureFilm,0.7000000000000001
+91658,"Girl with the Dragon Tattoo, The",2011,SuspensefulTone,Justice|Family,LinearNarrative,Contemporary,FeatureFilm,0.7333333333333334
+92259,Intouchables,2011,ComedyTone,Family,EpisodicNarrative,Contemporary,FeatureFilm,0.7000000000000001
+94864,Prometheus,2012,RomanticTone,Love,LinearNarrative,Contemporary,FeatureFilm,0.7000000000000001
+94959,Moonrise Kingdom,2012,RomanticTone,Family|Love,LinearNarrative,Contemporary,FeatureFilm,0.7333333333333334
+95167,Brave,2012,ComedyTone,Family,LinearNarrative,Contemporary,FeatureFilm,0.7000000000000001
+95510,"Amazing Spider-Man, The",2012,RomanticTone,Justice|Power|Love,LinearNarrative,Contemporary,FeatureFilm,0.7666666666666666
+96079,Skyfall,2012,DramaticTone|SuspensefulTone,Family,LinearNarrative,Contemporary,FeatureFilm,0.6666666666666666
+96610,Looper,2012,SuspensefulTone|DarkTone,Family,LinearNarrative,Contemporary,FeatureFilm,0.6666666666666666
+97304,Argo,2012,DramaticTone|SuspensefulTone,Love,LinearNarrative,Contemporary,FeatureFilm,0.6666666666666666
+97921,Silver Linings Playbook,2012,RomanticTone,Family|Love,EpisodicNarrative,Contemporary,FeatureFilm,0.7333333333333334
+97938,Life of Pi,2012,DramaticTone|RomanticTone,Survival|Family|Love,NonLinearNarrative,Contemporary,FeatureFilm,0.7333333333333334
+98809,"Hobbit: An Unexpected Journey, The",2012,DarkTone,,LinearNarrative,Contemporary,FeatureFilm,0.5666666666666667
+99114,Django Unchained,2012,SuspensefulTone,Revenge|Freedom,LinearNarrative,Contemporary,FeatureFilm,0.7333333333333334
+102125,Iron Man 3,2013,SuspensefulTone,Family,LinearNarrative,Contemporary,FeatureFilm,0.7000000000000001
+102445,Star Trek Into Darkness,2013,DramaticTone,Family,LinearNarrative,Contemporary,FeatureFilm,0.7000000000000001
+104841,Gravity,2013,SuspensefulTone,,LinearNarrative,Contemporary,FeatureFilm,0.5666666666666667
+106696,Frozen,2013,RomanticTone,Betrayal|Family|Love,LinearNarrative,Contemporary,FeatureFilm,0.7666666666666666
+106782,"Wolf of Wall Street, The",2013,ComedyTone|SuspensefulTone,Family|Power,LinearNarrative,Contemporary,FeatureFilm,0.7000000000000001
+108932,The Lego Movie,2014,RomanticTone|ComedyTone,Family|Love|Power,LinearNarrative,Contemporary,FeatureFilm,0.7333333333333334
+109374,"Grand Budapest Hotel, The",2014,ComedyTone|RomanticTone,Love,EpisodicNarrative,Contemporary,FeatureFilm,0.6666666666666666
+109487,Interstellar,2014,RomanticTone,Family|Love,LinearNarrative,Contemporary,FeatureFilm,0.7333333333333334
+110102,Captain America: The Winter Soldier,2014,SuspensefulTone,,LinearNarrative,Contemporary,FeatureFilm,0.5666666666666667
+111362,X-Men: Days of Future Past,2014,SuspensefulTone|DramaticTone,Justice|Identity|Power,NonLinearNarrative,Contemporary,FeatureFilm,0.7333333333333334
+111759,Edge of Tomorrow,2014,RomanticTone,,LinearNarrative,Contemporary,FeatureFilm,0.5666666666666667
+112552,Whiplash,2014,DramaticTone,Power,LinearNarrative,Contemporary,FeatureFilm,0.7000000000000001
+112556,Gone Girl,2014,SuspensefulTone,Love|Revenge|Justice,LinearNarrative,Contemporary,FeatureFilm,0.7666666666666666
+112852,Guardians of the Galaxy,2014,SuspensefulTone,,LinearNarrative,Contemporary,FeatureFilm,0.5666666666666667
+115149,John Wick,2014,SuspensefulTone,Revenge,LinearNarrative,Contemporary,FeatureFilm,0.7000000000000001
+115617,Big Hero 6,2014,RomanticTone,Revenge|Family|Love,LinearNarrative,Contemporary,FeatureFilm,0.7666666666666666
+115713,Ex Machina,2015,DramaticTone,Betrayal|Family|Power,LinearNarrative,Contemporary,FeatureFilm,0.7666666666666666
+116797,The Imitation Game,2014,DramaticTone|SuspensefulTone,,LinearNarrative,Contemporary,FeatureFilm,0.5333333333333333
+119145,Kingsman: The Secret Service,2015,SuspensefulTone,,LinearNarrative,Contemporary,FeatureFilm,0.5666666666666667
+122882,Mad Max: Fury Road,2015,SuspensefulTone,Survival,LinearNarrative,Contemporary,FeatureFilm,0.7000000000000001
+122886,Star Wars: Episode VII - The Force Awakens,2015,SuspensefulTone,Family,LinearNarrative,Contemporary,FeatureFilm,0.7000000000000001
+122892,Avengers: Age of Ultron,2015,DarkTone,,LinearNarrative,Contemporary,FeatureFilm,0.5666666666666667
+122900,Ant-Man,2015,RomanticTone,Family|Love,LinearNarrative,Contemporary,FeatureFilm,0.7333333333333334
+122904,Deadpool,2016,ComedyTone,Family,LinearNarrative,Contemporary,FeatureFilm,0.7000000000000001
+122918,Guardians of the Galaxy 2,2017,SuspensefulTone,Family,LinearNarrative,Contemporary,FeatureFilm,0.7000000000000001
+134130,The Martian,2015,DramaticTone,Survival,LinearNarrative,Contemporary,FeatureFilm,0.7000000000000001
+134853,Inside Out,2015,RomanticTone,Identity|Family|Love,LinearNarrative,Contemporary,FeatureFilm,0.7666666666666666
+139385,The Revenant,2015,SuspensefulTone|RomanticTone,Survival|Revenge|Love,LinearNarrative,Contemporary,FeatureFilm,0.7333333333333334
+152081,Zootopia,2016,SuspensefulTone,Revenge|Justice|Family,LinearNarrative,Contemporary,FeatureFilm,0.7666666666666666
+166528,Rogue One: A Star Wars Story,2016,SuspensefulTone,,LinearNarrative,Contemporary,FeatureFilm,0.5666666666666667
