@@ -2,6 +2,18 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { LlmService } from '../llm/llm.service';
 import { GraphService } from '../graph/graph.service';
+import { HistoryService } from '../history/history.service';
+
+interface HistoryEntry {
+  userId: string;
+  query: string;
+  wasSuccessful: boolean;
+  rdfGenerated?: string;
+  sparqlExecuted?: string;
+  resultsFound?: any[];
+  explanation?: string;
+  executionTimeMs?: number;
+}
 
 @Injectable()
 export class RecommendationService {
@@ -10,10 +22,18 @@ export class RecommendationService {
   constructor(
     private readonly llmService: LlmService,
     private readonly graphService: GraphService,
+    private readonly historyService: HistoryService,
   ) {}
 
-  async getRecommendation(userQuery: string) {
+  async getRecommendation(userQuery: string, userId: string) {
     const startTime = Date.now();
+
+    // Objeto para capturar el historial
+    let historyEntry: HistoryEntry = {
+      userId,
+      query: userQuery,
+      wasSuccessful: false,
+    };
     try {
       this.logger.log(
         `Iniciando flujo GraphRAG Multi-Ontología para: "${userQuery}"`,
@@ -88,18 +108,38 @@ export class RecommendationService {
 
       const executionTimeMs = Date.now() - startTime;
 
+      historyEntry = {
+        ...historyEntry,
+        rdfGenerated: extractedContext.rdfTriples,
+        sparqlExecuted: sparqlQuery,
+        resultsFound: moviesWithScores.slice(0, 5),
+        explanation: finalResponse,
+        executionTimeMs,
+        wasSuccessful: movies.length > 0,
+      };
+
+      this.historyService
+        .createEntry(historyEntry)
+        .catch((err) =>
+          this.logger.error(`Error guardando historial: ${err.message}`),
+        );
+
       return {
         query: userQuery,
         contextExtracted: extractedContext.contextSnapshot,
         rdfGenerated: extractedContext.rdfTriples,
         sparqlQuery,
         moviesFound: movies.length,
-        moviesWithScores: moviesWithScores.slice(0, 5), // Top 5
+        moviesWithScores: moviesWithScores.slice(0, 5),
         explanation: finalResponse,
         executionTimeMs,
       };
     } catch (error) {
       this.logger.error(`Fallo en el orquestador: ${error.message}`);
+      // Guardar incluso el fallo para análisis de errores en la tesis
+      this.historyService
+        .createEntry({ ...historyEntry, wasSuccessful: false })
+        .catch(() => null);
       throw error;
     }
   }
