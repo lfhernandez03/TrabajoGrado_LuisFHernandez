@@ -112,7 +112,7 @@ export default function RegisterPage() {
             <div className="space-y-2">
               <Label htmlFor="name">Nombre Completo</Label>
               <div className="relative">
-                <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <User className="absolute left-3 top-4 h-5 w-5 text-muted-foreground" />
                 <Input
                   id="name"
                   type="text"
@@ -131,7 +131,7 @@ export default function RegisterPage() {
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <div className="relative">
-                <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Mail className="absolute left-3 top-4 h-5 w-5 text-muted-foreground" />
                 <Input
                   id="email"
                   type="email"
@@ -150,7 +150,7 @@ export default function RegisterPage() {
             <div className="space-y-2">
               <Label htmlFor="password">Contraseña</Label>
               <div className="relative">
-                <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Lock className="absolute left-3 top-4 h-5 w-5 text-muted-foreground" />
                 <Input
                   id="password"
                   type="password"
@@ -170,7 +170,7 @@ export default function RegisterPage() {
             <div className="space-y-2">
               <Label htmlFor="confirmPassword">Confirmar Contraseña</Label>
               <div className="relative">
-                <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Lock className="absolute left-3 top-4 h-5 w-5 text-muted-foreground" />
                 <Input
                   id="confirmPassword"
                   type="password"
@@ -188,33 +188,8 @@ export default function RegisterPage() {
                 </p>
               )}
             </div>
-
-            <div className="flex items-start space-x-2">
-              <Checkbox
-                id="terms"
-                checked={formData.acceptTerms}
-                onCheckedChange={(checked) =>
-                  setFormData({ ...formData, acceptTerms: checked as boolean })
-                }
-                disabled={isLoading}
-                className="mt-1"
-              />
-              <label
-                htmlFor="terms"
-                className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-              >
-                Acepto los{" "}
-                <Link href="/terms" className="text-primary hover:underline">
-                  términos y condiciones
-                </Link>{" "}
-                y la{" "}
-                <Link href="/privacy" className="text-primary hover:underline">
-                  política de privacidad
-                </Link>
-              </label>
-            </div>
           </CardContent>
-          <CardFooter className="flex flex-col space-y-4">
+          <CardFooter className="flex flex-col p-4 space-y-4">
             <Button
               type="submit"
               className="w-full"
@@ -223,7 +198,7 @@ export default function RegisterPage() {
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {isLoading ? "Creando cuenta..." : "Crear Cuenta"}
             </Button>
-            <div className="text-sm text-center text-muted-foreground">
+            <div className="text-md text-center text-muted-foreground">
               ¿Ya tienes una cuenta?{" "}
               <Link
                 href="/login"
