@@ -1,27 +1,26 @@
 version: '3.8'
 
 services:
-  graphdb:
-    image: ontotext/graphdb:10.7.0
-    container_name: movie-graph-rag-graphdb
+  fuseki:
+    image: stain/jena-fuseki:latest
+    container_name: movie-graph-rag-fuseki
     ports:
-      - "7200:7200"
+      - "3030:3030"
     environment:
-      - GDB_JAVA_OPTS=-Xmx4g
-      - GDB_HEAP_INIT=2g
+      - ADMIN_PASSWORD=admin
+      - JVM_ARGS=-Xmx2g
     volumes:
-      - graphdb-data:/var/lib/graphdb
-      - ./scripts/graphdb-init:/opt/graphdb-init
+      - fuseki-data:/fuseki
+    networks:
+      - movie-rag-network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:7200/graphdb/rest/health"]
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3030/$/ping"]
       interval: 10s
       timeout: 5s
       retries: 5
-    networks:
-      - movie-rag-network
 
 volumes:
-  graphdb-data:
+  fuseki-data:
     driver: local
 
 networks:

@@ -22,7 +22,7 @@ export class AuthController {
     private readonly usersService: UsersService,
   ) {}
 
-  @Post('register')
+  @Post('/register')
   @ApiOperation({ summary: 'Registrar un nuevo usuario' })
   @ApiBody({
     description: 'Datos para registrar un nuevo usuario',
@@ -43,14 +43,23 @@ export class AuthController {
     description: 'Datos inválidos o usuario ya existe',
   })
   async register(@Body() registerDto: RegisterDto) {
-    return this.usersService.create(
+    // Crear el usuario
+    await this.usersService.create(
       registerDto.email,
       registerDto.password,
       registerDto.name,
     );
+
+    // Generar token JWT automáticamente después del registro
+    const loginResult = await this.authService.login(
+      registerDto.email,
+      registerDto.password,
+    );
+
+    return loginResult;
   }
 
-  @Post('login')
+  @Post('/login')
   @ApiOperation({ summary: 'Iniciar sesión y obtener token JWT' })
   @ApiBody({
     description: 'Credenciales de usuario',

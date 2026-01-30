@@ -7,9 +7,9 @@ import { ConfigService } from '@nestjs/config';
 import axios from 'axios';
 
 /**
- * GRAPH SERVICE - Cliente SPARQL para GraphDB
+ * GRAPH SERVICE - Cliente SPARQL para Apache Jena Fuseki
  * Este servicio actúa como un cliente HTTP para ejecutar consultas SPARQL contra
- * un repositorio GraphDB. Proporciona una capa de abstracción que simplifica la
+ * un servidor Apache Jena Fuseki. Proporciona una capa de abstracción que simplifica la
  * comunicación con el grafo de conocimiento, manejando:
  *
  * 1. CONSULTAS SELECT (executeQuery):
@@ -37,20 +37,27 @@ interface SparqlResponse {
 @Injectable()
 export class GraphService {
   private readonly logger = new Logger(GraphService.name);
-  private readonly graphDbUrl: string;
-  private readonly repositoryId: string;
+  private readonly fusekiUrl: string;
+  private readonly datasetId: string;
+  private readonly authConfig: { username: string; password: string };
 
   constructor(private configService: ConfigService) {
     // Obtenemos valores del .env
-    const graphDbUrl = this.configService.get<string>('GRAPHDB_URL');
-    const repositoryId = this.configService.get<string>('GRAPHDB_REPOSITORY');
-    if (!graphDbUrl || !repositoryId) {
+    const fusekiUrl = this.configService.get<string>('FUSEKI_URL');
+    const datasetId = this.configService.get<string>('FUSEKI_DATASET');
+    if (!fusekiUrl || !datasetId) {
       throw new Error(
-        'GRAPHDB_URL or GRAPHDB_REPOSITORY is not defined in environment variables',
+        'FUSEKI_URL or FUSEKI_DATASET is not defined in environment variables',
       );
     }
-    this.graphDbUrl = graphDbUrl;
-    this.repositoryId = repositoryId;
+    this.fusekiUrl = fusekiUrl;
+    this.datasetId = datasetId;
+
+    // Configuración de autenticación (opcional pero recomendado)
+    this.authConfig = {
+      username: this.configService.get<string>('FUSEKI_USER') || 'admin',
+      password: this.configService.get<string>('FUSEKI_PASSWORD') || 'admin',
+    };
   }
 
   /**
@@ -60,10 +67,10 @@ export class GraphService {
   async executeQuery<T extends Record<string, any> = Record<string, any>>(
     sparqlQuery: string,
   ): Promise<T[]> {
-    const endpoint = `${this.graphDbUrl}/repositories/${this.repositoryId}`;
+    const endpoint = `${this.fusekiUrl}/${this.datasetId}/query`;
 
     try {
-      this.logger.log('Ejecutando consulta SPARQL SELECT...');
+      this.logger.log('Ejecutando consulta SPARQL SELECT en Fuseki...');
 
       const response = await axios.post<SparqlResponse>(
         endpoint,
@@ -73,6 +80,8 @@ export class GraphService {
             'Content-Type': 'application/x-www-form-urlencoded',
             Accept: 'application/sparql-results+json',
           },
+          auth: this.authConfig,
+          timeout: 30000, // 30 segundos timeout
         },
       );
 
@@ -82,7 +91,7 @@ export class GraphService {
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : 'Unknown error';
-      this.logger.error(`Error en GraphDB (Select): ${errorMessage}`);
+      this.logger.error(`Error en Fuseki (Select): ${errorMessage}`);
       throw new InternalServerErrorException(
         'Error al consultar el Grafo de Conocimiento',
       );
@@ -94,20 +103,24 @@ export class GraphService {
    * @param updateQuery La consulta de actualización.
    */
   async executeUpdate(updateQuery: string): Promise<void> {
-    const endpoint = `${this.graphDbUrl}/repositories/${this.repositoryId}/statements`;
+    const endpoint = `${this.fusekiUrl}/${this.datasetId}/update`;
 
     try {
-      this.logger.log('Ejecutando actualización SPARQL (Update/Insert)...');
+      this.logger.log(
+        'Ejecutando actualización SPARQL (Update/Insert) en Fuseki...',
+      );
 
       await axios.post(endpoint, `update=${encodeURIComponent(updateQuery)}`, {
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
         },
+        auth: this.authConfig,
+        timeout: 30000, // 30 segundos timeout
       });
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : 'Unknown error';
-      this.logger.error(`Error en GraphDB (Update): ${errorMessage}`);
+      this.logger.error(`Error en Fuseki (Update): ${errorMessage}`);
       throw new InternalServerErrorException(
         'Error al actualizar el Grafo de Conocimiento',
       );

@@ -1,134 +1,147 @@
-import axios from "axios";
+import api from "@/lib/api";
+import { AxiosError } from "axios";
+import { toast } from "sonner";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/";
-
-export interface LoginCredentials {
-  email: string;
-  password: string;
-}
-
-export interface RegisterData {
-  name: string;
-  email: string;
-  password: string;
-}
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
 export interface AuthResponse {
+  access_token: string;
   user: {
     id: string;
     name: string;
     email: string;
   };
-  access_token: string;
+}
+
+export interface LoginDto {
+  email: string;
+  password: string;
+}
+
+export interface RegisterDto {
+  name: string;
+  email: string;
+  password: string;
 }
 
 class AuthService {
-  /**
-   * Iniciar sesión
-   */
-  async login(credentials: LoginCredentials): Promise<AuthResponse> {
-    const response = await axios.post<AuthResponse>(
-      `${API_URL}/auth/login`,
-      credentials
-    );
-    
-    if (response.data.access_token) {
-      this.setToken(response.data.access_token);
-      this.setUser(response.data.user);
-    }
-    
-    return response.data;
-  }
+  private readonly TOKEN_KEY = "auth_token";
+  private readonly USER_KEY = "auth_user";
 
   /**
-   * Registrar nuevo usuario
+   * Inicia sesión
    */
-  async register(data: RegisterData): Promise<AuthResponse> {
-    const response = await axios.post<AuthResponse>(
-      `${API_URL}/auth/register`,
-      data
-    );
-    
-    if (response.data.access_token) {
-      this.setToken(response.data.access_token);
-      this.setUser(response.data.user);
-    }
-    
-    return response.data;
-  }
+  async login(credentials: LoginDto): Promise<AuthResponse> {
+    try {
+      const response = await api.post<AuthResponse>("/auth/login", credentials);
 
-  /**
-   * Cerrar sesión
-   */
-  logout(): void {
-    if (typeof window !== "undefined") {
-      localStorage.removeItem("token");
-      localStorage.removeItem("user");
+      this.setSession(response.data);
+      return response.data;
+    } catch (error) {
+      if (error instanceof AxiosError) {
+        const message =
+          error.response?.data?.message || "Error al iniciar sesión";
+        throw new Error(message);
+      }
+      throw new Error("Error de conexión con el servidor");
     }
   }
 
   /**
-   * Obtener el token almacenado
+   * Registra un nuevo usuario
    */
-  getToken(): string | null {
-    if (typeof window !== "undefined") {
-      return localStorage.getItem("token");
-    }
-    return null;
-  }
+  async register(userData: RegisterDto): Promise<AuthResponse> {
+    try {
+      const response = await api.post<AuthResponse>("/auth/register", userData);
 
-  /**
-   * Guardar el token
-   */
-  private setToken(token: string): void {
-    if (typeof window !== "undefined") {
-      localStorage.setItem("token", token);
-    }
-  }
-
-  /**
-   * Obtener el usuario almacenado
-   */
-  getUser(): AuthResponse["user"] | null {
-    if (typeof window !== "undefined") {
-      const userStr = localStorage.getItem("user");
-      return userStr ? JSON.parse(userStr) : null;
-    }
-    return null;
-  }
-
-  /**
-   * Guardar el usuario
-   */
-  private setUser(user: AuthResponse["user"]): void {
-    if (typeof window !== "undefined") {
-      localStorage.setItem("user", JSON.stringify(user));
+      this.setSession(response.data);
+      return response.data;
+    } catch (error) {
+      if (error instanceof AxiosError) {
+        const message = error.response?.data?.message || "Error al registrarse";
+        throw new Error(message);
+      }
+      throw new Error("Error de conexión con el servidor");
     }
   }
 
   /**
-   * Verificar si el usuario está autenticado
-   */
-  isAuthenticated(): boolean {
-    return !!this.getToken();
-  }
-
-  /**
-   * Obtener perfil del usuario actual
+   * Obtiene el perfil del usuario actual
    */
   async getProfile(): Promise<AuthResponse["user"]> {
     const token = this.getToken();
-    const response = await axios.get<AuthResponse["user"]>(
-      `${API_URL}/auth/profile`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }
-    );
-    
-    this.setUser(response.data);
-    return response.data;
+    if (!token) {
+      throw new Error("No hay sesión activa");
+    }
+
+    try {
+      const response = await api.get<AuthResponse["user"]>("/auth/profile");
+
+      this.setUser(response.data);
+      return response.data;
+    } catch (error) {
+      this.logout();
+      throw error;
+    }
+  }
+
+  /**
+   * Guarda la sesión en localStorage
+   */
+  private setSession(data: AuthResponse): void {
+    if (typeof window === "undefined") return;
+
+    localStorage.setItem(this.TOKEN_KEY, data.access_token);
+    localStorage.setItem(this.USER_KEY, JSON.stringify(data.user));
+  }
+
+  /**
+   * Guarda el usuario en localStorage
+   */
+  private setUser(user: AuthResponse["user"]): void {
+    if (typeof window === "undefined") return;
+    localStorage.setItem(this.USER_KEY, JSON.stringify(user));
+  }
+
+  /**
+   * Obtiene el token de autenticación
+   */
+  getToken(): string | null {
+    if (typeof window === "undefined") return null;
+    return localStorage.getItem(this.TOKEN_KEY);
+  }
+
+  /**
+   * Obtiene el usuario almacenado
+   */
+  getUser(): AuthResponse["user"] | null {
+    if (typeof window === "undefined") return null;
+
+    const userStr = localStorage.getItem(this.USER_KEY);
+    if (!userStr) return null;
+
+    try {
+      return JSON.parse(userStr);
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * Cierra la sesión
+   */
+  logout(): void {
+    if (typeof window === "undefined") return;
+
+    localStorage.removeItem(this.TOKEN_KEY);
+    localStorage.removeItem(this.USER_KEY);
+  }
+
+  /**
+   * Verifica si hay una sesión activa
+   */
+  isAuthenticated(): boolean {
+    return !!this.getToken();
   }
 }
 

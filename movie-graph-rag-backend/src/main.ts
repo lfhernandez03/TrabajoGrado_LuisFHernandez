@@ -7,6 +7,14 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const logger = new Logger('Bootstrap');
 
+  // Habilitar CORS
+  app.enableCors({
+    origin: ['http://localhost:3001', 'http://localhost:3000'],
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+  });
+
   // Configuración de la documentación Swagger
   const config = new DocumentBuilder()
     .setTitle('CineSemantico GraphRAG API')
@@ -20,8 +28,9 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, document);
 
-  await app.listen(3000);
-  logger.log(`Aplicación corriendo en: http://localhost:3000`);
-  logger.log(`Documentación Swagger en: http://localhost:3000/api`);
+  const port = process.env.PORT || 3000;
+  await app.listen(port);
+  logger.log(`Aplicación corriendo en: http://localhost:${port}`);
+  logger.log(`Documentación Swagger en: http://localhost:${port}/api`);
 }
 bootstrap();

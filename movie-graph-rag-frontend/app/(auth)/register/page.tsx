@@ -2,17 +2,24 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Film, Mail, Lock, User, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function RegisterPage() {
-  const router = useRouter();
+  const { register } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
@@ -51,7 +58,10 @@ export default function RegisterPage() {
 
   const handleConfirmPasswordChange = (confirmPassword: string) => {
     setFormData({ ...formData, confirmPassword });
-    const error = confirmPassword !== formData.password ? "Las contraseñas no coinciden" : "";
+    const error =
+      confirmPassword !== formData.password
+        ? "Las contraseñas no coinciden"
+        : "";
     setErrors({ ...errors, confirmPassword: error });
   };
 
@@ -72,38 +82,18 @@ export default function RegisterPage() {
     setIsLoading(true);
 
     try {
-      // TODO: Implementar llamada al backend
-      // const response = await fetch('http://localhost:3001/api/auth/register', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({
-      //     name: formData.name,
-      //     email: formData.email,
-      //     password: formData.password,
-      //   }),
-      // });
-
-      // Simulación de registro
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      toast.success("Registro exitoso", {
-        description: "Tu cuenta ha sido creada. Redirigiendo al login...",
-      });
-
-      setTimeout(() => {
-        router.push("/login");
-      }, 1000);
-    } catch {
-      toast.error("Error al registrarse", {
-        description: "Ocurrió un error. Por favor intenta nuevamente.",
-      });
+      await register(formData.name, formData.email, formData.password);
+      // El hook de useAuth ya maneja el toast y la redirección
+    } catch (error) {
+      // Los errores ya se manejan en el hook useAuth
+      console.error("Error en registro:", error);
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-muted p-4">
+    <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-background via-background to-muted p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
           <div className="flex items-center justify-center mb-4">
@@ -129,7 +119,9 @@ export default function RegisterPage() {
                   placeholder="Juan Pérez"
                   className="pl-10"
                   value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, name: e.target.value })
+                  }
                   required
                   disabled={isLoading}
                 />
@@ -146,7 +138,9 @@ export default function RegisterPage() {
                   placeholder="tu@email.com"
                   className="pl-10"
                   value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, email: e.target.value })
+                  }
                   required
                   disabled={isLoading}
                 />
@@ -189,7 +183,9 @@ export default function RegisterPage() {
                 />
               </div>
               {errors.confirmPassword && (
-                <p className="text-sm text-destructive">{errors.confirmPassword}</p>
+                <p className="text-sm text-destructive">
+                  {errors.confirmPassword}
+                </p>
               )}
             </div>
 
@@ -197,7 +193,7 @@ export default function RegisterPage() {
               <Checkbox
                 id="terms"
                 checked={formData.acceptTerms}
-                onCheckedChange={(checked) => 
+                onCheckedChange={(checked) =>
                   setFormData({ ...formData, acceptTerms: checked as boolean })
                 }
                 disabled={isLoading}
@@ -219,9 +215,9 @@ export default function RegisterPage() {
             </div>
           </CardContent>
           <CardFooter className="flex flex-col space-y-4">
-            <Button 
-              type="submit" 
-              className="w-full" 
+            <Button
+              type="submit"
+              className="w-full"
               disabled={isLoading || !formData.acceptTerms}
             >
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -229,7 +225,10 @@ export default function RegisterPage() {
             </Button>
             <div className="text-sm text-center text-muted-foreground">
               ¿Ya tienes una cuenta?{" "}
-              <Link href="/login" className="text-primary hover:underline font-medium">
+              <Link
+                href="/login"
+                className="text-primary hover:underline font-medium"
+              >
                 Inicia sesión aquí
               </Link>
             </div>

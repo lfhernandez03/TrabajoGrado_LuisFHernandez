@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { authService, type AuthResponse } from "@/services/auth.service";
 import { toast } from "sonner";
@@ -12,6 +12,7 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<void>;
   register: (name: string, email: string, password: string) => Promise<void>;
   logout: () => void;
+  refreshProfile: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -21,23 +22,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
 
+  const logout = useCallback(() => {
+    authService.logout();
+    setUser(null);
+    toast.info("Sesión cerrada");
+    router.push("/login");
+  }, [router]);
+
   useEffect(() => {
     // Verificar si hay un usuario en el almacenamiento local
-    const initAuth = () => {
+    const initAuth = async () => {
       const storedUser = authService.getUser();
       const token = authService.getToken();
 
       if (storedUser && token) {
         setUser(storedUser);
-        // Opcional: Verificar token con el backend
-        // authService.getProfile().then(setUser).catch(() => logout());
+        
+        // Verificar token con el backend
+        try {
+          const profile = await authService.getProfile();
+          setUser(profile);
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        } catch (error) {
+          // Si el token es inválido, cerrar sesión
+          logout();
+        }
       }
       
       setIsLoading(false);
     };
 
     initAuth();
-  }, []);
+  }, [logout]);
 
   const login = async (email: string, password: string) => {
     try {
@@ -65,11 +81,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const logout = () => {
-    authService.logout();
-    setUser(null);
-    toast.info("Sesión cerrada");
-    router.push("/login");
+  const refreshProfile = async () => {
+    try {
+      const profile = await authService.getProfile();
+      setUser(profile);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    } catch (error) {
+      logout();
+    }
   };
 
   const value = {
@@ -79,6 +98,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     login,
     register,
     logout,
+    refreshProfile,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

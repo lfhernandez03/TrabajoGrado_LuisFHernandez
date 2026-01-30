@@ -2,17 +2,23 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Film, Mail, Lock, Loader2 } from "lucide-react";
-import { toast } from "sonner";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function LoginPage() {
-  const router = useRouter();
+  const { login } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     email: "",
@@ -25,39 +31,18 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      // TODO: Implementar llamada al backend
-      // const response = await fetch('http://localhost:3001/api/auth/login', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({ email: formData.email, password: formData.password }),
-      // });
-
-      // Simulación de login
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      toast.success("Inicio de sesión exitoso", {
-        description: "Redirigiendo al dashboard...",
-      });
-
-      // Simular guardado de token
-      if (formData.rememberMe) {
-        localStorage.setItem("user", JSON.stringify({ email: formData.email }));
-      }
-
-      setTimeout(() => {
-        router.push("/");
-      }, 1000);
-    } catch {
-      toast.error("Error al iniciar sesión", {
-        description: "Verifica tus credenciales e intenta nuevamente.",
-      });
+      await login(formData.email, formData.password);
+      // El hook de useAuth ya maneja el toast y la redirección
+    } catch (error) {
+      // Los errores ya se manejan en el hook useAuth
+      console.error("Error en login:", error);
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-muted p-4">
+    <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-background via-background to-muted p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
           <div className="flex items-center justify-center mb-4">
@@ -83,7 +68,9 @@ export default function LoginPage() {
                   placeholder="tu@email.com"
                   className="pl-10"
                   value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, email: e.target.value })
+                  }
                   required
                   disabled={isLoading}
                 />
@@ -92,8 +79,8 @@ export default function LoginPage() {
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label htmlFor="password">Contraseña</Label>
-                <Link 
-                  href="/forgot-password" 
+                <Link
+                  href="/forgot-password"
                   className="text-sm text-primary hover:underline"
                 >
                   ¿Olvidaste tu contraseña?
@@ -107,7 +94,9 @@ export default function LoginPage() {
                   placeholder="••••••••"
                   className="pl-10"
                   value={formData.password}
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, password: e.target.value })
+                  }
                   required
                   disabled={isLoading}
                 />
@@ -117,7 +106,7 @@ export default function LoginPage() {
               <Checkbox
                 id="remember"
                 checked={formData.rememberMe}
-                onCheckedChange={(checked) => 
+                onCheckedChange={(checked) =>
                   setFormData({ ...formData, rememberMe: checked as boolean })
                 }
                 disabled={isLoading}
@@ -131,17 +120,16 @@ export default function LoginPage() {
             </div>
           </CardContent>
           <CardFooter className="flex flex-col space-y-4">
-            <Button 
-              type="submit" 
-              className="w-full" 
-              disabled={isLoading}
-            >
+            <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {isLoading ? "Iniciando sesión..." : "Iniciar Sesión"}
             </Button>
             <div className="text-sm text-center text-muted-foreground">
               ¿No tienes una cuenta?{" "}
-              <Link href="/register" className="text-primary hover:underline font-medium">
+              <Link
+                href="/register"
+                className="text-primary hover:underline font-medium"
+              >
                 Regístrate aquí
               </Link>
             </div>
