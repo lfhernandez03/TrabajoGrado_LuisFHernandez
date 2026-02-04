@@ -16,9 +16,9 @@ export class RecommendationRequestDto {
 }
 
 /**
- * DTO para la respuesta de películas
+ * DTO para la respuesta de películas en recomendaciones
  */
-export class MovieDto {
+export class RecommendedMovieDto {
   @ApiProperty({ description: 'Título de la película' })
   title: string;
 
@@ -101,10 +101,10 @@ export class RecommendationResponseDto {
   moviesFound: number;
 
   @ApiProperty({
-    type: [MovieDto],
+    type: [RecommendedMovieDto],
     description: 'Top 5 películas con scores de compatibilidad',
   })
-  moviesWithScores: MovieDto[];
+  moviesWithScores: RecommendedMovieDto[];
 
   @ApiProperty({ description: 'Respuesta narrativa personalizada del LLM' })
   explanation: string;

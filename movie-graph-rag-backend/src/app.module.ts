@@ -9,6 +9,7 @@ import { RecommendationModule } from './modules/recommendation/recommendation.mo
 import { HistoryModule } from './modules/history/history.module';
 import { UsersModule } from './modules/users/users.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { MoviesModule } from './modules/movies/movies.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { AuthModule } from './modules/auth/auth.module';
     HistoryModule,
     UsersModule,
     AuthModule,
+    MoviesModule,
   ],
   controllers: [AppController],
   providers: [AppService],
