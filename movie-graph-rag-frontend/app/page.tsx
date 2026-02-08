@@ -25,13 +25,14 @@ import { Movie, searchMovies, getMovieExamples } from "@/services/movies.service
 import { getMyHistory, HistoryEntry } from "@/services/history.service";
 import { toast } from "sonner";
 import { MovieCard } from "@/components/recommendation/MovieCard";
-import { ConnectionExplorer } from "@/components/recommendation/ConnectionExplorer";
 import { useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
+import { useRouter } from "next/navigation";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Home() {
   const { user } = useAuth();
+  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<Movie[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -46,7 +47,6 @@ export default function Home() {
   const [contextMovie, setContextMovie] = useState<Movie | null>(null);
   const [loadingContext, setLoadingContext] = useState(true);
   const [selectedGenre, setSelectedGenre] = useState<string>("");
-  const [showConnectionExplorer, setShowConnectionExplorer] = useState(false);
 
   useEffect(() => {
     loadHistory();
@@ -390,7 +390,7 @@ LIMIT 36`;
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
               <Card
                 className="bg-card border-border hover:border-accent/60 transition-all cursor-pointer group"
-                onClick={() => setShowConnectionExplorer(true)}
+                onClick={() => router.push("/connections")}
               >
                 <CardContent className="p-4 flex flex-col items-center text-center gap-2">
                   <div className="h-12 w-12 rounded-full bg-accent/10 flex items-center justify-center group-hover:bg-accent/20 transition-colors">
@@ -739,11 +739,7 @@ LIMIT 36`;
         </DialogContent>
       </Dialog>
 
-      {/* Connection Explorer Dialog */}
-      <ConnectionExplorer
-        open={showConnectionExplorer}
-        onClose={() => setShowConnectionExplorer(false)}
-      />
+
     </div>
   );
 }

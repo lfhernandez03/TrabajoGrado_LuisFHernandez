@@ -2,6 +2,13 @@ import { Injectable, Logger } from '@nestjs/common';
 import { GraphService } from '../graph/graph.service';
 import { HistoryService } from '../history/history.service';
 import { MovieDto, SearchMovieDto } from './dto/movie.dto';
+import {
+  ConnectionExplorerDto,
+  ConnectionExplorerResponseDto,
+  ConnectionNodeDto,
+  ConnectionEdgeDto,
+  ConnectionPathStepDto,
+} from './dto/connection-explorer.dto';
 import { NAMESPACES } from '../../common/constants/namespaces';
 
 @Injectable()
@@ -12,6 +19,61 @@ export class MoviesService {
     private readonly graphService: GraphService,
     private readonly historyService: HistoryService,
   ) {}
+
+  /**
+   * Busca películas por título para autocompletado rápido.
+   * Retorna coincidencias parciales ordenadas por relevancia.
+   */
+  async autocomplete(
+    term: string,
+    limit: number = 8,
+  ): Promise<Array<{ uri: string; title: string; director?: string; year?: string }>> {
+    const searchTerm = term.toLowerCase().trim();
+    if (searchTerm.length < 2) return [];
+
+    const sparql = `
+      PREFIX movie: <${NAMESPACES.MOVIE}>
+      PREFIX rdf: <${NAMESPACES.RDF}>
+
+      SELECT DISTINCT ?movie ?title ?directorName
+      WHERE {
+        ?movie rdf:type movie:FeatureFilm ;
+               movie:hasTitle ?title .
+        FILTER(CONTAINS(LCASE(?title), "${searchTerm}"))
+        OPTIONAL {
+          ?movie movie:hasDirector ?dir .
+          ?dir movie:personName ?directorName
+        }
+      }
+      ORDER BY STRLEN(?title)
+      LIMIT ${limit}
+    `;
+
+    try {
+      const results = await this.graphService.executeQuery<{
+        movie: string;
+        title: string;
+        directorName?: string;
+      }>(sparql);
+
+      // Deduplicar por URI (puede haber múltiples directores)
+      const seen = new Set<string>();
+      return results
+        .filter((r) => {
+          if (seen.has(r.movie)) return false;
+          seen.add(r.movie);
+          return true;
+        })
+        .map((r) => ({
+          uri: r.movie,
+          title: r.title,
+          director: r.directorName,
+        }));
+    } catch (error) {
+      this.logger.error('Error en autocomplete', error);
+      return [];
+    }
+  }
 
   /**
    * Obtiene películas de ejemplo para mostrar en la página principal
@@ -262,5 +324,535 @@ export class MoviesService {
     }
 
     return Array.from(moviesMap.values()).slice(0, limit);
+  }
+
+  /**
+   * Encuentra conexiones entre dos películas explorando el grafo.
+   * Busca caminos a través de directores, actores y géneros compartidos.
+   */
+  async findConnections(
+    dto: ConnectionExplorerDto,
+    userId?: string,
+  ): Promise<ConnectionExplorerResponseDto> {
+    const startTime = Date.now();
+    const maxDepth = dto.maxDepth || 3;
+    const fromTerm = dto.from.toLowerCase();
+    const toTerm = dto.to.toLowerCase();
+
+    // PASO 1: Obtener las URIs de las películas de origen y destino
+    const resolveSparql = `
+      PREFIX movie: <${NAMESPACES.MOVIE}>
+      PREFIX rdf: <${NAMESPACES.RDF}>
+
+      SELECT ?movie ?title
+      WHERE {
+        ?movie rdf:type movie:FeatureFilm ;
+               movie:hasTitle ?title .
+        FILTER(
+          CONTAINS(LCASE(?title), "${fromTerm}") ||
+          CONTAINS(LCASE(?title), "${toTerm}")
+        )
+      }
+      LIMIT 20
+    `;
+
+    try {
+      const resolveResults = await this.graphService.executeQuery<{
+        movie: string;
+        title: string;
+      }>(resolveSparql);
+
+      // Encontrar la mejor coincidencia para from y to
+      const fromMovie = resolveResults.find((r) =>
+        r.title.toLowerCase().includes(fromTerm),
+      );
+      const toMovie = resolveResults.find((r) =>
+        r.title.toLowerCase().includes(toTerm),
+      );
+
+      if (!fromMovie || !toMovie) {
+        const executionTimeMs = Date.now() - startTime;
+        return {
+          found: false,
+          nodes: [],
+          edges: [],
+          pathSteps: [],
+          distance: 0,
+          sparqlQuery: resolveSparql,
+          executionTimeMs,
+          fromTitle: fromMovie?.title,
+          toTitle: toMovie?.title,
+        };
+      }
+
+      if (fromMovie.movie === toMovie.movie) {
+        const executionTimeMs = Date.now() - startTime;
+        const node: ConnectionNodeDto = {
+          uri: fromMovie.movie,
+          label: fromMovie.title,
+          type: 'movie',
+        };
+        return {
+          found: true,
+          nodes: [node],
+          edges: [],
+          pathSteps: [
+            { step: 1, description: `${fromMovie.title} es la misma película`, node },
+          ],
+          distance: 0,
+          sparqlQuery: resolveSparql,
+          executionTimeMs,
+          fromTitle: fromMovie.title,
+          toTitle: toMovie.title,
+        };
+      }
+
+      // PASO 2: Buscar conexiones a 1 salto (director, género compartido)
+      const connection1Sparql = `
+        PREFIX movie: <${NAMESPACES.MOVIE}>
+        PREFIX rdf: <${NAMESPACES.RDF}>
+
+        SELECT ?sharedEntity ?sharedLabel ?relType
+        WHERE {
+          {
+            <${fromMovie.movie}> movie:hasDirector ?sharedEntity .
+            <${toMovie.movie}> movie:hasDirector ?sharedEntity .
+            ?sharedEntity movie:personName ?sharedLabel .
+            BIND("director" AS ?relType)
+          }
+          UNION
+          {
+            <${fromMovie.movie}> movie:hasMainGenre ?sharedEntity .
+            <${toMovie.movie}> movie:hasMainGenre ?sharedEntity .
+            ?sharedEntity movie:genreName ?sharedLabel .
+            BIND("genre" AS ?relType)
+          }
+          UNION
+          {
+            <${fromMovie.movie}> movie:hasActor ?sharedEntity .
+            <${toMovie.movie}> movie:hasActor ?sharedEntity .
+            ?sharedEntity movie:personName ?sharedLabel .
+            BIND("actor" AS ?relType)
+          }
+        }
+      `;
+
+      const direct = await this.graphService.executeQuery<{
+        sharedEntity: string;
+        sharedLabel: string;
+        relType: string;
+      }>(connection1Sparql);
+
+      if (direct.length > 0) {
+        // Construir path directo
+        const result = this.buildDirectPath(
+          fromMovie,
+          toMovie,
+          direct,
+          connection1Sparql,
+          Date.now() - startTime,
+        );
+
+        this.saveConnectionHistory(
+          userId,
+          dto,
+          connection1Sparql,
+          result,
+          Date.now() - startTime,
+        );
+
+        return result;
+      }
+
+      // PASO 3: Buscar conexiones a 2 saltos (película intermedia)
+      if (maxDepth >= 2) {
+        const connection2Sparql = `
+          PREFIX movie: <${NAMESPACES.MOVIE}>
+          PREFIX rdf: <${NAMESPACES.RDF}>
+
+          SELECT ?intermediateMovie ?intermediateTitle ?sharedEntity1 ?sharedLabel1 ?relType1 ?sharedEntity2 ?sharedLabel2 ?relType2
+          WHERE {
+            ?intermediateMovie rdf:type movie:FeatureFilm ;
+                               movie:hasTitle ?intermediateTitle .
+            FILTER(?intermediateMovie != <${fromMovie.movie}> && ?intermediateMovie != <${toMovie.movie}>)
+
+            {
+              <${fromMovie.movie}> movie:hasDirector ?sharedEntity1 .
+              ?intermediateMovie movie:hasDirector ?sharedEntity1 .
+              ?sharedEntity1 movie:personName ?sharedLabel1 .
+              BIND("director" AS ?relType1)
+            }
+            UNION
+            {
+              <${fromMovie.movie}> movie:hasMainGenre ?sharedEntity1 .
+              ?intermediateMovie movie:hasMainGenre ?sharedEntity1 .
+              ?sharedEntity1 movie:genreName ?sharedLabel1 .
+              BIND("genre" AS ?relType1)
+            }
+            UNION
+            {
+              <${fromMovie.movie}> movie:hasActor ?sharedEntity1 .
+              ?intermediateMovie movie:hasActor ?sharedEntity1 .
+              ?sharedEntity1 movie:personName ?sharedLabel1 .
+              BIND("actor" AS ?relType1)
+            }
+
+            {
+              ?intermediateMovie movie:hasDirector ?sharedEntity2 .
+              <${toMovie.movie}> movie:hasDirector ?sharedEntity2 .
+              ?sharedEntity2 movie:personName ?sharedLabel2 .
+              BIND("director" AS ?relType2)
+            }
+            UNION
+            {
+              ?intermediateMovie movie:hasMainGenre ?sharedEntity2 .
+              <${toMovie.movie}> movie:hasMainGenre ?sharedEntity2 .
+              ?sharedEntity2 movie:genreName ?sharedLabel2 .
+              BIND("genre" AS ?relType2)
+            }
+            UNION
+            {
+              ?intermediateMovie movie:hasActor ?sharedEntity2 .
+              <${toMovie.movie}> movie:hasActor ?sharedEntity2 .
+              ?sharedEntity2 movie:personName ?sharedLabel2 .
+              BIND("actor" AS ?relType2)
+            }
+          }
+          LIMIT 5
+        `;
+
+        const indirect = await this.graphService.executeQuery<{
+          intermediateMovie: string;
+          intermediateTitle: string;
+          sharedEntity1: string;
+          sharedLabel1: string;
+          relType1: string;
+          sharedEntity2: string;
+          sharedLabel2: string;
+          relType2: string;
+        }>(connection2Sparql);
+
+        if (indirect.length > 0) {
+          const result = this.buildIndirectPath(
+            fromMovie,
+            toMovie,
+            indirect[0],
+            connection2Sparql,
+            Date.now() - startTime,
+          );
+
+          this.saveConnectionHistory(
+            userId,
+            dto,
+            connection2Sparql,
+            result,
+            Date.now() - startTime,
+          );
+
+          return result;
+        }
+      }
+
+      // No se encontró conexión
+      const executionTimeMs = Date.now() - startTime;
+      const noResult: ConnectionExplorerResponseDto = {
+        found: false,
+        nodes: [
+          { uri: fromMovie.movie, label: fromMovie.title, type: 'movie' },
+          { uri: toMovie.movie, label: toMovie.title, type: 'movie' },
+        ],
+        edges: [],
+        pathSteps: [],
+        distance: -1,
+        sparqlQuery: connection1Sparql,
+        executionTimeMs,
+        fromTitle: fromMovie.title,
+        toTitle: toMovie.title,
+      };
+
+      this.saveConnectionHistory(
+        userId,
+        dto,
+        connection1Sparql,
+        noResult,
+        executionTimeMs,
+      );
+
+      return noResult;
+    } catch (error) {
+      this.logger.error('Error buscando conexiones en el grafo', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Construye un path directo (1 salto) entre dos películas
+   */
+  private buildDirectPath(
+    fromMovie: { movie: string; title: string },
+    toMovie: { movie: string; title: string },
+    shared: Array<{
+      sharedEntity: string;
+      sharedLabel: string;
+      relType: string;
+    }>,
+    sparqlQuery: string,
+    executionTimeMs: number,
+  ): ConnectionExplorerResponseDto {
+    const nodes: ConnectionNodeDto[] = [
+      { uri: fromMovie.movie, label: fromMovie.title, type: 'movie' },
+    ];
+    const edges: ConnectionEdgeDto[] = [];
+    const pathSteps: ConnectionPathStepDto[] = [
+      {
+        step: 1,
+        description: fromMovie.title,
+        node: { uri: fromMovie.movie, label: fromMovie.title, type: 'movie' },
+      },
+    ];
+
+    // Usar la primera conexión encontrada (prioridad: director > actor > genre)
+    const priorityOrder = ['director', 'actor', 'genre'];
+    const sortedShared = [...shared].sort(
+      (a, b) =>
+        priorityOrder.indexOf(a.relType) - priorityOrder.indexOf(b.relType),
+    );
+    const best = sortedShared[0];
+
+    const relLabels: Record<string, { fromLabel: string; toLabel: string; property: string }> = {
+      director: {
+        fromLabel: 'dirigida por',
+        toLabel: 'también dirigió',
+        property: 'movie:hasDirector',
+      },
+      actor: {
+        fromLabel: 'protagonizada por',
+        toLabel: 'también actuó en',
+        property: 'movie:hasActor',
+      },
+      genre: {
+        fromLabel: 'pertenece al género',
+        toLabel: 'también del género',
+        property: 'movie:hasMainGenre',
+      },
+    };
+
+    const rel = relLabels[best.relType] || relLabels['genre'];
+    const nodeType: 'person' | 'genre' =
+      best.relType === 'genre' ? 'genre' : 'person';
+
+    nodes.push({
+      uri: best.sharedEntity,
+      label: best.sharedLabel,
+      type: nodeType,
+    });
+    nodes.push({ uri: toMovie.movie, label: toMovie.title, type: 'movie' });
+
+    edges.push({
+      from: fromMovie.movie,
+      to: best.sharedEntity,
+      label: rel.fromLabel,
+      property: rel.property,
+    });
+    edges.push({
+      from: best.sharedEntity,
+      to: toMovie.movie,
+      label: rel.toLabel,
+      property: rel.property,
+    });
+
+    pathSteps.push({
+      step: 2,
+      description: `${rel.fromLabel} ${best.sharedLabel}`,
+      node: { uri: best.sharedEntity, label: best.sharedLabel, type: nodeType },
+    });
+    pathSteps.push({
+      step: 3,
+      description: `${rel.toLabel} ${toMovie.title}`,
+      node: { uri: toMovie.movie, label: toMovie.title, type: 'movie' },
+    });
+
+    return {
+      found: true,
+      nodes,
+      edges,
+      pathSteps,
+      distance: 1,
+      sparqlQuery,
+      executionTimeMs,
+      fromTitle: fromMovie.title,
+      toTitle: toMovie.title,
+    };
+  }
+
+  /**
+   * Construye un path indirecto (2 saltos) a través de una película intermedia
+   */
+  private buildIndirectPath(
+    fromMovie: { movie: string; title: string },
+    toMovie: { movie: string; title: string },
+    connection: {
+      intermediateMovie: string;
+      intermediateTitle: string;
+      sharedEntity1: string;
+      sharedLabel1: string;
+      relType1: string;
+      sharedEntity2: string;
+      sharedLabel2: string;
+      relType2: string;
+    },
+    sparqlQuery: string,
+    executionTimeMs: number,
+  ): ConnectionExplorerResponseDto {
+    const relLabels: Record<string, { fromLabel: string; toLabel: string; property: string }> = {
+      director: {
+        fromLabel: 'dirigida por',
+        toLabel: 'también dirigió',
+        property: 'movie:hasDirector',
+      },
+      actor: {
+        fromLabel: 'protagonizada por',
+        toLabel: 'también actuó en',
+        property: 'movie:hasActor',
+      },
+      genre: {
+        fromLabel: 'pertenece al género',
+        toLabel: 'también del género',
+        property: 'movie:hasMainGenre',
+      },
+    };
+
+    const rel1 = relLabels[connection.relType1] || relLabels['genre'];
+    const rel2 = relLabels[connection.relType2] || relLabels['genre'];
+    const nodeType1: 'person' | 'genre' =
+      connection.relType1 === 'genre' ? 'genre' : 'person';
+    const nodeType2: 'person' | 'genre' =
+      connection.relType2 === 'genre' ? 'genre' : 'person';
+
+    const nodes: ConnectionNodeDto[] = [
+      { uri: fromMovie.movie, label: fromMovie.title, type: 'movie' },
+      {
+        uri: connection.sharedEntity1,
+        label: connection.sharedLabel1,
+        type: nodeType1,
+      },
+      {
+        uri: connection.intermediateMovie,
+        label: connection.intermediateTitle,
+        type: 'movie',
+      },
+      {
+        uri: connection.sharedEntity2,
+        label: connection.sharedLabel2,
+        type: nodeType2,
+      },
+      { uri: toMovie.movie, label: toMovie.title, type: 'movie' },
+    ];
+
+    const edges: ConnectionEdgeDto[] = [
+      {
+        from: fromMovie.movie,
+        to: connection.sharedEntity1,
+        label: rel1.fromLabel,
+        property: rel1.property,
+      },
+      {
+        from: connection.sharedEntity1,
+        to: connection.intermediateMovie,
+        label: rel1.toLabel,
+        property: rel1.property,
+      },
+      {
+        from: connection.intermediateMovie,
+        to: connection.sharedEntity2,
+        label: rel2.fromLabel,
+        property: rel2.property,
+      },
+      {
+        from: connection.sharedEntity2,
+        to: toMovie.movie,
+        label: rel2.toLabel,
+        property: rel2.property,
+      },
+    ];
+
+    const pathSteps: ConnectionPathStepDto[] = [
+      {
+        step: 1,
+        description: fromMovie.title,
+        node: { uri: fromMovie.movie, label: fromMovie.title, type: 'movie' },
+      },
+      {
+        step: 2,
+        description: `${rel1.fromLabel} ${connection.sharedLabel1}`,
+        node: {
+          uri: connection.sharedEntity1,
+          label: connection.sharedLabel1,
+          type: nodeType1,
+        },
+      },
+      {
+        step: 3,
+        description: `${rel1.toLabel} ${connection.intermediateTitle}`,
+        node: {
+          uri: connection.intermediateMovie,
+          label: connection.intermediateTitle,
+          type: 'movie',
+        },
+      },
+      {
+        step: 4,
+        description: `${rel2.fromLabel} ${connection.sharedLabel2}`,
+        node: {
+          uri: connection.sharedEntity2,
+          label: connection.sharedLabel2,
+          type: nodeType2,
+        },
+      },
+      {
+        step: 5,
+        description: `${rel2.toLabel} ${toMovie.title}`,
+        node: { uri: toMovie.movie, label: toMovie.title, type: 'movie' },
+      },
+    ];
+
+    return {
+      found: true,
+      nodes,
+      edges,
+      pathSteps,
+      distance: 2,
+      sparqlQuery,
+      executionTimeMs,
+      fromTitle: fromMovie.title,
+      toTitle: toMovie.title,
+    };
+  }
+
+  /**
+   * Guarda la exploración de conexiones en el historial
+   */
+  private async saveConnectionHistory(
+    userId: string | undefined,
+    dto: ConnectionExplorerDto,
+    sparqlQuery: string,
+    result: ConnectionExplorerResponseDto,
+    executionTimeMs: number,
+  ): Promise<void> {
+    if (!userId) return;
+
+    try {
+      await this.historyService.createEntry({
+        userId,
+        query: `Explorador de Conexiones: ${dto.from} → ${dto.to}`,
+        sparqlExecuted: sparqlQuery,
+        resultsFound: result.pathSteps,
+        executionTimeMs,
+        wasSuccessful: result.found,
+        contextExtracted: dto,
+      });
+    } catch (error) {
+      this.logger.warn('No se pudo guardar conexión en historial', error);
+    }
   }
 }

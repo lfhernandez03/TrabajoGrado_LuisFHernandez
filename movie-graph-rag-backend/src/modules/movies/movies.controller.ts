@@ -9,6 +9,10 @@ import {
 import { AuthGuard } from '@nestjs/passport';
 import { MoviesService } from './movies.service';
 import { MovieDto, SearchMovieDto } from './dto/movie.dto';
+import {
+  ConnectionExplorerDto,
+  ConnectionExplorerResponseDto,
+} from './dto/connection-explorer.dto';
 
 @ApiTags('movies')
 @Controller('movies')
@@ -36,6 +40,40 @@ export class MoviesController {
   async getExamples(@Query('limit') limit?: string): Promise<MovieDto[]> {
     const limitNum = limit ? parseInt(limit) : 3;
     return this.moviesService.getExamples(limitNum);
+  }
+
+  @Get('autocomplete')
+  @UseGuards(AuthGuard('jwt'))
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Autocompletar títulos de películas',
+    description:
+      'Busca películas por coincidencia parcial del título para usar en campos de autocompletado.',
+  })
+  @ApiQuery({
+    name: 'q',
+    required: true,
+    type: String,
+    description: 'Término de búsqueda parcial',
+    example: 'incep',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Límite de sugerencias',
+    example: 8,
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Lista de sugerencias de películas',
+  })
+  async autocomplete(
+    @Query('q') q: string,
+    @Query('limit') limit?: string,
+  ) {
+    const limitNum = limit ? parseInt(limit) : 8;
+    return this.moviesService.autocomplete(q, limitNum);
   }
 
   @Get('search')
@@ -99,5 +137,47 @@ export class MoviesController {
   ): Promise<MovieDto[]> {
     const userId = req.user.userId;
     return this.moviesService.searchMovies(searchDto, userId);
+  }
+
+  @Get('connections')
+  @UseGuards(AuthGuard('jwt'))
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Explorador de Conexiones entre películas',
+    description:
+      'Encuentra el camino semántico entre dos películas en el grafo de conocimiento, explorando relaciones compartidas (director, género, actor).',
+  })
+  @ApiQuery({
+    name: 'from',
+    required: true,
+    type: String,
+    description: 'Película de origen',
+    example: 'Inception',
+  })
+  @ApiQuery({
+    name: 'to',
+    required: true,
+    type: String,
+    description: 'Película de destino',
+    example: 'Interstellar',
+  })
+  @ApiQuery({
+    name: 'maxDepth',
+    required: false,
+    type: Number,
+    description: 'Grado máximo de separación',
+    example: 3,
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Camino de conexión encontrado',
+    type: ConnectionExplorerResponseDto,
+  })
+  async findConnections(
+    @Query() connectionDto: ConnectionExplorerDto,
+    @Request() req: { user: { userId: string } },
+  ): Promise<ConnectionExplorerResponseDto> {
+    const userId = req.user.userId;
+    return this.moviesService.findConnections(connectionDto, userId);
   }
 }
