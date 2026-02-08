@@ -8,21 +8,28 @@ import {
   MovieSuggestion,
 } from "@/services/movies.service";
 
-interface MovieSearchInputProps {
-  value: string;
-  onChange: (value: string) => void;
+export interface MovieSearchInputProps {
+  value?: string;
+  onChange?: (value: string) => void;
   onSelect: (movie: MovieSuggestion) => void;
+  onSubmit?: (value: string) => void;
   placeholder?: string;
   disabled?: boolean;
+  className?: string;
 }
 
 export function MovieSearchInput({
-  value,
-  onChange,
+  value: controlledValue,
+  onChange: controlledOnChange,
   onSelect,
+  onSubmit,
   placeholder = "Buscar película...",
   disabled = false,
+  className,
 }: MovieSearchInputProps) {
+  const [internalValue, setInternalValue] = useState("");
+  const value = controlledValue ?? internalValue;
+  const onChange = controlledOnChange ?? setInternalValue;
   const [suggestions, setSuggestions] = useState<MovieSuggestion[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
@@ -88,6 +95,9 @@ export function MovieSearchInput({
         e.preventDefault();
         if (highlightedIndex >= 0) {
           handleSelect(suggestions[highlightedIndex]);
+        } else if (onSubmit && value.trim()) {
+          setIsOpen(false);
+          onSubmit(value.trim());
         }
         break;
       case "Escape":
@@ -130,7 +140,7 @@ export function MovieSearchInput({
           }}
           placeholder={placeholder}
           disabled={disabled}
-          className="pr-8"
+          className={`pr-8 ${className || ""}`}
         />
         <div className="absolute right-2.5 top-1/2 -translate-y-1/2">
           {isLoading ? (
