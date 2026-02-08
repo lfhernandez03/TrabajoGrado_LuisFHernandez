@@ -3,8 +3,7 @@
 import { useEffect, useState } from "react";
 import { Movie, getMovieExamples } from "@/services/movies.service";
 import { MovieCard } from "./MovieCard";
-import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 interface MoviesCarouselProps {
@@ -44,14 +43,6 @@ export function MoviesCarousel({
   const endIdx = startIdx + itemsPerPage;
   const currentMovies = movies.slice(startIdx, endIdx);
 
-  const goToNext = () => {
-    setCurrentPage((prev) => (prev + 1) % totalPages);
-  };
-
-  const goToPrevious = () => {
-    setCurrentPage((prev) => (prev - 1 + totalPages) % totalPages);
-  };
-
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -82,41 +73,21 @@ export function MoviesCarousel({
         ))}
       </div>
 
-      {/* Controles del carrusel */}
+      {/* Carousel dot indicators */}
       {totalPages > 1 && (
-        <div className="flex items-center justify-center gap-4">
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={goToPrevious}
-            aria-label="Página anterior"
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-          
-          <div className="flex gap-2">
-            {Array.from({ length: totalPages }).map((_, idx) => (
-              <button
-                key={idx}
-                onClick={() => setCurrentPage(idx)}
-                className={`h-2 rounded-full transition-all ${
-                  idx === currentPage
-                    ? "w-8 bg-primary"
-                    : "w-2 bg-muted-foreground/30 hover:bg-muted-foreground/50"
-                }`}
-                aria-label={`Ir a página ${idx + 1}`}
-              />
-            ))}
-          </div>
-
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={goToNext}
-            aria-label="Página siguiente"
-          >
-            <ChevronRight className="h-4 w-4" />
-          </Button>
+        <div className="flex items-center justify-center gap-2 mt-6">
+          {Array.from({ length: totalPages }).map((_, idx) => (
+            <button
+              key={idx}
+              onClick={() => setCurrentPage(idx)}
+              className={`h-2.5 rounded-full transition-all ${
+                idx === currentPage
+                  ? "w-2.5 bg-primary"
+                  : "w-2.5 bg-muted-foreground/30 hover:bg-muted-foreground/50"
+              }`}
+              aria-label={`Ir a página ${idx + 1}`}
+            />
+          ))}
         </div>
       )}
     </div>

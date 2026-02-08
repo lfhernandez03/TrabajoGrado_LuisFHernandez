@@ -1,24 +1,21 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Film, Search, History, User, Settings, LogOut, Menu } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { User, Settings, LogOut } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 
 export function Navbar() {
   const { user, isAuthenticated, logout } = useAuth();
-  const pathname = usePathname();
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-
-  const navigation = [
-    { name: "Inicio", href: "/", icon: Film },
-    { name: "Buscar", href: "/search", icon: Search },
-    { name: "Historial", href: "/history", icon: History },
-  ];
 
   const getInitials = (name: string) => {
     return name
@@ -30,51 +27,39 @@ export function Navbar() {
   };
 
   return (
-    <nav className="border-b bg-background">
+    <nav className="bg-background/80 backdrop-blur-sm sticky top-0 z-50">
       <div className="container mx-auto px-4">
         <div className="flex h-16 items-center justify-between">
-          {/* Logo */}
-          <Link href="/" className="flex items-center gap-2">
-            <Film className="h-6 w-6 text-primary" />
-            <span className="text-xl font-bold">Movie Graph RAG</span>
+          {/* Logo / App Name */}
+          <Link href="/" className="flex items-center gap-3">
+            <span className="bg-primary text-primary-foreground text-sm font-bold px-3 py-1.5 rounded-full ring-2 ring-accent/50">
+              LLM
+            </span>
           </Link>
 
-          {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center gap-6">
-            {navigation.map((item) => {
-              const isActive = pathname === item.href;
-              const Icon = item.icon;
-              return (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  className={`flex items-center gap-2 text-sm font-medium transition-colors hover:text-primary ${
-                    isActive ? "text-primary" : "text-muted-foreground"
-                  }`}
-                >
-                  <Icon className="h-4 w-4" />
-                  {item.name}
-                </Link>
-              );
-            })}
-          </div>
-
-          {/* User Menu */}
-          <div className="flex items-center gap-4">
+          {/* User Profile */}
+          <div className="flex items-center">
             {isAuthenticated && user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-                    <Avatar className="h-10 w-10">
+                  <Button
+                    variant="ghost"
+                    className="relative h-10 w-10 rounded-full"
+                  >
+                    <Avatar className="h-10 w-10 border-2 border-accent/50">
                       <AvatarImage src="" alt={user.name} />
-                      <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
+                      <AvatarFallback className="bg-primary/20 text-primary font-semibold">
+                        {getInitials(user.name)}
+                      </AvatarFallback>
                     </Avatar>
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="w-56" align="end">
                   <DropdownMenuLabel>
                     <div className="flex flex-col space-y-1">
-                      <p className="text-sm font-medium leading-none">{user.name}</p>
+                      <p className="text-sm font-medium leading-none">
+                        {user.name}
+                      </p>
                       <p className="text-xs leading-none text-muted-foreground">
                         {user.email}
                       </p>
@@ -94,7 +79,10 @@ export function Navbar() {
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={logout} className="cursor-pointer text-destructive">
+                  <DropdownMenuItem
+                    onClick={logout}
+                    className="cursor-pointer text-destructive"
+                  >
                     <LogOut className="mr-2 h-4 w-4" />
                     <span>Cerrar Sesión</span>
                   </DropdownMenuItem>
@@ -110,40 +98,8 @@ export function Navbar() {
                 </Button>
               </div>
             )}
-
-            {/* Mobile Menu Button */}
-            <Button
-              variant="ghost"
-              size="icon"
-              className="md:hidden"
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            >
-              <Menu className="h-5 w-5" />
-            </Button>
           </div>
         </div>
-
-        {/* Mobile Navigation */}
-        {isMobileMenuOpen && (
-          <div className="md:hidden py-4 border-t">
-            <div className="flex flex-col space-y-2">
-              {navigation.map((item) => {
-                const Icon = item.icon;
-                return (
-                  <Link
-                    key={item.name}
-                    href={item.href}
-                    className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md hover:bg-accent"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                  >
-                    <Icon className="h-4 w-4" />
-                    {item.name}
-                  </Link>
-                );
-              })}
-            </div>
-          </div>
-        )}
       </div>
     </nav>
   );

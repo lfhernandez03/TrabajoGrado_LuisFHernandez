@@ -20,14 +20,18 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Navbar } from "@/components/shared/Navbar";
 import { MoviesCarousel } from "@/components/recommendation/MoviesCarousel";
-import { Film, Search, Sparkles, Code2, ChevronDown, ChevronUp, Calendar, Star, User, History } from "lucide-react";
-import { Movie, searchMovies } from "@/services/movies.service";
+import { Search, Sparkles, Code2, ChevronDown, ChevronUp, Calendar, Star, User, History, Heart, Shuffle, Smile, Network, Compass } from "lucide-react";
+import { Movie, searchMovies, getMovieExamples } from "@/services/movies.service";
 import { getMyHistory, HistoryEntry } from "@/services/history.service";
 import { toast } from "sonner";
 import { MovieCard } from "@/components/recommendation/MovieCard";
+import { ConnectionExplorer } from "@/components/recommendation/ConnectionExplorer";
 import { useEffect } from "react";
+import { useAuth } from "@/hooks/useAuth";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Home() {
+  const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<Movie[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -39,10 +43,29 @@ export default function Home() {
   const [showHistoryDialog, setShowHistoryDialog] = useState(false);
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
+  const [contextMovie, setContextMovie] = useState<Movie | null>(null);
+  const [loadingContext, setLoadingContext] = useState(true);
+  const [selectedGenre, setSelectedGenre] = useState<string>("");
+  const [showConnectionExplorer, setShowConnectionExplorer] = useState(false);
 
   useEffect(() => {
     loadHistory();
+    loadContextRecommendation();
   }, []);
+
+  const loadContextRecommendation = async () => {
+    try {
+      setLoadingContext(true);
+      const movies = await getMovieExamples(1);
+      if (movies.length > 0) {
+        setContextMovie(movies[0]);
+      }
+    } catch (error) {
+      console.error("Error cargando recomendación contextual:", error);
+    } finally {
+      setLoadingContext(false);
+    }
+  };
 
   const loadHistory = async () => {
     try {
@@ -188,56 +211,52 @@ LIMIT 36`;
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      <main className="container mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="flex flex-col items-center gap-4 py-8">
-          <div className="flex items-center gap-2">
-            <Film className="h-8 w-8 text-primary" />
-            <h1 className="text-4xl font-bold">Movie Graph RAG</h1>
+
+      {/* Search Bar + Favorites + History — directly below navbar */}
+      <div className="container mx-auto px-4 py-4">
+        <div className="flex items-center gap-3">
+          <div className="relative flex-1">
+            <Input
+              placeholder="Buscar películas..."
+              className="w-full pr-10 bg-secondary/50 border-border"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={handleKeyDown}
+              disabled={isSearching}
+            />
+            <button
+              onClick={handleSearch}
+              disabled={isSearching}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-primary transition-colors"
+            >
+              <Search className="h-5 w-5" />
+            </button>
           </div>
-          <p className="text-center text-muted-foreground max-w-2xl">
-            Sistema de recomendación de películas potenciado por grafos de
-            conocimiento y IA
-          </p>
+
+          {/* Favorites button */}
           <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setShowHistoryDialog(true)}
-            className="flex items-center gap-2"
+            variant="ghost"
+            size="icon"
+            className="shrink-0 text-muted-foreground hover:text-primary"
+            title="Favoritos"
           >
-            <History className="h-4 w-4" />
-            Ver Historial ({history.length})
+            <Heart className="h-5 w-5" />
+          </Button>
+
+          {/* History button */}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="shrink-0 text-muted-foreground hover:text-primary"
+            onClick={() => setShowHistoryDialog(true)}
+            title="Historial"
+          >
+            <History className="h-5 w-5" />
           </Button>
         </div>
+      </div>
 
-        {/* Search Section */}
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Search className="h-5 w-5" />
-              Buscar Películas
-            </CardTitle>
-            <CardDescription>
-              Ingresa tu consulta para buscar películas en nuestra base de datos
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex gap-2">
-              <Input
-                placeholder="Ej: Inception, Christopher Nolan, Sci-Fi..."
-                className="flex-1"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyDown={handleKeyDown}
-                disabled={isSearching}
-              />
-              <Button onClick={handleSearch} disabled={isSearching}>
-                <Sparkles className="mr-2 h-4 w-4" />
-                {isSearching ? "Buscando..." : "Buscar"}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+      <main className="container mx-auto px-4 pb-8">
 
         {/* Search Results */}
         {hasSearched && (
@@ -298,57 +317,166 @@ LIMIT 36`;
               </div>
             ) : (
               <div className="text-center py-8 text-muted-foreground">
-                No se encontraron resultados para `{searchQuery}`;
+                No se encontraron resultados para &ldquo;{searchQuery}&rdquo;
               </div>
             )}
           </div>
         )}
 
-        {/* Example Movies Carousel */}
-        <div className="mb-8">
-          <h2 className="text-2xl font-semibold mb-4">Películas Destacadas</h2>
-          <MoviesCarousel
-            itemsPerPage={3}
-            onViewDetails={handleViewDetails}
-            onRecommendSimilar={handleRecommendSimilar}
-          />
-        </div>
-
-        {/* Features */}
-        <div className="mt-12 grid gap-6 md:grid-cols-3">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">🎬 Base de Conocimiento</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">
-                Grafos semánticos con ontologías enriquecidas
+        {/* ===== SECTION 1: Context Recommendation ===== */}
+        {!hasSearched && (
+          <section className="mb-10 ">
+            <div className="mb-4">
+              <h2 className="text-2xl font-semibold">
+                ¡Hola, {user?.name?.split(" ")[0] || "Cinéfilo"}!
+              </h2>
+              <p className="text-muted-foreground text-sm mt-1">
+                Basado en tu actividad, te recomendamos
               </p>
-            </CardContent>
-          </Card>
+            </div>
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">🤖 IA Generativa</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">
-                Recomendaciones contextuales impulsadas por LLMs
-              </p>
-            </CardContent>
-          </Card>
+            <div className="grid gap-6 md:grid-cols-[1fr_auto] items-center">
+              {/* Context Movie Card */}
+              <div>
+                {loadingContext ? (
+                  <Card className="bg-card border-border p-5 space-y-3">
+                    <Skeleton className="h-5 w-3/4" />
+                    <Skeleton className="h-4 w-1/2" />
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-4 w-5/6" />
+                    <div className="flex gap-2 pt-2">
+                      <Skeleton className="h-9 flex-1" />
+                      <Skeleton className="h-9 flex-1" />
+                    </div>
+                  </Card>
+                ) : contextMovie ? (
+                  <MovieCard
+                    movie={contextMovie}
+                    onViewDetails={handleViewDetails}
+                    onRecommendSimilar={handleRecommendSimilar}
+                  />
+                ) : null}
+              </div>
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">🔍 RAG Avanzado</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">
-                Recuperación aumentada sobre grafos de conocimiento
+              {/* Explanation text */}
+              <div className="hidden md:flex flex-col gap-2 w-72 text-sm text-muted-foreground leading-relaxed">
+                <p>
+                  Te recomendamos esta película porque en tus últimas búsquedas
+                  mostraste interés en el género <span className="text-accent font-medium">Sci-Fi</span> y
+                  en películas dirigidas por <span className="text-accent font-medium">Christopher Nolan</span>.
+                </p>
+                <p className="mt-1">
+                  Nuestro sistema de grafos de conocimiento encontró una alta
+                  compatibilidad semántica con tu perfil de preferencias.
+                </p>
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* ===== SECTION 2: Intelligent Discovery ===== */}
+        {!hasSearched && (
+          <section className="mb-10">
+            <div className="mb-6">
+              <h2 className="text-2xl font-semibold text-center">
+                Descubrimiento Inteligente
+              </h2>
+              <p className="text-muted-foreground text-sm mt-1 text-center">
+                Explora películas de formas únicas usando el poder del grafo de conocimiento
               </p>
-            </CardContent>
-          </Card>
-        </div>
+            </div>
+
+            {/* Feature cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+              <Card
+                className="bg-card border-border hover:border-accent/60 transition-all cursor-pointer group"
+                onClick={() => setShowConnectionExplorer(true)}
+              >
+                <CardContent className="p-4 flex flex-col items-center text-center gap-2">
+                  <div className="h-12 w-12 rounded-full bg-accent/10 flex items-center justify-center group-hover:bg-accent/20 transition-colors">
+                    <Network className="h-6 w-6 text-accent" />
+                  </div>
+                  <h3 className="font-semibold text-base">Explorador de Conexiones</h3>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    Descubre el camino semántico entre dos películas o directores en el grafo
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-card border-border hover:border-accent/60 transition-all cursor-pointer group">
+                <CardContent className="p-4 flex flex-col items-center text-center gap-2">
+                  <div className="h-12 w-12 rounded-full bg-accent/10 flex items-center justify-center group-hover:bg-accent/20 transition-colors">
+                    <Compass className="h-6 w-6 text-accent" />
+                  </div>
+                  <h3 className="font-semibold text-base">Viaje Cinematográfico</h3>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    Recorre una secuencia curada de 5-7 películas conectadas temáticamente
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-card border-border hover:border-accent/60 transition-all cursor-pointer group">
+                <CardContent className="p-4 flex flex-col items-center text-center gap-2">
+                  <div className="h-12 w-12 rounded-full bg-accent/10 flex items-center justify-center group-hover:bg-accent/20 transition-colors">
+                    <Shuffle className="h-6 w-6 text-accent" />
+                  </div>
+                  <h3 className="font-semibold text-base">Rueda Aleatoria</h3>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    Navegación multihop por el grafo para descubrir algo completamente nuevo
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-card border-border hover:border-accent/60 transition-all cursor-pointer group">
+                <CardContent className="p-4 flex flex-col items-center text-center gap-2">
+                  <div className="h-12 w-12 rounded-full bg-accent/10 flex items-center justify-center group-hover:bg-accent/20 transition-colors">
+                    <Smile className="h-6 w-6 text-accent" />
+                  </div>
+                  <h3 className="font-semibold text-base">Selector Emocional</h3>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    Recomendaciones basadas en tu estado de ánimo y preferencias del momento
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+          </section>
+        )}
+
+        {/* ===== SECTION 3: Browse by Genre + Carousel ===== */}
+        {!hasSearched && (
+          <section className="mb-10">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-2xl font-semibold">Películas Destacadas</h2>
+                <p className="text-muted-foreground text-sm mt-1">
+                  Explora nuestro catálogo de películas
+                </p>
+              </div>
+
+              {/* Genre filter dropdown */}
+              <select
+                value={selectedGenre}
+                onChange={(e) => setSelectedGenre(e.target.value)}
+                className="bg-secondary/50 border border-border text-foreground text-sm rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-accent"
+              >
+                <option value="">Género</option>
+                <option value="Action">Acción</option>
+                <option value="Comedy">Comedia</option>
+                <option value="Drama">Drama</option>
+                <option value="Horror">Terror</option>
+                <option value="Sci-Fi">Ciencia Ficción</option>
+                <option value="Romance">Romance</option>
+                <option value="Thriller">Thriller</option>
+              </select>
+            </div>
+
+            <MoviesCarousel
+              itemsPerPage={3}
+              onViewDetails={handleViewDetails}
+              onRecommendSimilar={handleRecommendSimilar}
+            />
+          </section>
+        )}
       </main>
 
       {/* Dialog de Detalles de Película */}
@@ -488,6 +616,22 @@ LIMIT 36`;
         </DialogContent>
       </Dialog>
 
+      {/* Floating Chatbot Button */}
+      <div className="fixed bottom-6 right-6 z-50 flex items-end gap-3">
+        <div className="bg-card border border-accent/40 text-foreground text-sm rounded-2xl rounded-br-none px-4 py-3 shadow-lg max-w-[200px]">
+          <p className="font-medium text-accent">¿Necesitas ayuda?</p>
+          <p className="text-muted-foreground text-xs mt-0.5">
+            Pregúntame sobre películas, géneros o recomendaciones.
+          </p>
+        </div>
+        <button
+          className="h-14 w-14 shrink-0 rounded-full bg-accent text-accent-foreground shadow-lg hover:bg-accent/90 transition-all hover:scale-105 flex items-center justify-center"
+          title="Asistente IA"
+        >
+          <Sparkles className="h-6 w-6" />
+        </button>
+      </div>
+
       {/* Dialog de Historial */}
       <Dialog open={showHistoryDialog} onOpenChange={setShowHistoryDialog}>
         <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
@@ -594,6 +738,12 @@ LIMIT 36`;
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Connection Explorer Dialog */}
+      <ConnectionExplorer
+        open={showConnectionExplorer}
+        onClose={() => setShowConnectionExplorer(false)}
+      />
     </div>
   );
 }
