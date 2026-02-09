@@ -20,7 +20,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Navbar } from "@/components/shared/Navbar";
 import { MoviesCarousel } from "@/components/recommendation/MoviesCarousel";
-import { Search, Sparkles, Code2, ChevronDown, ChevronUp, Calendar, Star, User, History, Heart, Shuffle, Smile, Network, Compass } from "lucide-react";
+import { Search, Sparkles, Code2, ChevronDown, ChevronUp, Calendar, Star, User, History, Heart, Shuffle, Smile, Network, Compass, MessageSquare } from "lucide-react";
 import { Movie, searchMovies, getMovieExamples } from "@/services/movies.service";
 import { getMyHistory, HistoryEntry } from "@/services/history.service";
 import { toast } from "sonner";
@@ -241,6 +241,17 @@ LIMIT 36`;
             title="Favoritos"
           >
             <Heart className="h-5 w-5" />
+          </Button>
+
+          {/* Chat button */}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="shrink-0 text-muted-foreground hover:text-primary"
+            onClick={() => router.push("/chat")}
+            title="Chat de Recomendaciones"
+          >
+            <MessageSquare className="h-5 w-5" />
           </Button>
 
           {/* History button */}
@@ -625,6 +636,7 @@ LIMIT 36`;
           </p>
         </div>
         <button
+          onClick={() => router.push("/chat")}
           className="h-14 w-14 shrink-0 rounded-full bg-accent text-accent-foreground shadow-lg hover:bg-accent/90 transition-all hover:scale-105 flex items-center justify-center"
           title="Asistente IA"
         >

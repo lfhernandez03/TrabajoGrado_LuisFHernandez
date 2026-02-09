@@ -48,7 +48,8 @@ export interface MovieWithScore {
   title: string;
   runtime?: number;
   genreName?: string;
-  releaseYear?: number;
+  releaseDate?: string;
+  averageRating?: number;
   compatibilityScore?: number;
   [key: string]: any;
 }

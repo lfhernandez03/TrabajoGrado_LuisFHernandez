@@ -37,8 +37,9 @@ export function Navbar() {
             </span>
           </Link>
 
-          {/* User Profile */}
-          <div className="flex items-center">
+          {/* Nav Actions */}
+          <div className="flex items-center gap-2">
+            {/* User Profile */}
             {isAuthenticated && user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
