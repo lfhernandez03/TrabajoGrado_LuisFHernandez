@@ -13,7 +13,6 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Film, Mail, Lock, Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -23,7 +22,6 @@ export default function LoginPage() {
   const [formData, setFormData] = useState({
     email: "",
     password: "",
-    rememberMe: false,
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -79,12 +77,6 @@ export default function LoginPage() {
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label htmlFor="password">Contraseña</Label>
-                <Link
-                  href="/forgot-password"
-                  className="text-md text-primary hover:underline"
-                >
-                  ¿Olvidaste tu contraseña?
-                </Link>
               </div>
               <div className="relative">
                 <Lock className="absolute left-3 top-4 h-5 w-5 text-muted-foreground" />
@@ -101,22 +93,6 @@ export default function LoginPage() {
                   disabled={isLoading}
                 />
               </div>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="remember"
-                checked={formData.rememberMe}
-                onCheckedChange={(checked) =>
-                  setFormData({ ...formData, rememberMe: checked as boolean })
-                }
-                disabled={isLoading}
-              />
-              <label
-                htmlFor="remember"
-                className="text-md font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-              >
-                Recordarme
-              </label>
             </div>
           </CardContent>
           <CardFooter className="flex flex-col p-4 space-y-4">

@@ -14,7 +14,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Film, Mail, Lock, User, Loader2 } from "lucide-react";
-import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 
 export default function RegisterPage() {
@@ -25,7 +24,6 @@ export default function RegisterPage() {
     email: "",
     password: "",
     confirmPassword: "",
-    acceptTerms: false,
   });
 
   const [errors, setErrors] = useState({
@@ -66,12 +64,6 @@ export default function RegisterPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    // Validaciones
-    if (!formData.acceptTerms) {
-      toast.error("Debes aceptar los términos y condiciones");
-      return;
-    }
 
     if (errors.password || errors.confirmPassword) {
       toast.error("Por favor corrige los errores en el formulario");
@@ -192,7 +184,7 @@ export default function RegisterPage() {
             <Button
               type="submit"
               className="w-full"
-              disabled={isLoading || !formData.acceptTerms}
+              disabled={isLoading}
             >
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {isLoading ? "Creando cuenta..." : "Crear Cuenta"}

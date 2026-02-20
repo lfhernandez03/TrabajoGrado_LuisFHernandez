@@ -6,8 +6,8 @@ export interface HistoryEntry {
   query: string;
   rdfGenerated?: string;
   sparqlExecuted?: string;
-  contextExtracted?: any;
-  resultsFound?: any[];
+  contextExtracted?: Record<string, unknown>;
+  resultsFound?: Record<string, unknown>[];
   explanation?: string;
   executionTimeMs?: number;
   wasSuccessful: boolean;
@@ -25,10 +25,4 @@ export const getMyHistory = async (limit?: number): Promise<HistoryEntry[]> => {
   return response.data;
 };
 
-/**
- * Obtiene el detalle de una consulta específica del historial
- */
-export const getHistoryDetail = async (id: string): Promise<HistoryEntry | null> => {
-  const response = await api.get<HistoryEntry>(`/history/${id}`);
-  return response.data;
-};
+

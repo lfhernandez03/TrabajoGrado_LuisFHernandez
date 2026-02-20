@@ -13,10 +13,6 @@ export interface Movie {
 
 export interface SearchMovieParams {
   q?: string;
-  genre?: string;
-  director?: string;
-  yearFrom?: number;
-  yearTo?: number;
   limit?: number;
 }
 

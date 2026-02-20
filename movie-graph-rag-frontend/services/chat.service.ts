@@ -40,7 +40,6 @@ export interface ChatMessage {
   content: string;
   timestamp: Date;
   recommendation?: ChatRecommendationResponse;
-  isLoading?: boolean;
 }
 
 /**

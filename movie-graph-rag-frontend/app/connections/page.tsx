@@ -12,8 +12,6 @@ import {
   Network,
   ArrowRight,
   Film,
-  User,
-  Tag,
   Code2,
   ChevronDown,
   ChevronUp,
@@ -25,9 +23,9 @@ import {
 import {
   findConnections,
   ConnectionExplorerResponse,
-  ConnectionNode,
   MovieSuggestion,
 } from "@/services/movies.service";
+import { getNodeIcon, getNodeColor, getEdgeColor } from "@/lib/graph-styles";
 import { toast } from "sonner";
 import Link from "next/link";
 
@@ -74,39 +72,6 @@ export default function ConnectionsPage() {
     setToSelected(null);
     setResult(null);
     setShowSparql(false);
-  };
-
-  const getNodeIcon = (type: ConnectionNode["type"]) => {
-    switch (type) {
-      case "movie":
-        return <Film className="h-4 w-4" />;
-      case "person":
-        return <User className="h-4 w-4" />;
-      case "genre":
-        return <Tag className="h-4 w-4" />;
-    }
-  };
-
-  const getNodeColor = (type: ConnectionNode["type"]) => {
-    switch (type) {
-      case "movie":
-        return "bg-blue-500/20 text-blue-400 border-blue-500/40";
-      case "person":
-        return "bg-amber-500/20 text-amber-400 border-amber-500/40";
-      case "genre":
-        return "bg-emerald-500/20 text-emerald-400 border-emerald-500/40";
-    }
-  };
-
-  const getEdgeColor = (type: ConnectionNode["type"]) => {
-    switch (type) {
-      case "movie":
-        return "border-blue-500/50";
-      case "person":
-        return "border-amber-500/50";
-      case "genre":
-        return "border-emerald-500/50";
-    }
   };
 
   return (
