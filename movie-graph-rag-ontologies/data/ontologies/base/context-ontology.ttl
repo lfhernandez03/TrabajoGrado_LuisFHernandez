@@ -419,6 +419,128 @@
 # Un snapshot tiene como máximo una hora del día
 :hourOfDay rdf:type owl:FunctionalProperty .
 
+# Tipo de compañía es funcional (un solo valor por SocialContext)
+:companionType rdf:type owl:FunctionalProperty .
+
+# Presencia de niños es funcional
+:hasChildren rdf:type owl:FunctionalProperty .
+
+# Descripción de mood es funcional (un solo estado dominante)
+:moodDescription rdf:type owl:FunctionalProperty .
+
+# Nivel de energía deseado es funcional
+:desiredEnergyLevel rdf:type owl:FunctionalProperty .
+
+# Tiempo disponible es funcional
+:availableTime rdf:type owl:FunctionalProperty .
+
+# Idioma preferido es funcional
+:preferredLanguage rdf:type owl:FunctionalProperty .
+
+# Día de la semana es funcional
+:dayOfWeek rdf:type owl:FunctionalProperty .
+
+#================================================================
+# CLASES DISJUNTAS (MUTUAMENTE EXCLUYENTES)
+#================================================================
+
+# Las 5 clases principales de la ontología son mutuamente disjuntas
+[] rdf:type owl:AllDisjointClasses ;
+   owl:members ( :User :ContextSnapshot :SocialContext
+                 :EmotionalContext :RequirementContext ) .
+
+#================================================================
+# RESTRICCIONES DE CARDINALIDAD PARA OBJECT PROPERTIES
+#================================================================
+
+# Un ContextSnapshot tiene como máximo un SocialContext
+:ContextSnapshot rdfs:subClassOf [ rdf:type owl:Restriction ;
+                                   owl:onProperty :withCompanion ;
+                                   owl:maxCardinality "1"^^xsd:nonNegativeInteger
+                                 ] .
+
+# Un ContextSnapshot tiene como máximo un EmotionalContext
+:ContextSnapshot rdfs:subClassOf [ rdf:type owl:Restriction ;
+                                   owl:onProperty :feelsMood ;
+                                   owl:maxCardinality "1"^^xsd:nonNegativeInteger
+                                 ] .
+
+# Un ContextSnapshot tiene como máximo un RequirementContext
+:ContextSnapshot rdfs:subClassOf [ rdf:type owl:Restriction ;
+                                   owl:onProperty :hasRequirement ;
+                                   owl:maxCardinality "1"^^xsd:nonNegativeInteger
+                                 ] .
+
+# Un SocialContext DEBE tener exactamente un companionType
+:SocialContext rdfs:subClassOf [ rdf:type owl:Restriction ;
+                                 owl:onProperty :companionType ;
+                                 owl:cardinality "1"^^xsd:nonNegativeInteger
+                               ] .
+
+# Un SocialContext tiene como máximo un valor hasChildren
+:SocialContext rdfs:subClassOf [ rdf:type owl:Restriction ;
+                                 owl:onProperty :hasChildren ;
+                                 owl:maxCardinality "1"^^xsd:nonNegativeInteger
+                               ] .
+
+# Un EmotionalContext DEBE tener exactamente una descripción de mood
+:EmotionalContext rdfs:subClassOf [ rdf:type owl:Restriction ;
+                                    owl:onProperty :moodDescription ;
+                                    owl:cardinality "1"^^xsd:nonNegativeInteger
+                                  ] .
+
+# Un EmotionalContext tiene como máximo un nivel de energía deseado
+:EmotionalContext rdfs:subClassOf [ rdf:type owl:Restriction ;
+                                    owl:onProperty :desiredEnergyLevel ;
+                                    owl:maxCardinality "1"^^xsd:nonNegativeInteger
+                                  ] .
+
+# Un EmotionalContext tiene como máximo una intensidad de mood
+:EmotionalContext rdfs:subClassOf [ rdf:type owl:Restriction ;
+                                    owl:onProperty :moodIntensity ;
+                                    owl:maxCardinality "1"^^xsd:nonNegativeInteger
+                                  ] .
+
+# Un RequirementContext tiene como máximo un tiempo disponible
+:RequirementContext rdfs:subClassOf [ rdf:type owl:Restriction ;
+                                      owl:onProperty :availableTime ;
+                                      owl:maxCardinality "1"^^xsd:nonNegativeInteger
+                                    ] .
+
+# Un RequirementContext tiene como máximo un idioma preferido
+:RequirementContext rdfs:subClassOf [ rdf:type owl:Restriction ;
+                                      owl:onProperty :preferredLanguage ;
+                                      owl:maxCardinality "1"^^xsd:nonNegativeInteger
+                                    ] .
+
+#================================================================
+# RESTRICCIONES allValuesFrom (TIPADO ESTRICTO)
+#================================================================
+
+# Los valores de withCompanion DEBEN ser instancias de SocialContext
+:ContextSnapshot rdfs:subClassOf [ rdf:type owl:Restriction ;
+                                   owl:onProperty :withCompanion ;
+                                   owl:allValuesFrom :SocialContext
+                                 ] .
+
+# Los valores de feelsMood DEBEN ser instancias de EmotionalContext
+:ContextSnapshot rdfs:subClassOf [ rdf:type owl:Restriction ;
+                                   owl:onProperty :feelsMood ;
+                                   owl:allValuesFrom :EmotionalContext
+                                 ] .
+
+# Los valores de hasRequirement DEBEN ser instancias de RequirementContext
+:ContextSnapshot rdfs:subClassOf [ rdf:type owl:Restriction ;
+                                   owl:onProperty :hasRequirement ;
+                                   owl:allValuesFrom :RequirementContext
+                                 ] .
+
+# Los valores de hasCurrentContext DEBEN ser instancias de ContextSnapshot
+:User rdfs:subClassOf [ rdf:type owl:Restriction ;
+                        owl:onProperty :hasCurrentContext ;
+                        owl:allValuesFrom :ContextSnapshot
+                      ] .
+
 #################################################################
 #    Instancias de Ejemplo para Testing
 #################################################################
