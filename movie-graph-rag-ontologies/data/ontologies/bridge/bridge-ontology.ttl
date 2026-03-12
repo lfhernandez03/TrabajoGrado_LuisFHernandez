@@ -744,6 +744,35 @@ movie:Movie rdfs:subClassOf [
 # Una película tiene como máximo un compatibilityScore por contexto
 :compatibilityScore rdf:type owl:FunctionalProperty .
 
+# Scores por dimensión son funcionales (un solo valor por película por contexto)
+:moodMatchScore rdf:type owl:FunctionalProperty .
+:socialMatchScore rdf:type owl:FunctionalProperty .
+:energyMatchScore rdf:type owl:FunctionalProperty .
+:requirementMatchScore rdf:type owl:FunctionalProperty .
+
+# energyMatchScore debe estar entre 0.0 y 1.0
+movie:Movie rdfs:subClassOf [ 
+    rdf:type owl:Restriction ;
+    owl:onProperty :energyMatchScore ;
+    owl:allValuesFrom [ 
+        rdf:type rdfs:Datatype ;
+        owl:onDatatype xsd:float ;
+        owl:withRestrictions ( 
+            [ xsd:minInclusive "0.0"^^xsd:float ]
+            [ xsd:maxInclusive "1.0"^^xsd:float ]
+        )
+    ]
+] .
+
+#================================================================
+# Restricciones de Cardinalidad para Propiedades de Puente
+#================================================================
+
+# isRecommendedIn: una película puede estar en múltiples contextos (sin restricción max)
+# satisfiesRequirement: una película puede satisfacer múltiples requisitos
+
+# isKidFriendly ya está declarada como FunctionalProperty en su definición
+
 #================================================================
 # Propiedades Disjuntas (Mutuamente Excluyentes)
 #================================================================

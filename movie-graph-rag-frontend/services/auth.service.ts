@@ -1,8 +1,5 @@
 import api from "@/lib/api";
 import { AxiosError } from "axios";
-import { toast } from "sonner";
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
 export interface AuthResponse {
   access_token: string;

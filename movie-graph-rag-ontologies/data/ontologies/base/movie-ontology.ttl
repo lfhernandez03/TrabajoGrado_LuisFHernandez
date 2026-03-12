@@ -1562,6 +1562,100 @@
                                         ]
                       ] .
 
+# TMDb rating debe estar entre 0 y 10
+:Movie rdfs:subClassOf [ rdf:type owl:Restriction ;
+                         owl:onProperty :hasTMDbRating ;
+                         owl:allValuesFrom [ rdf:type rdfs:Datatype ;
+                                           owl:onDatatype xsd:decimal ;
+                                           owl:withRestrictions ( [ xsd:minInclusive "0.0"^^xsd:decimal ]
+                                                                 [ xsd:maxInclusive "10.0"^^xsd:decimal ]
+                                                               )
+                                         ]
+                       ] .
+
+# IMDb rating debe estar entre 0 y 10
+:Movie rdfs:subClassOf [ rdf:type owl:Restriction ;
+                         owl:onProperty :hasIMDbRating ;
+                         owl:allValuesFrom [ rdf:type rdfs:Datatype ;
+                                           owl:onDatatype xsd:decimal ;
+                                           owl:withRestrictions ( [ xsd:minInclusive "0.0"^^xsd:decimal ]
+                                                                 [ xsd:maxInclusive "10.0"^^xsd:decimal ]
+                                                               )
+                                         ]
+                       ] .
+
+# MovieLens average rating debe estar entre 0 y 5
+:Movie rdfs:subClassOf [ rdf:type owl:Restriction ;
+                         owl:onProperty :hasAverageRating ;
+                         owl:allValuesFrom [ rdf:type rdfs:Datatype ;
+                                           owl:onDatatype xsd:decimal ;
+                                           owl:withRestrictions ( [ xsd:minInclusive "0.0"^^xsd:decimal ]
+                                                                 [ xsd:maxInclusive "5.0"^^xsd:decimal ]
+                                                               )
+                                         ]
+                       ] .
+
+# Metascore debe estar entre 0 y 100
+:Movie rdfs:subClassOf [ rdf:type owl:Restriction ;
+                         owl:onProperty :hasMetascore ;
+                         owl:allValuesFrom [ rdf:type rdfs:Datatype ;
+                                           owl:onDatatype xsd:integer ;
+                                           owl:withRestrictions ( [ xsd:minInclusive "0"^^xsd:integer ]
+                                                                 [ xsd:maxInclusive "100"^^xsd:integer ]
+                                                               )
+                                         ]
+                       ] .
+
+# Vote counts deben ser no negativos
+:Movie rdfs:subClassOf [ rdf:type owl:Restriction ;
+                         owl:onProperty :hasVoteCount ;
+                         owl:allValuesFrom [ rdf:type rdfs:Datatype ;
+                                           owl:onDatatype xsd:integer ;
+                                           owl:withRestrictions ( [ xsd:minInclusive "0"^^xsd:integer ] )
+                                         ]
+                       ] .
+
+:Movie rdfs:subClassOf [ rdf:type owl:Restriction ;
+                         owl:onProperty :hasTMDbVoteCount ;
+                         owl:allValuesFrom [ rdf:type rdfs:Datatype ;
+                                           owl:onDatatype xsd:integer ;
+                                           owl:withRestrictions ( [ xsd:minInclusive "0"^^xsd:integer ] )
+                                         ]
+                       ] .
+
+:Movie rdfs:subClassOf [ rdf:type owl:Restriction ;
+                         owl:onProperty :hasIMDbVoteCount ;
+                         owl:allValuesFrom [ rdf:type rdfs:Datatype ;
+                                           owl:onDatatype xsd:integer ;
+                                           owl:withRestrictions ( [ xsd:minInclusive "0"^^xsd:integer ] )
+                                         ]
+                       ] .
+
+:Movie rdfs:subClassOf [ rdf:type owl:Restriction ;
+                         owl:onProperty :hasRatingCount ;
+                         owl:allValuesFrom [ rdf:type rdfs:Datatype ;
+                                           owl:onDatatype xsd:integer ;
+                                           owl:withRestrictions ( [ xsd:minInclusive "0"^^xsd:integer ] )
+                                         ]
+                       ] .
+
+# Budget y BoxOffice deben ser no negativos
+:Movie rdfs:subClassOf [ rdf:type owl:Restriction ;
+                         owl:onProperty :hasBudget ;
+                         owl:allValuesFrom [ rdf:type rdfs:Datatype ;
+                                           owl:onDatatype xsd:decimal ;
+                                           owl:withRestrictions ( [ xsd:minInclusive "0.0"^^xsd:decimal ] )
+                                         ]
+                       ] .
+
+:Movie rdfs:subClassOf [ rdf:type owl:Restriction ;
+                         owl:onProperty :hasBoxOffice ;
+                         owl:allValuesFrom [ rdf:type rdfs:Datatype ;
+                                           owl:onDatatype xsd:decimal ;
+                                           owl:withRestrictions ( [ xsd:minInclusive "0.0"^^xsd:decimal ] )
+                                         ]
+                       ] .
+
 #================================================================
 # PROPIEDADES FUNCIONALES (VALORES ÚNICOS)
 #================================================================
@@ -1589,6 +1683,30 @@
 
 # Un cluster tiene exactamente un tamaño
 :clusterSize rdf:type owl:FunctionalProperty .
+
+# IDs externos son funcionales (una película tiene como máximo un ID por fuente)
+:hasIMDbID rdf:type owl:FunctionalProperty .
+:hasTMDbID rdf:type owl:FunctionalProperty .
+
+# Valores financieros son funcionales
+:hasBudget rdf:type owl:FunctionalProperty .
+:hasBoxOffice rdf:type owl:FunctionalProperty .
+
+# Métricas agregadas son funcionales (un solo valor por película)
+:hasPopularity rdf:type owl:FunctionalProperty .
+:hasVoteCount rdf:type owl:FunctionalProperty .
+:hasAverageRating rdf:type owl:FunctionalProperty .
+:hasRatingCount rdf:type owl:FunctionalProperty .
+:hasTMDbRating rdf:type owl:FunctionalProperty .
+:hasTMDbVoteCount rdf:type owl:FunctionalProperty .
+:hasIMDbRating rdf:type owl:FunctionalProperty .
+:hasIMDbVoteCount rdf:type owl:FunctionalProperty .
+:hasMetascore rdf:type owl:FunctionalProperty .
+:hasOriginalLanguage rdf:type owl:FunctionalProperty .
+
+# Atributos identificadores de entidades son funcionales
+:genreName rdf:type owl:FunctionalProperty .
+:companyName rdf:type owl:FunctionalProperty .
 
 #================================================================
 # CLASES DISJUNTAS (MUTUAMENTE EXCLUYENTES)
@@ -1649,6 +1767,25 @@
 
 :Mature owl:disjointWith :AdultOnly .
 
+# Clases principales de la ontología son mutuamente disjuntas (AllDisjointClasses)
+[] rdf:type owl:AllDisjointClasses ;
+   owl:members ( :Movie :Person :Attribute :Role
+                 :ProductionCompany :Certification :Award
+                 :AwardParticipation :MovieCluster ) .
+
+# Subclases de Person son mutuamente disjuntas
+[] rdf:type owl:AllDisjointClasses ;
+   owl:members ( :Director :Actor :Producer :Screenwriter
+                 :Cinematographer :Composer :Editor ) .
+
+# Subclases de Rating son mutuamente disjuntas
+[] rdf:type owl:AllDisjointClasses ;
+   owl:members ( :CriticRating :UserRating :AggregateRating ) .
+
+# Subclases de NarrativeElement son mutuamente disjuntas
+[] rdf:type owl:AllDisjointClasses ;
+   owl:members ( :Theme :Tone :PlotStructure ) .
+
 #================================================================
 # PROPIEDADES TRANSITIVAS (Para inferencia)
 #================================================================
@@ -1683,6 +1820,30 @@
 :Genre rdfs:subClassOf [ rdf:type owl:Restriction ;
                          owl:onProperty :isGenreOf ;
                          owl:minCardinality "1"^^xsd:nonNegativeInteger
+                       ] .
+
+# Una persona DEBE tener exactamente un nombre
+:Person rdfs:subClassOf [ rdf:type owl:Restriction ;
+                          owl:onProperty :hasName ;
+                          owl:cardinality "1"^^xsd:nonNegativeInteger
+                        ] .
+
+# Un género DEBE tener exactamente un nombre
+:Genre rdfs:subClassOf [ rdf:type owl:Restriction ;
+                         owl:onProperty :genreName ;
+                         owl:cardinality "1"^^xsd:nonNegativeInteger
+                       ] .
+
+# Una compañía DEBE tener exactamente un nombre
+:ProductionCompany rdfs:subClassOf [ rdf:type owl:Restriction ;
+                                     owl:onProperty :companyName ;
+                                     owl:cardinality "1"^^xsd:nonNegativeInteger
+                                   ] .
+
+# Una película puede tener como máximo un runtime
+:Movie rdfs:subClassOf [ rdf:type owl:Restriction ;
+                         owl:onProperty :runtime ;
+                         owl:maxCardinality "1"^^xsd:nonNegativeInteger
                        ] .
 
 #================================================================
@@ -1836,7 +1997,7 @@
     
     Autor: Luis Fernando Hernández Solís
     Institución: Universidad del Valle - Escuela de Ingeniería de Sistemas y Computación
-    Año: 2025
+    Año: 2026
     
     """@es .
 

@@ -28,8 +28,8 @@ export class RecommendedMovieDto {
   @ApiProperty({ description: 'Nombre del género', required: false })
   genreName?: string;
 
-  @ApiProperty({ description: 'Año de lanzamiento', required: false })
-  releaseYear?: number;
+  @ApiProperty({ description: 'Fecha de lanzamiento', required: false })
+  releaseDate?: string;
 
   @ApiProperty({
     description: 'Score de compatibilidad (0.0 - 1.0)',

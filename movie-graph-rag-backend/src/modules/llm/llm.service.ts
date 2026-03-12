@@ -115,9 +115,11 @@ export class LlmService {
       FORMATO DE SALIDA:
       Responde ÚNICAMENTE con las tripletas RDF en formato Turtle.
       Usa :snapshot1, :social1, :emotion1, :req1 como identificadores.
+      SIEMPRE incluye la declaración @prefix : para el prefijo por defecto.
       NO incluyas explicaciones, solo el código Turtle.
 
       EJEMPLO:
+      @prefix : <http://www.semanticweb.org/movierecommendation/data/context/> .
       @prefix context: <http://www.semanticweb.org/movierecommendation/ontologies/2025/context-ontology#> .
       @prefix movie: <http://www.semanticweb.org/movierecommendation/ontologies/2025/movie-ontology#> .
       @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
@@ -174,7 +176,6 @@ export class LlmService {
     hourOfDay: number,
     dayOfWeek: string,
   ): ContextSnapshot {
-    /* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return */
     try {
       // Parser robusto de RDF Turtle con N3.js
       const parser = new Parser({ format: 'text/turtle' });
@@ -198,9 +199,12 @@ export class LlmService {
         social: {
           companionType: getObjectValue('social1', 'companionType'),
           hasChildren: getObjectValue('social1', 'hasChildren') === 'true',
-          numberOfPeople: getObjectValue('social1', 'numberOfPeople')
-            ? Number(getObjectValue('social1', 'numberOfPeople'))
-            : undefined,
+          numberOfPeople: (() => {
+            const raw = getObjectValue('social1', 'numberOfPeople');
+            if (!raw) return undefined;
+            const num = Number(raw);
+            return isNaN(num) ? undefined : num;
+          })(),
         },
         emotional: {
           moodDescription: getObjectValue('emotion1', 'moodDescription'),
@@ -229,7 +233,6 @@ export class LlmService {
             .map((q) => q.object.value),
         },
       };
-      /* eslint-enable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return */
 
       // Validar con Zod para asegurar vocabulario controlado
       const validationResult = contextSchema.safeParse(rawContext);
@@ -242,9 +245,10 @@ export class LlmService {
         // Continuar con snapshot vacío en lugar de fallar
       }
 
+      // Si Zod falla en campos no críticos, usar rawContext como fallback
       const validatedData = validationResult.success
         ? validationResult.data
-        : {};
+        : rawContext;
 
       // Construir snapshot con datos validados
       return {
@@ -255,9 +259,8 @@ export class LlmService {
         dayOfWeek,
         socialContext: validatedData.social
           ? {
-              companionType:
-                validatedData.social.companionType ||
-                ('solo' as SocialContext['companionType']),
+              companionType: (validatedData.social.companionType ||
+                'solo') as SocialContext['companionType'],
               hasChildren: validatedData.social.hasChildren || false,
               numberOfPeople: validatedData.social.numberOfPeople,
             }
@@ -335,17 +338,18 @@ export class LlmService {
       PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
       PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
       
-      CLASES Y PROPIEDADES:
+      CLASES Y PROPIEDADES REALES EN EL GRAFO:
       
-      movie:Movie
-        - movie:hasTitle (string)
+      Tipos de película: movie:FeatureFilm, movie:Documentary, movie:ShortFilm, movie:AnimatedFilm
+        - movie:hasTitle (string) - título
         - movie:runtime (integer, minutos)
-        - movie:hasGenre → movie:Genre
-        - movie:releaseYear (integer)
-        - movie:averageRating (decimal)
+        - movie:hasMainGenre → genre:Action, genre:Comedy, etc. (instancias de movie:MainGenre)
+        - movie:releaseDate (xsd:date, formato "YYYY-MM-DD")
+        - movie:hasAverageRating (xsd:float)
+        - movie:hasIMDbRating (xsd:float)
       
-      movie:Genre
-        - movie:genreName (string: Action, Comedy, Drama, etc.)
+      genre:Action, genre:Comedy, genre:Drama, etc. (instancias de movie:MainGenre)
+        - movie:genreName (string: "Action", "Comedy", "Drama", etc.)
       
       context:ContextSnapshot, context:SocialContext, context:EmotionalContext, context:RequirementContext
         - context:companionType (string)
@@ -363,53 +367,57 @@ export class LlmService {
       
       TAREA:
       Genera una consulta SPARQL SELECT que:
-      1. Busque películas (movie:Movie)
+      1. Busque películas usando {{ ?m a movie:FeatureFilm }} UNION {{ ?m a movie:AnimatedFilm }} UNION {{ ?m a movie:Documentary }}
       2. Aplique filtros basados en el CONTEXTO:
-         - Si availableTime existe: FILTER(?runtime <= {availableTime} + 30) (permite 30 min extra de flexibilidad)
+         - Si availableTime existe: FILTER(?runtime <= availableTime + 30) (permite 30 min extra de flexibilidad). El availableTime actual es {availableTime} minutos.
          - Si hasChildren = true: EXCLUIR Horror, Thriller, War (contenido familiar)
-         - Si excludedGenre existe: FILTER(NOT CONTAINS(?genreName, "Horror"))
+         - Si excludedGenre existe: FILTER(!CONTAINS(?genreName, "Horror"))
          - Si desiredEnergyLevel = "bajo": preferir Drama, Romance, Documentary
          - Si desiredEnergyLevel = "alto": preferir Action, Adventure, Sci-Fi, Comedy
          - Si desiredEnergyLevel = "medio": preferir Comedy, Mystery, Fantasy, Animation
-      3. Retorne: ?title ?runtime ?genreName ?releaseYear ?averageRating
+      3. Retorne: ?title ?runtime ?genreName ?releaseDate ?averageRating
       4. Ordene por relevancia (usa averageRating si existe)
       5. LIMITE a 20 resultados (LIMIT 20)
       
       REGLAS CRÍTICAS:
-      - Los géneros están en ESPAÑOL E INGLÉS: "Comedia"/"Comedy", "Acción"/"Action", "Terror"/"Horror", "Aventura"/"Adventure", "Animación"/"Animation"
-      - Si hasChildren = true, SIEMPRE excluir: Horror, Terror, Thriller, Crime, War
+      - Usa movie:hasMainGenre (NO movie:hasGenre) para conectar películas con géneros
+      - Los géneros en el grafo están en INGLÉS: "Action", "Comedy", "Drama", "Horror", "Adventure", "Animation", "Sci-Fi", "Thriller", "Crime", "War", "Romance", "Fantasy", "Mystery", "Documentary", "Western", "Family", "Children"
+      - Usa movie:hasAverageRating (NO movie:averageRating) para ratings
+      - Usa movie:releaseDate (NO movie:releaseYear) - es xsd:date
+      - Si hasChildren = true, SIEMPRE excluir: Horror, Thriller, Crime, War
       - Si availableTime existe, aplicar FILTER(?runtime <= availableTime + 30) para dar flexibilidad
-      - Usa OPTIONAL para propiedades que pueden no existir (releaseYear, averageRating)
-      - Usa FILTER con CONTAINS para búsqueda flexible de géneros (tanto español como inglés)
+      - Usa OPTIONAL para propiedades que pueden no existir (releaseDate, hasAverageRating)
+      - Usa FILTER con CONTAINS para búsqueda flexible de géneros
       - NO inventes propiedades que no existen en las ontologías
       - Prioriza resultados con averageRating alto cuando existe
-      - Para filtros de género, usa AMBOS idiomas: CONTAINS(?genreName, "Comedy") || CONTAINS(?genreName, "Comedia")
       
       EJEMPLO (usuario con niños, 90 minutos, quiere algo divertido):
       PREFIX movie: <http://www.semanticweb.org/movierecommendation/ontologies/2025/movie-ontology#>
+      PREFIX genre: <http://www.semanticweb.org/movierecommendation/data/genre/>
       PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
       
-      SELECT DISTINCT ?title ?runtime ?genreName ?releaseYear ?averageRating WHERE {{
-        ?m rdf:type movie:Movie ;
-           movie:hasTitle ?title ;
+      SELECT DISTINCT ?title ?runtime ?genreName ?releaseDate ?averageRating WHERE {{
+        {{ ?m a movie:FeatureFilm }} UNION {{ ?m a movie:AnimatedFilm }}
+        ?m movie:hasTitle ?title ;
            movie:runtime ?runtime ;
-           movie:hasGenre ?g .
+           movie:hasMainGenre ?g .
         ?g movie:genreName ?genreName .
         
-        OPTIONAL {{ ?m movie:releaseYear ?releaseYear }}
-        OPTIONAL {{ ?m movie:averageRating ?averageRating }}
+        OPTIONAL {{ ?m movie:releaseDate ?releaseDate }}
+        OPTIONAL {{ ?m movie:hasAverageRating ?averageRating }}
         
-        # FILTROS (bilingües español/inglés)
         FILTER(?runtime <= 120)
         FILTER(
-          CONTAINS(?genreName, "Animation") || CONTAINS(?genreName, "Animación") ||
-          CONTAINS(?genreName, "Comedy") || CONTAINS(?genreName, "Comedia") ||
-          CONTAINS(?genreName, "Family") || CONTAINS(?genreName, "Familia") ||
-          CONTAINS(?genreName, "Adventure") || CONTAINS(?genreName, "Aventura")
+          CONTAINS(?genreName, "Animation") ||
+          CONTAINS(?genreName, "Comedy") ||
+          CONTAINS(?genreName, "Family") ||
+          CONTAINS(?genreName, "Children") ||
+          CONTAINS(?genreName, "Adventure")
         )
         FILTER(
-          !CONTAINS(?genreName, "Horror") && !CONTAINS(?genreName, "Terror") &&
-          !CONTAINS(?genreName, "Thriller") && !CONTAINS(?genreName, "Crime")
+          !CONTAINS(?genreName, "Horror") &&
+          !CONTAINS(?genreName, "Thriller") &&
+          !CONTAINS(?genreName, "Crime")
         )
       }}
       ORDER BY DESC(?averageRating)
@@ -435,21 +443,31 @@ export class LlmService {
   }
 
   /**
-   * Calcula un score de compatibilidad entre una película y el contexto del usuario.
+   * Calcula scores de compatibilidad para TODAS las películas en UNA SOLA llamada al LLM.
+   * Optimización: reemplaza N llamadas individuales por 1 sola llamada batch.
    */
   /* eslint-disable @typescript-eslint/no-unsafe-assignment */
   /* eslint-disable @typescript-eslint/no-unsafe-member-access */
-  async calculateCompatibilityScore(
-    movie: any,
+  /* eslint-disable @typescript-eslint/no-unsafe-return */
+  async calculateCompatibilityScores(
+    movies: any[],
     context: ContextSnapshot,
-  ): Promise<number> {
-    const movieInfo = JSON.stringify({
-      title: movie.title,
-      runtime: movie.runtime,
-      genreName: movie.genreName,
-      releaseYear: movie.releaseYear,
-      averageRating: movie.averageRating,
-    });
+  ): Promise<MovieWithScore[]> {
+    this.logger.log(
+      `Calculando compatibility scores en batch para ${movies.length} películas...`,
+    );
+
+    // Tomar máximo 10 películas para scoring (reduce tokens y tiempo)
+    const moviesToScore = movies.slice(0, 10);
+
+    const moviesInfo = moviesToScore.map((m, i) => ({
+      index: i + 1,
+      title: m.title,
+      runtime: m.runtime,
+      genreName: m.genreName,
+      releaseDate: m.releaseDate,
+      averageRating: m.averageRating,
+    }));
 
     const contextInfo = JSON.stringify({
       social: context.socialContext,
@@ -462,89 +480,71 @@ export class LlmService {
     });
 
     const prompt = ChatPromptTemplate.fromTemplate(`
-      Calcula un score de compatibilidad (0.0 a 1.0) entre esta película y el contexto del usuario.
+      Calcula un score de compatibilidad (0.0 a 1.0) para CADA película con el contexto del usuario.
       
-      PELÍCULA:
-      {movieInfo}
+      PELÍCULAS:
+      {moviesInfo}
       
       CONTEXTO USUARIO:
       {contextInfo}
       
-      CRITERIOS DE EVALUACIÓN:
-      
-      1. ALINEACIÓN EMOCIONAL (40%):
-         - ¿El género y tono de la película coinciden con el mood?
-         - ¿El nivel de energía de la película se ajusta al desiredEnergyLevel?
-         - Ejemplos:
-           * desiredEnergyLevel="alto" + Action/Thriller = score alto
-           * desiredEnergyLevel="bajo" + Drama/Documentary = score alto
-           * desiredEnergyLevel="medio" + Comedy/Mystery = score alto
-      
-      2. NIVEL DE ENERGÍA (30%):
-         - ¿La intensidad de la película es apropiada?
-         - Action/Thriller/Adventure = energía alta
-         - Drama/Romance/Documentary = energía baja
-         - Comedy/Mystery/Fantasy = energía media
-      
-      3. CONTEXTO SOCIAL (20%):
-         - ¿Es apropiada para la compañía?
-         - familia con niños: Animation, Family, Comedy (evitar Horror, Thriller)
+      CRITERIOS:
+      1. ALINEACIÓN EMOCIONAL (40%): ¿El género coincide con el mood y desiredEnergyLevel?
+         - alto: Action, Adventure, Sci-Fi, Thriller
+         - bajo: Drama, Romance, Documentary
+         - medio: Comedy, Mystery, Fantasy, Animation
+      2. CONTEXTO SOCIAL (30%): ¿Es apropiada para la compañía?
+         - familia/niños: Animation, Family, Comedy
          - pareja: Romance, Drama
-         - solo: cualquier género
          - amigos: Comedy, Action, Sci-Fi
+         - solo: cualquier género
+      3. LOGÍSTICA (20%): ¿runtime <= availableTime?
+      4. CALIDAD (10%): averageRating alto = bonus
       
-      4. LOGÍSTICA (10%):
-         - ¿Cumple con el tiempo disponible?
-         - Si runtime > availableTime: penalizar
-         - ¿Cumple con restricciones de género?
+      FORMATO DE RESPUESTA (una línea por película, NADA MÁS):
+      1:0.85
+      2:0.72
+      3:0.91
+      ...
       
-      CÁLCULO:
-      - Suma ponderada de los 4 criterios
-      - Retorna un decimal entre 0.0 y 1.0
-      - Sé generoso pero objetivo
-      
-      RESPONDE SOLO CON EL NÚMERO DECIMAL (ejemplo: 0.87)
-      NO incluyas explicaciones, solo el número.
+      REGLAS:
+      - Una línea por película con formato índice:score
+      - Score entre 0.0 y 1.0
+      - SIN explicaciones, SIN texto adicional, SOLO las líneas con scores
     `);
 
     const chain = prompt.pipe(this.model).pipe(new StringOutputParser());
-    const scoreStr = await chain.invoke({ movieInfo, contextInfo });
+    const result = await chain.invoke({
+      moviesInfo: JSON.stringify(moviesInfo),
+      contextInfo,
+    });
 
-    // Parsear el score, manejar errores
-    const score = parseFloat(scoreStr.trim());
-    return isNaN(score) ? 0.5 : Math.max(0, Math.min(1, score));
-  }
-  /* eslint-enable @typescript-eslint/no-unsafe-assignment */
-  /* eslint-enable @typescript-eslint/no-unsafe-member-access */
+    // Parsear scores del batch
+    const scoreMap = new Map<number, number>();
+    const lines = result.trim().split('\n');
+    for (const line of lines) {
+      const match = line.trim().match(/^(\d+)\s*[:=\-]\s*([\d.]+)/);
+      if (match) {
+        const index = parseInt(match[1]);
+        const score = parseFloat(match[2]);
+        if (!isNaN(index) && !isNaN(score)) {
+          scoreMap.set(index, Math.max(0, Math.min(1, score)));
+        }
+      }
+    }
 
-  /**
-   * Calcula scores para múltiples películas en paralelo.
-   */
-  /* eslint-disable @typescript-eslint/no-unsafe-member-access */
-  /* eslint-disable @typescript-eslint/no-unsafe-return */
-  async calculateCompatibilityScores(
-    movies: any[],
-    context: ContextSnapshot,
-  ): Promise<MovieWithScore[]> {
-    this.logger.log(
-      `Calculando compatibility scores para ${movies.length} películas...`,
-    );
-
-    const moviesWithScores = await Promise.all(
-      movies.map(async (movie) => {
-        const score = await this.calculateCompatibilityScore(movie, context);
-        return {
-          ...movie,
-          compatibilityScore: score,
-        };
-      }),
-    );
+    // Asignar scores a películas
+    const moviesWithScores = moviesToScore.map((movie, i) => ({
+      ...movie,
+      compatibilityScore: scoreMap.get(i + 1) ?? 0.5,
+    }));
 
     // Ordenar por score descendente
     return moviesWithScores.sort(
       (a, b) => (b.compatibilityScore || 0) - (a.compatibilityScore || 0),
     );
   }
+  /* eslint-enable @typescript-eslint/no-unsafe-assignment */
   /* eslint-enable @typescript-eslint/no-unsafe-member-access */
   /* eslint-enable @typescript-eslint/no-unsafe-return */
 
@@ -561,7 +561,7 @@ export class LlmService {
         title: m.title,
         runtime: m.runtime,
         genreName: m.genreName,
-        releaseYear: m.releaseYear,
+        releaseDate: m.releaseDate,
         compatibilityScore: m.compatibilityScore,
       })),
     );
