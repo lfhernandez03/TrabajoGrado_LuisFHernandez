@@ -335,6 +335,7 @@ export class LlmService {
       PREFIX movie: <http://www.semanticweb.org/movierecommendation/ontologies/2025/movie-ontology#>
       PREFIX context: <http://www.semanticweb.org/movierecommendation/ontologies/2025/context-ontology#>
       PREFIX bridge: <http://www.semanticweb.org/movierecommendation/ontologies/2025/bridge-ontology#>
+      PREFIX schema: <http://schema.org/>
       PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
       PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
       
@@ -347,6 +348,7 @@ export class LlmService {
         - movie:releaseDate (xsd:date, formato "YYYY-MM-DD")
         - movie:hasAverageRating (xsd:float)
         - movie:hasIMDbRating (xsd:float)
+        - Póster (opcional): puede estar en movie:hasPosterUrl, movie:hasPosterURL, movie:posterUrl o schema:image
       
       genre:Action, genre:Comedy, genre:Drama, etc. (instancias de movie:MainGenre)
         - movie:genreName (string: "Action", "Comedy", "Drama", etc.)
@@ -375,7 +377,7 @@ export class LlmService {
          - Si desiredEnergyLevel = "bajo": preferir Drama, Romance, Documentary
          - Si desiredEnergyLevel = "alto": preferir Action, Adventure, Sci-Fi, Comedy
          - Si desiredEnergyLevel = "medio": preferir Comedy, Mystery, Fantasy, Animation
-      3. Retorne: ?title ?runtime ?genreName ?releaseDate ?averageRating
+      3. Retorne: ?title ?runtime ?genreName ?releaseDate ?averageRating ?posterUrl
       4. Ordene por relevancia (usa averageRating si existe)
       5. LIMITE a 20 resultados (LIMIT 20)
       
@@ -384,6 +386,7 @@ export class LlmService {
       - Los géneros en el grafo están en INGLÉS: "Action", "Comedy", "Drama", "Horror", "Adventure", "Animation", "Sci-Fi", "Thriller", "Crime", "War", "Romance", "Fantasy", "Mystery", "Documentary", "Western", "Family", "Children"
       - Usa movie:hasAverageRating (NO movie:averageRating) para ratings
       - Usa movie:releaseDate (NO movie:releaseYear) - es xsd:date
+      - Para poster, usa OPTIONAL y retorna ?posterUrl cuando exista
       - Si hasChildren = true, SIEMPRE excluir: Horror, Thriller, Crime, War
       - Si availableTime existe, aplicar FILTER(?runtime <= availableTime + 30) para dar flexibilidad
       - Usa OPTIONAL para propiedades que pueden no existir (releaseDate, hasAverageRating)

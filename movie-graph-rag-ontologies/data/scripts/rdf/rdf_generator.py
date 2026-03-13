@@ -19,6 +19,8 @@ from namespaces import (
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+TMDB_IMAGE_BASE_URL = "https://image.tmdb.org/t/p/w500"
+
 # Paths absolutos relativos a DATA
 DATA_ROOT = Path(__file__).resolve().parents[2]
 PROCESSED_DIR = DATA_ROOT / "data" / "processed"
@@ -180,6 +182,18 @@ class RDFMovieGenerator:
         except:
             pass
         return None
+
+    def _normalize_tmdb_image_url(self, path_or_url):
+        """Normaliza poster/backdrop de TMDb a URL absoluta."""
+        if pd.isna(path_or_url) or path_or_url == '' or path_or_url == 'N/A':
+            return None
+
+        value = str(path_or_url).strip()
+        if value.startswith('http://') or value.startswith('https://'):
+            return value
+        if not value.startswith('/'):
+            value = f'/{value}'
+        return f'{TMDB_IMAGE_BASE_URL}{value}'
     
     def add_movie(self, row):
         """Agrega una película completa al grafo con todas sus relaciones"""
@@ -277,6 +291,16 @@ class RDFMovieGenerator:
         
         if tmdb_id := self._safe_literal(row.get('tmdbId')):
             self.graph.add((movie_uri, MOVIE_NS.hasTMDbID, tmdb_id))
+
+        # Recursos visuales TMDb
+        poster_url = self._normalize_tmdb_image_url(row.get('poster_path'))
+        if poster_url:
+            self.graph.add((movie_uri, MOVIE_NS.hasPosterUrl, Literal(poster_url)))
+            self.graph.add((movie_uri, SCHEMA.image, Literal(poster_url)))
+
+        backdrop_url = self._normalize_tmdb_image_url(row.get('backdrop_path'))
+        if backdrop_url:
+            self.graph.add((movie_uri, MOVIE_NS.hasBackdropUrl, Literal(backdrop_url)))
     
     def _add_genres(self, movie_uri, row):
         """Agrega géneros como instancias"""

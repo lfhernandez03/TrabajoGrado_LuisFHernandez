@@ -140,6 +140,11 @@ export default function Home() {
     performSearch(query);
   };
 
+  function navigateToSearch(title: string): void {
+    setSearchQuery(title);
+    performSearch(title);
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />

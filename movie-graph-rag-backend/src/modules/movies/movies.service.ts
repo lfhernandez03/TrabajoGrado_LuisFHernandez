@@ -1,4 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import axios from 'axios';
 import { GraphService } from '../graph/graph.service';
 import { HistoryService } from '../history/history.service';
 import { MovieDto, SearchMovieDto } from './dto/movie.dto';
@@ -18,7 +20,56 @@ export class MoviesService {
   constructor(
     private readonly graphService: GraphService,
     private readonly historyService: HistoryService,
+    private readonly configService: ConfigService,
   ) {}
+
+  private getNormalizedPosterUrl(rawPoster?: string): string | undefined {
+    if (!rawPoster) return undefined;
+    if (rawPoster.startsWith('http://') || rawPoster.startsWith('https://')) {
+      return rawPoster;
+    }
+    if (rawPoster.startsWith('/')) {
+      return `https://image.tmdb.org/t/p/w500${rawPoster}`;
+    }
+    return rawPoster;
+  }
+
+  private async enrichPostersFromTmdb(movies: MovieDto[]): Promise<MovieDto[]> {
+    const tmdbApiKey = this.configService.get<string>('TMDB_API_KEY');
+    if (!tmdbApiKey || movies.length === 0) {
+      return movies;
+    }
+
+    const enriched = await Promise.all(
+      movies.map(async (movie) => {
+        if (movie.posterUrl || !movie.tmdbId) {
+          return movie;
+        }
+
+        try {
+          const response = await axios.get<{ poster_path?: string }>(
+            `https://api.themoviedb.org/3/movie/${movie.tmdbId}`,
+            {
+              params: { api_key: tmdbApiKey },
+              timeout: 5000,
+            },
+          );
+
+          const posterPath = response.data?.poster_path;
+          return {
+            ...movie,
+            posterUrl: posterPath
+              ? `https://image.tmdb.org/t/p/w500${posterPath}`
+              : undefined,
+          };
+        } catch {
+          return movie;
+        }
+      }),
+    );
+
+    return enriched;
+  }
 
   /**
    * Busca películas por título para autocompletado rápido.
@@ -89,7 +140,7 @@ export class MoviesService {
       PREFIX rdfs: <${NAMESPACES.RDFS}>
       PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
       
-      SELECT DISTINCT ?movie ?title ?director ?directorName ?genreName ?rating ?description
+      SELECT DISTINCT ?movie ?title ?director ?directorName ?genreName ?rating ?description ?posterUrl ?tmdbId ?releaseDate ?runtime ?certification
       WHERE {
         ?movie rdf:type movie:FeatureFilm ;
                movie:hasTitle ?title .
@@ -102,6 +153,14 @@ export class MoviesService {
           ?movie movie:hasMainGenre ?genre .
           ?genre movie:genreName ?genreName
         }
+        OPTIONAL { ?movie movie:hasTMDbID ?tmdbId }
+        OPTIONAL { ?movie movie:hasPosterUrl ?posterUrl }
+        OPTIONAL { ?movie movie:hasPosterURL ?posterUrl }
+        OPTIONAL { ?movie movie:posterUrl ?posterUrl }
+        OPTIONAL { ?movie <http://schema.org/image> ?posterUrl }
+        OPTIONAL { ?movie movie:releaseDate ?releaseDate }
+        OPTIONAL { ?movie movie:runtime ?runtime }
+        OPTIONAL { ?movie movie:hasCertification/movie:certificationRating ?certification }
         OPTIONAL { ?movie movie:hasAverageRating ?rating }
         OPTIONAL { ?movie movie:hasPlotSummary ?description }
         
@@ -119,6 +178,11 @@ export class MoviesService {
         director?: string;
         directorName?: string;
         genreName?: string;
+        posterUrl?: string;
+        tmdbId?: string;
+        releaseDate?: string;
+        runtime?: string;
+        certification?: string;
         rating?: string;
         description?: string;
       }>(sparql);
@@ -131,6 +195,13 @@ export class MoviesService {
           moviesMap.set(result.movie, {
             uri: result.movie,
             title: result.title,
+            posterUrl: this.getNormalizedPosterUrl(result.posterUrl),
+            tmdbId: result.tmdbId,
+            year: result.releaseDate
+              ? new Date(result.releaseDate).getFullYear()
+              : undefined,
+            runtime: result.runtime ? parseInt(result.runtime, 10) : undefined,
+            certification: result.certification,
             director: result.directorName,
             genres: result.genreName ? [result.genreName] : [],
             rating: result.rating ? parseFloat(result.rating) : undefined,
@@ -146,7 +217,8 @@ export class MoviesService {
       }
 
       // Limitar a la cantidad solicitada después de agrupar
-      return Array.from(moviesMap.values()).slice(0, limit);
+      const movies = Array.from(moviesMap.values()).slice(0, limit);
+      return this.enrichPostersFromTmdb(movies);
     } catch (error) {
       this.logger.error('Error obteniendo películas de ejemplo', error);
       throw error;
@@ -171,7 +243,7 @@ export class MoviesService {
       PREFIX movie: <${NAMESPACES.MOVIE}>
       PREFIX rdf: <${NAMESPACES.RDF}>
       
-      SELECT DISTINCT ?movie ?title ?directorName ?genreName ?rating ?description ?matchScore ?relationReason
+      SELECT DISTINCT ?movie ?title ?directorName ?genreName ?rating ?description ?posterUrl ?tmdbId ?releaseDate ?runtime ?certification ?matchScore ?relationReason
       WHERE {
         # 1. Encontrar la película objetivo (Seed)
         {
@@ -215,6 +287,14 @@ export class MoviesService {
         ?movie movie:hasTitle ?title .
         OPTIONAL { ?movie movie:hasDirector/movie:personName ?directorName }
         OPTIONAL { ?movie movie:hasMainGenre/movie:genreName ?genreName }
+        OPTIONAL { ?movie movie:hasTMDbID ?tmdbId }
+        OPTIONAL { ?movie movie:hasPosterUrl ?posterUrl }
+        OPTIONAL { ?movie movie:hasPosterURL ?posterUrl }
+        OPTIONAL { ?movie movie:posterUrl ?posterUrl }
+        OPTIONAL { ?movie <http://schema.org/image> ?posterUrl }
+        OPTIONAL { ?movie movie:releaseDate ?releaseDate }
+        OPTIONAL { ?movie movie:runtime ?runtime }
+        OPTIONAL { ?movie movie:hasCertification/movie:certificationRating ?certification }
         OPTIONAL { ?movie movie:hasAverageRating ?rating }
         OPTIONAL { ?movie movie:hasPlotSummary ?description }
 
@@ -234,13 +314,19 @@ export class MoviesService {
         title: string;
         directorName?: string;
         genreName?: string;
+        posterUrl?: string;
+        tmdbId?: string;
+        releaseDate?: string;
+        runtime?: string;
+        certification?: string;
         rating?: string;
         description?: string;
         matchScore?: string;
         relationReason?: string;
       }>(sparql);
 
-      const movies = this.groupMovieResults(results, limit);
+      const groupedMovies = this.groupMovieResults(results, limit);
+      const movies = await this.enrichPostersFromTmdb(groupedMovies);
       const executionTime = Date.now() - startTime;
 
       // Guardar en historial si hay un usuario autenticado
@@ -296,6 +382,11 @@ export class MoviesService {
       director?: string;
       directorName?: string;
       genreName?: string;
+      posterUrl?: string;
+      tmdbId?: string;
+      releaseDate?: string;
+      runtime?: string;
+      certification?: string;
       rating?: string;
       description?: string;
       relationReason?: string;
@@ -309,6 +400,13 @@ export class MoviesService {
         moviesMap.set(result.movie, {
           uri: result.movie,
           title: result.title,
+          posterUrl: this.getNormalizedPosterUrl(result.posterUrl),
+          tmdbId: result.tmdbId,
+          year: result.releaseDate
+            ? new Date(result.releaseDate).getFullYear()
+            : undefined,
+          runtime: result.runtime ? parseInt(result.runtime, 10) : undefined,
+          certification: result.certification,
           director: result.directorName,
           genres: result.genreName ? [result.genreName] : [],
           rating: result.rating ? parseFloat(result.rating) : undefined,

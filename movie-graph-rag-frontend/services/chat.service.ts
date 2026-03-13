@@ -24,6 +24,7 @@ export interface ChatRecommendationResponse {
   moviesFound: number;
   moviesWithScores: {
     title: string;
+    posterUrl?: string;
     runtime?: number;
     genreName?: string;
     releaseDate?: string;

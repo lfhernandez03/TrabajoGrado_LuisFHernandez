@@ -14,11 +14,39 @@ export class MovieDto {
   title: string;
 
   @ApiProperty({
+    description: 'URL del póster de la película',
+    example: 'https://image.tmdb.org/t/p/w500/abc123.jpg',
+    required: false,
+  })
+  posterUrl?: string;
+
+  @ApiProperty({
+    description: 'ID de TMDb de la película',
+    example: '550',
+    required: false,
+  })
+  tmdbId?: string;
+
+  @ApiProperty({
     description: 'Año de lanzamiento',
     example: 2010,
     required: false,
   })
   year?: number;
+
+  @ApiProperty({
+    description: 'Duración en minutos',
+    example: 129,
+    required: false,
+  })
+  runtime?: number;
+
+  @ApiProperty({
+    description: 'Clasificación de contenido (ej. PG-13, R)',
+    example: 'R',
+    required: false,
+  })
+  certification?: string;
 
   @ApiProperty({
     description: 'Director de la película',

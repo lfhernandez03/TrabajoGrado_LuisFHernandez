@@ -12,7 +12,7 @@ export class RecommendationRequestDto {
   })
   @IsString()
   @IsNotEmpty()
-  query: string;
+  query!: string;
 }
 
 /**
@@ -20,7 +20,10 @@ export class RecommendationRequestDto {
  */
 export class RecommendedMovieDto {
   @ApiProperty({ description: 'Título de la película' })
-  title: string;
+  title!: string;
+
+  @ApiProperty({ description: 'URL del póster', required: false })
+  posterUrl?: string;
 
   @ApiProperty({ description: 'Duración en minutos', required: false })
   runtime?: number;
@@ -43,19 +46,19 @@ export class RecommendedMovieDto {
  */
 export class ContextExtractedDto {
   @ApiProperty()
-  snapshotID: string;
+  snapshotID!: string;
 
   @ApiProperty()
-  requestTimestamp: Date;
+  requestTimestamp!: Date;
 
   @ApiProperty()
-  userIntent: string;
+  userIntent!: string;
 
   @ApiProperty()
-  hourOfDay: number;
+  hourOfDay!: number;
 
   @ApiProperty()
-  dayOfWeek: string;
+  dayOfWeek!: string;
 
   @ApiProperty({ required: false })
   socialContext?: {
@@ -83,32 +86,32 @@ export class ContextExtractedDto {
  */
 export class RecommendationResponseDto {
   @ApiProperty({ description: 'Consulta original del usuario' })
-  query: string;
+  query!: string;
 
   @ApiProperty({
     description: 'Contexto extraído del usuario',
     type: ContextExtractedDto,
   })
-  contextExtracted: ContextExtractedDto;
+  contextExtracted!: ContextExtractedDto;
 
   @ApiProperty({ description: 'Tripletas RDF generadas en formato Turtle' })
-  rdfGenerated: string;
+  rdfGenerated!: string;
 
   @ApiProperty({ description: 'Consulta SPARQL ejecutada en GraphDB' })
-  sparqlQuery: string;
+  sparqlQuery!: string;
 
   @ApiProperty({ description: 'Número de películas encontradas' })
-  moviesFound: number;
+  moviesFound!: number;
 
   @ApiProperty({
     type: [RecommendedMovieDto],
     description: 'Top 5 películas con scores de compatibilidad',
   })
-  moviesWithScores: RecommendedMovieDto[];
+  moviesWithScores!: RecommendedMovieDto[];
 
   @ApiProperty({ description: 'Respuesta narrativa personalizada del LLM' })
-  explanation: string;
+  explanation!: string;
 
   @ApiProperty({ description: 'Tiempo de ejecución en milisegundos' })
-  executionTimeMs: number;
+  executionTimeMs!: number;
 }

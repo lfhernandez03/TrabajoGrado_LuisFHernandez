@@ -895,6 +895,20 @@
     rdfs:label "has TMDb ID"@en ,
                "tiene ID de TMDb"@es .
 
+:hasPosterUrl rdf:type owl:DatatypeProperty ;
+    rdfs:domain :Movie ;
+    rdfs:range xsd:anyURI ;
+    rdfs:label "has poster URL"@en ,
+               "tiene URL de póster"@es ;
+    rdfs:comment "URL del póster principal de la película"@es .
+
+:hasBackdropUrl rdf:type owl:DatatypeProperty ;
+    rdfs:domain :Movie ;
+    rdfs:range xsd:anyURI ;
+    rdfs:label "has backdrop URL"@en ,
+               "tiene URL de backdrop"@es ;
+    rdfs:comment "URL del backdrop de la película"@es .
+
 :hasPopularity rdf:type owl:DatatypeProperty ;
     rdfs:domain :Movie ;
     rdfs:range xsd:decimal ;
@@ -1687,6 +1701,8 @@
 # IDs externos son funcionales (una película tiene como máximo un ID por fuente)
 :hasIMDbID rdf:type owl:FunctionalProperty .
 :hasTMDbID rdf:type owl:FunctionalProperty .
+:hasPosterUrl rdf:type owl:FunctionalProperty .
+:hasBackdropUrl rdf:type owl:FunctionalProperty .
 
 # Valores financieros son funcionales
 :hasBudget rdf:type owl:FunctionalProperty .

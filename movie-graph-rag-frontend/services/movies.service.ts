@@ -3,7 +3,10 @@ import api from '@/lib/api';
 export interface Movie {
   uri: string;
   title: string;
+  posterUrl?: string;
   year?: number;
+  runtime?: number;
+  certification?: string;
   director?: string;
   genres?: string[];
   description?: string;

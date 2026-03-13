@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Film, Star, Clock } from "lucide-react";
 import type { ChatRecommendationResponse } from "@/services/chat.service";
@@ -9,6 +10,7 @@ interface MovieRecommendationCardProps {
 }
 
 export function MovieRecommendationCard({ movie }: MovieRecommendationCardProps) {
+  const [imageError, setImageError] = useState(false);
   const score = movie.compatibilityScore ?? 0;
   const scoreColor =
     score >= 0.8
@@ -16,11 +18,26 @@ export function MovieRecommendationCard({ movie }: MovieRecommendationCardProps)
       : score >= 0.6
       ? "text-yellow-400"
       : "text-orange-400";
+  const normalizedPosterUrl =
+    movie.posterUrl?.startsWith("/")
+      ? `https://image.tmdb.org/t/p/w500${movie.posterUrl}`
+      : movie.posterUrl;
+  const hasPoster = Boolean(normalizedPosterUrl && !imageError);
 
   return (
     <div className="bg-background/60 border border-border/50 rounded-lg p-3 flex items-center gap-3">
-      <div className="shrink-0 h-10 w-10 bg-primary/10 rounded-lg flex items-center justify-center">
-        <Film className="h-5 w-5 text-primary" />
+      <div className="shrink-0 h-14 w-10 bg-primary/10 rounded-md overflow-hidden flex items-center justify-center p-1">
+        {hasPoster ? (
+          <img
+            src={normalizedPosterUrl}
+            alt={`Póster de ${movie.title}`}
+            className="h-full w-full object-contain"
+            loading="lazy"
+            onError={() => setImageError(true)}
+          />
+        ) : (
+          <Film className="h-5 w-5 text-primary" />
+        )}
       </div>
       <div className="flex-1 min-w-0">
         <p className="text-sm font-medium truncate">{movie.title}</p>
