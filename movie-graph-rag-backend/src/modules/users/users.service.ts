@@ -1,7 +1,7 @@
 import { ConflictException, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { User } from './schemas/user.schema';
+import { FavoriteMovieSnapshot, User } from './schemas/user.schema';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
@@ -27,5 +27,52 @@ export class UsersService {
   async findByEmail(email: string): Promise<User | undefined> {
     const user = await this.userModel.findOne({ email }).exec();
     return user ?? undefined;
+  }
+
+  async getFavorites(userId: string): Promise<FavoriteMovieSnapshot[]> {
+    const user = await this.userModel
+      .findById(userId)
+      .select('favoriteMovies')
+      .lean()
+      .exec();
+
+    return user?.favoriteMovies ?? [];
+  }
+
+  async addFavorite(
+    userId: string,
+    movie: Omit<FavoriteMovieSnapshot, 'addedAt'>,
+  ): Promise<FavoriteMovieSnapshot[]> {
+    await this.userModel
+      .findByIdAndUpdate(userId, {
+        $pull: { favoriteMovies: { uri: movie.uri } },
+      })
+      .exec();
+
+    await this.userModel
+      .findByIdAndUpdate(userId, {
+        $push: {
+          favoriteMovies: {
+            $each: [{ ...movie, addedAt: new Date() }],
+            $position: 0,
+          },
+        },
+      })
+      .exec();
+
+    return this.getFavorites(userId);
+  }
+
+  async removeFavorite(
+    userId: string,
+    movieUri: string,
+  ): Promise<FavoriteMovieSnapshot[]> {
+    await this.userModel
+      .findByIdAndUpdate(userId, {
+        $pull: { favoriteMovies: { uri: movieUri } },
+      })
+      .exec();
+
+    return this.getFavorites(userId);
   }
 }
