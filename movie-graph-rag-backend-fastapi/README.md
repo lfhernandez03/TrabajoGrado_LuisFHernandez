@@ -67,6 +67,12 @@ La API abre conexión a MongoDB al iniciar y la cierra al apagar.
 - `POST /api/v1/auth/login`
 - `POST /api/v1/auth/token` (OAuth2 form login para Swagger Authorize)
 - `GET /api/v1/auth/me`
+- `GET /api/v1/users/me/favorites`
+- `POST /api/v1/users/me/favorites`
+- `DELETE /api/v1/users/me/favorites`
+- `POST /api/v1/history/me`
+- `GET /api/v1/history/me?limit=10`
+- `GET /api/v1/history/{id}`
 
 ## Siguiente fase de migración
 
