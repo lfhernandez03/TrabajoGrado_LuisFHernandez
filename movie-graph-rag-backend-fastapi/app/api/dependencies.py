@@ -3,6 +3,9 @@ from fastapi.security import OAuth2PasswordBearer
 from pymongo.database import Database
 
 from app.adapters.repositories.mongo_auth_user_repository import MongoAuthUserRepositoryAdapter
+from app.adapters.repositories.mongo_movie_catalog_repository import (
+    MongoMovieCatalogRepositoryAdapter,
+)
 from app.adapters.repositories.mongo_query_history_repository import (
     MongoQueryHistoryRepositoryAdapter,
 )
@@ -10,7 +13,9 @@ from app.adapters.repositories.mongo_user_favorites_repository import (
     MongoUserFavoritesRepositoryAdapter,
 )
 from app.application.use_cases.auth_user import AuthUserUseCase
+from app.application.use_cases.movies import MoviesUseCase
 from app.application.use_cases.query_history import QueryHistoryUseCase
+from app.application.use_cases.recommendation import RecommendationUseCase
 from app.application.use_cases.user_favorites import UserFavoritesUseCase
 from app.core.database import get_database
 from app.core.security import decode_access_token
@@ -57,6 +62,34 @@ def get_query_history_use_case(
     ),
 ) -> QueryHistoryUseCase:
     return QueryHistoryUseCase(repository=repository)
+
+
+def get_recommendation_use_case(
+    favorites_use_case: UserFavoritesUseCase = Depends(get_user_favorites_use_case),
+    history_use_case: QueryHistoryUseCase = Depends(get_query_history_use_case),
+) -> RecommendationUseCase:
+    return RecommendationUseCase(
+        favorites_use_case=favorites_use_case,
+        history_use_case=history_use_case,
+    )
+
+
+def get_movie_catalog_repository(
+    db: Database = Depends(get_database),
+) -> MongoMovieCatalogRepositoryAdapter:
+    return MongoMovieCatalogRepositoryAdapter(db=db)
+
+
+def get_movies_use_case(
+    catalog_repository: MongoMovieCatalogRepositoryAdapter = Depends(
+        get_movie_catalog_repository
+    ),
+    history_use_case: QueryHistoryUseCase = Depends(get_query_history_use_case),
+) -> MoviesUseCase:
+    return MoviesUseCase(
+        catalog_repository=catalog_repository,
+        history_use_case=history_use_case,
+    )
 
 
 def get_current_user(

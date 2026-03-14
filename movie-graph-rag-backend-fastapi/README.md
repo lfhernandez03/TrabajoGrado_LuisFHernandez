@@ -39,6 +39,13 @@ tests/
 
 - Python 3.11+
 - MongoDB accesible por `MONGO_URI`
+- Opcional: `GROQ_API_KEY` (y `GROQ_MODEL`) para generar explicaciones narrativas con LLM
+
+## Recommendation v1.5
+
+- `POST /api/v1/recommendation` ahora genera `rdfGenerated` contextual y ejecuta `sparqlQuery` real sobre Fuseki.
+- Si Fuseki no responde o no retorna resultados, hace fallback a señales de favoritos para mantener disponibilidad.
+- `POST /api/v1/recommendation/debug` devuelve la misma recomendación + diagnóstico (`source`, `fallbackUsed`, `errors`) y tiempos por etapa (`contextExtraction`, `rdfAndSparqlBuild`, `fusekiQuery`, `scoring`, `llmExplanation`, `historyWrite`, `total`).
 
 ## Instalación
 
@@ -73,6 +80,13 @@ La API abre conexión a MongoDB al iniciar y la cierra al apagar.
 - `POST /api/v1/history/me`
 - `GET /api/v1/history/me?limit=10`
 - `GET /api/v1/history/{id}`
+- `GET /api/v1/recommendation?query=...`
+- `POST /api/v1/recommendation`
+- `POST /api/v1/recommendation/debug`
+- `GET /api/v1/movies/examples?limit=3`
+- `GET /api/v1/movies/autocomplete?q=...&limit=8`
+- `GET /api/v1/movies/search?...`
+- `GET /api/v1/movies/connections?from=...&to=...&maxDepth=3`
 
 ## Siguiente fase de migración
 

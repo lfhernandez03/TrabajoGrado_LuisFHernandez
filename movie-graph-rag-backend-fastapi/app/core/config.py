@@ -14,6 +14,7 @@ class Settings(BaseSettings):
     jwt_secret: str = "change_me"
     jwt_algorithm: str = "HS256"
     jwt_expire_minutes: int = 1440
+    groq_model: str = "llama-3.1-8b-instant"
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
