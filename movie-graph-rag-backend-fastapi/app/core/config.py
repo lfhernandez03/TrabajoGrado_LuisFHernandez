@@ -12,6 +12,8 @@ class Settings(BaseSettings):
     fuseki_url: str = "http://localhost:3030"
     fuseki_dataset: str = "movies"
     jwt_secret: str = "change_me"
+    jwt_algorithm: str = "HS256"
+    jwt_expire_minutes: int = 1440
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
