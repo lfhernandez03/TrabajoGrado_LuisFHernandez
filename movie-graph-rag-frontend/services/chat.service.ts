@@ -52,3 +52,13 @@ export const sendChatMessage = async (query: string): Promise<ChatRecommendation
   });
   return response.data;
 };
+
+/**
+ * Obtiene recomendación personalizada basada en actividad del usuario
+ */
+export const getActivityRecommendation = async (): Promise<ChatRecommendationResponse> => {
+  const response = await api.get<ChatRecommendationResponse>('/recommendation/activity', {
+    timeout: 180000,
+  });
+  return response.data;
+};

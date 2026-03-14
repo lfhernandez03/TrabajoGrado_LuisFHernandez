@@ -13,7 +13,7 @@ import {
   FloatingChatButton,
 } from "@/components/home";
 import { Movie, searchMovies, getMovieExamples } from "@/services/movies.service";
-import { sendChatMessage } from "@/services/chat.service";
+import { getActivityRecommendation } from "@/services/chat.service";
 import { getMyHistory, HistoryEntry } from "@/services/history.service";
 import { buildDisplaySparqlQuery } from "@/lib/sparql";
 import { toast } from "sonner";
@@ -58,9 +58,7 @@ export default function Home() {
   const loadContextRecommendation = useCallback(async () => {
     try {
       setLoadingContext(true);
-      const recommendation = await sendChatMessage(
-        "Recomiéndame una película basada en mi actividad reciente"
-      );
+      const recommendation = await getActivityRecommendation();
 
       const bestMovie = recommendation.moviesWithScores?.[0];
       if (bestMovie) {

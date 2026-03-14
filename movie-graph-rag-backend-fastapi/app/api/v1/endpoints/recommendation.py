@@ -32,6 +32,14 @@ def get_recommendation_post(
     )
 
 
+@router.get("/activity", response_model=RecommendationResponse)
+def get_activity_recommendation(
+    current_user: AuthUser = Depends(get_current_user),
+    use_case: RecommendationUseCase = Depends(get_recommendation_use_case),
+) -> RecommendationResponse:
+    return RecommendationResponse(**use_case.get_activity_recommendation(current_user.id))
+
+
 @router.post("/debug", response_model=RecommendationDebugResponse)
 def get_recommendation_debug(
     payload: RecommendationRequest,

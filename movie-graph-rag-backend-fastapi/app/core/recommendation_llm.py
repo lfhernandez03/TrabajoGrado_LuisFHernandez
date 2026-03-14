@@ -3,7 +3,154 @@ from __future__ import annotations
 import json
 from urllib import error, request
 
+from pydantic import BaseModel, Field
+
 from app.core.config import settings
+
+
+# ---------------------------------------------------------------------------
+# Structured NLU context model
+# ---------------------------------------------------------------------------
+
+
+class QueryContext(BaseModel):
+    """Typed context extracted from a user query, produced by LLM or keyword fallback."""
+
+    intent: str = "general"
+    social_context: dict | None = None
+    """e.g. {"companionType": "friends", "hasChildren": False, "numberOfPeople": 3}"""
+    emotional_context: dict | None = None
+    """e.g. {"moodDescription": "relaxed", "desiredEnergyLevel": "low"}"""
+    requirement_context: dict | None = None
+    """e.g. {"availableTime": 90, "excludedGenre": None}"""
+    preferred_genres: list[str] = Field(default_factory=list)
+    director_hint: str | None = None
+    year_range: list[int] | None = None  # [min_year, max_year]
+    exclusions: list[str] = Field(default_factory=list)
+
+
+def _keyword_extract_context(query_lower: str) -> QueryContext:
+    """Synchronous keyword-based parser — identical to the original if/else logic."""
+    social_context = None
+    if any(token in query_lower for token in ["amigos", "friends", "grupo"]):
+        social_context = {"companionType": "friends", "hasChildren": False, "numberOfPeople": 3}
+    elif any(token in query_lower for token in ["pareja", "novia", "novio"]):
+        social_context = {"companionType": "partner", "hasChildren": False, "numberOfPeople": 2}
+    elif any(token in query_lower for token in ["familia", "ninos", "niños", "hijos"]):
+        social_context = {"companionType": "family", "hasChildren": True, "numberOfPeople": 4}
+
+    emotional_context = None
+    if any(token in query_lower for token in ["relaj", "tranquil", "liger", "calm"]):
+        emotional_context = {"moodDescription": "relaxed", "desiredEnergyLevel": "low"}
+    elif any(token in query_lower for token in ["accion", "acción", "emocion", "intensa"]):
+        emotional_context = {"moodDescription": "excited", "desiredEnergyLevel": "high"}
+
+    requirement_context = None
+    for minutes in [60, 75, 90, 100, 120, 150]:
+        if str(minutes) in query_lower:
+            requirement_context = {"availableTime": minutes, "excludedGenre": None}
+            break
+
+    genre_aliases = {
+        "accion": "Action",
+        "acción": "Action",
+        "drama": "Drama",
+        "comedia": "Comedy",
+        "romantica": "Romance",
+        "romántica": "Romance",
+        "romance": "Romance",
+        "terror": "Horror",
+        "miedo": "Horror",
+        "familia": "Family",
+        "familiar": "Family",
+        "animada": "Animation",
+        "animacion": "Animation",
+        "animación": "Animation",
+        "ciencia ficcion": "Science Fiction",
+        "ciencia ficción": "Science Fiction",
+        "sci-fi": "Science Fiction",
+        "thriller": "Thriller",
+    }
+    preferred_genres: list[str] = []
+    for keyword, genre_name in genre_aliases.items():
+        if keyword in query_lower and genre_name not in preferred_genres:
+            preferred_genres.append(genre_name)
+
+    return QueryContext(
+        intent="general",
+        social_context=social_context,
+        emotional_context=emotional_context,
+        requirement_context=requirement_context,
+        preferred_genres=preferred_genres,
+    )
+
+
+_NLU_SYSTEM_PROMPT = (
+    "Eres un analizador de intención para un sistema de recomendación de películas. "
+    "Analiza la consulta del usuario y devuelve SOLO un objeto JSON con esta estructura exacta:\n"
+    "{\n"
+    '  "intent": "general|action|romance|horror|comedy|family|scifi|thriller|drama",\n'
+    '  "social_context": null | {"companionType": "solo|partner|friends|family", '
+    '"hasChildren": bool, "numberOfPeople": int},\n'
+    '  "emotional_context": null | {"moodDescription": "relaxed|excited|sad|happy|neutral", '
+    '"desiredEnergyLevel": "low|medium|high"},\n'
+    '  "requirement_context": null | {"availableTime": int_or_null, "excludedGenre": string_or_null},\n'
+    '  "preferred_genres": ["Action","Drama","Comedy","Romance","Horror","Family",'
+    '"Animation","Science Fiction","Thriller"],\n'
+    '  "director_hint": null | "string",\n'
+    '  "year_range": null | [min_year_int, max_year_int],\n'
+    '  "exclusions": []\n'
+    "}\n"
+    "Responde SOLO con el JSON, sin texto adicional."
+)
+
+
+def extract_query_context(query: str) -> QueryContext:
+    """Extract structured NLU context from a query using the LLM.
+
+    Falls back to :func:`_keyword_extract_context` if the API key is missing,
+    the request times out, or the response cannot be parsed.
+    """
+    api_key = settings.groq_api_key
+    query_lower = query.lower()
+
+    if not api_key:
+        return _keyword_extract_context(query_lower)
+
+    payload = {
+        "model": settings.groq_model,
+        "temperature": 0.1,
+        "max_tokens": 300,
+        "response_format": {"type": "json_object"},
+        "messages": [
+            {"role": "system", "content": _NLU_SYSTEM_PROMPT},
+            {"role": "user", "content": query},
+        ],
+    }
+
+    req = request.Request(
+        "https://api.groq.com/openai/v1/chat/completions",
+        data=json.dumps(payload).encode("utf-8"),
+        headers={
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {api_key}",
+        },
+        method="POST",
+    )
+
+    try:
+        with request.urlopen(req, timeout=10) as response:
+            body = json.loads(response.read().decode("utf-8"))
+            choices = body.get("choices", [])
+            if not choices:
+                return _keyword_extract_context(query_lower)
+            content = choices[0].get("message", {}).get("content", "").strip()
+            if not content:
+                return _keyword_extract_context(query_lower)
+            data = json.loads(content)
+            return QueryContext.model_validate(data)
+    except Exception:
+        return _keyword_extract_context(query_lower)
 
 
 def _build_prompt(

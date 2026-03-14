@@ -729,6 +729,18 @@ PersonalizedPageRank(seed = película favorita del usuario)
 
 ## 11. Roadmap de Implementación
 
+### 11.0 Seguimiento de Implementación (Redes Complejas)
+
+> Checklist vivo para ir marcando lo que ya está implementado en backend/frontend.
+
+- [x] **Cold start con señal de red compleja**: estrategia para usuarios sin historial/favoritos basada en centralidad estructural (conectividad por género/director) + rating global + diversidad por género.
+- [x] **Recomendación por actividad del usuario**: endpoint dedicado que sintetiza preferencias desde historial y favoritos para personalizar la recomendación principal del home.
+- [ ] **Centralidades persistidas en ontología**: almacenar explícitamente `degree`, `betweenness`, `closeness`, `pagerank` como tripletas RDF para consumo directo en SPARQL.
+- [ ] **Detección de comunidades (Leiden/Louvain)**: asignar `movie:belongsToCluster` y habilitar recomendación intra/inter cluster.
+- [ ] **Métricas topológicas expuestas por API**: endpoint analítico (`/graph/topology`) con distribución de grados, clustering promedio, modularidad y path length.
+- [ ] **Serendipity formal**: integrar score de sorpresa (combinando centralidad/anti-popularity/clustering) en el ranking final.
+- [ ] **Diversity score en respuesta**: reportar diversidad intra-lista vía distancia media en grafo entre recomendaciones.
+
 ### Fase 1: Métricas de Redes (Backend — 2-3 semanas)
 
 | # | Tarea | Módulo |

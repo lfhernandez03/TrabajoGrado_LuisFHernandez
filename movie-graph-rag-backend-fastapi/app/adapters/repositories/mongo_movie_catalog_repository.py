@@ -7,6 +7,8 @@ from bson import ObjectId
 from pymongo.collection import Collection
 from pymongo.database import Database
 
+from app.core.fuseki_client import FusekiQueryError, execute_select_query
+
 
 class MongoMovieCatalogRepositoryAdapter:
     def __init__(self, db: Database) -> None:
@@ -53,6 +55,38 @@ class MongoMovieCatalogRepositoryAdapter:
             "relationReason": movie.get("relationReason"),
             "_updatedAt": movie.get("addedAt") or movie.get("createdAt") or datetime.utcnow(),
         }
+
+    def _safe_sparql_literal(self, value: str) -> str:
+        return (
+            value.replace("\\", "\\\\")
+            .replace('"', '\\"')
+            .replace("\n", " ")
+            .replace("\r", " ")
+        )
+
+    def _parse_year(self, value: Any) -> int | None:
+        if value is None:
+            return None
+        try:
+            return int(str(value)[:4])
+        except Exception:
+            return None
+
+    def _parse_runtime(self, value: Any) -> int | None:
+        if value is None:
+            return None
+        try:
+            return int(float(str(value)))
+        except Exception:
+            return None
+
+    def _parse_rating(self, value: Any) -> float | None:
+        if value is None:
+            return None
+        try:
+            return float(str(value))
+        except Exception:
+            return None
 
     def _merge_catalog(
         self,
@@ -154,3 +188,168 @@ class MongoMovieCatalogRepositoryAdapter:
             movie.pop("_updatedAt", None)
 
         return movies
+
+    def search_global_catalog(
+        self,
+        q: str | None,
+        genre: str | None,
+        director: str | None,
+        year_from: int | None,
+        year_to: int | None,
+        limit: int,
+    ) -> list[dict[str, Any]]:
+        safe_q = self._safe_sparql_literal((q or "").strip().lower())
+        safe_genre = self._safe_sparql_literal((genre or "").strip().lower())
+        safe_director = self._safe_sparql_literal((director or "").strip().lower())
+
+        filters: list[str] = []
+        if safe_q:
+            filters.append(f'FILTER(CONTAINS(LCASE(?title), "{safe_q}"))')
+        if safe_genre:
+            filters.append(f'FILTER(CONTAINS(LCASE(COALESCE(?genreName, "")), "{safe_genre}"))')
+        if safe_director:
+            filters.append(
+                f'FILTER(CONTAINS(LCASE(COALESCE(?directorName, "")), "{safe_director}"))'
+            )
+
+        filters_block = "\n  ".join(filters)
+        sparql_query = (
+            "PREFIX movie: <http://www.semanticweb.org/movierecommendation/ontologies/2025/movie-ontology#>\n"
+            "PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>\n"
+            "SELECT DISTINCT ?movie ?title ?posterUrl ?runtime ?releaseDate ?rating ?directorName ?genreName ?description\n"
+            "WHERE {\n"
+            "  ?movie rdf:type movie:FeatureFilm ;\n"
+            "         movie:hasTitle ?title .\n"
+            "  OPTIONAL { ?movie movie:hasPosterUrl ?posterUrl }\n"
+            "  OPTIONAL { ?movie movie:runtime ?runtime }\n"
+            "  OPTIONAL { ?movie movie:releaseDate ?releaseDate }\n"
+            "  OPTIONAL { ?movie movie:hasAverageRating ?rating }\n"
+            "  OPTIONAL { ?movie movie:hasPlotSummary ?description }\n"
+            "  OPTIONAL { ?movie movie:hasDirector/movie:personName ?directorName }\n"
+            "  OPTIONAL { ?movie movie:hasMainGenre/movie:genreName ?genreName }\n"
+            f"  {filters_block}\n"
+            "}\n"
+            "ORDER BY DESC(?rating) DESC(?releaseDate)\n"
+            f"LIMIT {max(50, limit * 12)}"
+        )
+
+        try:
+            rows = execute_select_query(sparql_query)
+        except FusekiQueryError:
+            return []
+
+        catalog: dict[str, dict[str, Any]] = {}
+        for row in rows:
+            uri = row.get("movie")
+            title = row.get("title")
+            if not uri or not title:
+                continue
+
+            year = self._parse_year(row.get("releaseDate"))
+            if year_from is not None and year is not None and year < year_from:
+                continue
+            if year_to is not None and year is not None and year > year_to:
+                continue
+
+            runtime = self._parse_runtime(row.get("runtime"))
+            rating = self._parse_rating(row.get("rating"))
+            genre_name = row.get("genreName")
+
+            movie = {
+                "uri": uri,
+                "title": title,
+                "posterUrl": row.get("posterUrl"),
+                "tmdbId": None,
+                "year": year,
+                "runtime": runtime,
+                "certification": None,
+                "director": row.get("directorName"),
+                "genres": [genre_name] if genre_name else [],
+                "description": row.get("description"),
+                "rating": rating,
+                "relationReason": None,
+                "createdAt": datetime.utcnow(),
+            }
+
+            existing = catalog.get(uri)
+            if not existing:
+                catalog[uri] = movie
+                continue
+
+            existing_genres = set(existing.get("genres", []))
+            if genre_name:
+                existing_genres.add(genre_name)
+            existing["genres"] = sorted(existing_genres)
+
+            for field in [
+                "posterUrl",
+                "year",
+                "runtime",
+                "director",
+                "description",
+                "rating",
+            ]:
+                if existing.get(field) is None and movie.get(field) is not None:
+                    existing[field] = movie[field]
+
+        movies = list(catalog.values())
+        movies.sort(
+            key=lambda m: (
+                m.get("rating") is not None,
+                m.get("rating") or 0,
+                m.get("year") or 0,
+            ),
+            reverse=True,
+        )
+        return movies[: max(1, limit)]
+
+    def autocomplete_global(self, term: str, limit: int = 8) -> list[dict[str, Any]]:
+        query = term.lower().strip()
+        if len(query) < 2:
+            return []
+
+        safe_term = self._safe_sparql_literal(query)
+        sparql_query = (
+            "PREFIX movie: <http://www.semanticweb.org/movierecommendation/ontologies/2025/movie-ontology#>\n"
+            "PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>\n"
+            "SELECT DISTINCT ?movie ?title ?directorName\n"
+            "WHERE {\n"
+            "  ?movie rdf:type movie:FeatureFilm ;\n"
+            "         movie:hasTitle ?title .\n"
+            "  OPTIONAL { ?movie movie:hasDirector/movie:personName ?directorName }\n"
+            f'  FILTER(CONTAINS(LCASE(?title), "{safe_term}"))\n'
+            "}\n"
+            "ORDER BY ?title\n"
+            f"LIMIT {max(10, limit * 3)}"
+        )
+
+        try:
+            rows = execute_select_query(sparql_query)
+        except FusekiQueryError:
+            return []
+
+        results: list[dict[str, Any]] = []
+        seen_titles: set[str] = set()
+        for row in rows:
+            title = row.get("title")
+            uri = row.get("movie")
+            if not title or not uri:
+                continue
+
+            normalized = title.strip().lower()
+            if normalized in seen_titles:
+                continue
+            seen_titles.add(normalized)
+
+            results.append(
+                {
+                    "uri": uri,
+                    "title": title,
+                    "director": row.get("directorName"),
+                }
+            )
+
+            if len(results) >= max(1, limit):
+                break
+
+        return results

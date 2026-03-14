@@ -20,7 +20,14 @@ class MoviesUseCase:
         self.history_use_case = history_use_case
 
     def get_examples(self, limit: int = 3) -> list[dict[str, Any]]:
-        return self.catalog_repository.get_catalog(user_id=None)[: max(1, limit)]
+        return self.catalog_repository.search_global_catalog(
+            q=None,
+            genre=None,
+            director=None,
+            year_from=None,
+            year_to=None,
+            limit=max(1, limit),
+        )
 
     def autocomplete(
         self,
@@ -28,20 +35,11 @@ class MoviesUseCase:
         term: str,
         limit: int = 8,
     ) -> list[dict[str, Any]]:
-        query = term.lower().strip()
-        if len(query) < 2:
-            return []
-
-        catalog = self.catalog_repository.get_catalog(user_id=user_id)
-        matches = [movie for movie in catalog if query in movie["title"].lower()]
-        return [
-            {
-                "uri": movie["uri"],
-                "title": movie["title"],
-                "director": movie.get("director"),
-            }
-            for movie in matches[: max(1, limit)]
-        ]
+        _ = user_id
+        return self.catalog_repository.autocomplete_global(
+            term=term,
+            limit=max(1, limit),
+        )
 
     def search_movies(
         self,
@@ -54,25 +52,14 @@ class MoviesUseCase:
         limit: int,
     ) -> list[dict[str, Any]]:
         start = datetime.utcnow()
-        catalog = self.catalog_repository.get_catalog(user_id=user_id)
-
-        def matches(movie: dict[str, Any]) -> bool:
-            if q and q.lower() not in movie["title"].lower():
-                return False
-            if genre:
-                genres = [g.lower() for g in movie.get("genres", [])]
-                if genre.lower() not in " ".join(genres):
-                    return False
-            if director and director.lower() not in (movie.get("director") or "").lower():
-                return False
-            year = movie.get("year")
-            if year_from is not None and isinstance(year, int) and year < year_from:
-                return False
-            if year_to is not None and isinstance(year, int) and year > year_to:
-                return False
-            return True
-
-        results = [movie for movie in catalog if matches(movie)][: max(1, limit)]
+        results = self.catalog_repository.search_global_catalog(
+            q=q,
+            genre=genre,
+            director=director,
+            year_from=year_from,
+            year_to=year_to,
+            limit=max(1, limit),
+        )
 
         execution_time_ms = max(1, int((datetime.utcnow() - start).total_seconds() * 1000))
         self.history_use_case.create_entry(
@@ -104,17 +91,33 @@ class MoviesUseCase:
         max_depth: int = 3,
     ) -> dict[str, Any]:
         start = datetime.utcnow()
-        catalog = self.catalog_repository.get_catalog(user_id=user_id)
+        from_results = self.catalog_repository.search_global_catalog(
+            q=from_term,
+            genre=None,
+            director=None,
+            year_from=None,
+            year_to=None,
+            limit=25,
+        )
+        to_results = self.catalog_repository.search_global_catalog(
+            q=to_term,
+            genre=None,
+            director=None,
+            year_from=None,
+            year_to=None,
+            limit=25,
+        )
 
-        def find_movie(term: str) -> dict[str, Any] | None:
+        def find_movie(term: str, candidates: list[dict[str, Any]]) -> dict[str, Any] | None:
             term_norm = term.lower().strip()
-            for movie in catalog:
-                if term_norm in movie["title"].lower():
-                    return movie
-            return None
+            exact = next((m for m in candidates if m.get("title", "").strip().lower() == term_norm), None)
+            if exact:
+                return exact
+            contains = next((m for m in candidates if term_norm in m.get("title", "").lower()), None)
+            return contains
 
-        from_movie = find_movie(from_term)
-        to_movie = find_movie(to_term)
+        from_movie = find_movie(from_term, from_results)
+        to_movie = find_movie(to_term, to_results)
 
         if not from_movie or not to_movie:
             response = {
