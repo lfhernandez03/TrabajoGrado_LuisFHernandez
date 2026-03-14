@@ -13,6 +13,7 @@ import {
   FloatingChatButton,
 } from "@/components/home";
 import { Movie, searchMovies, getMovieExamples } from "@/services/movies.service";
+import { sendChatMessage } from "@/services/chat.service";
 import { getMyHistory, HistoryEntry } from "@/services/history.service";
 import { buildDisplaySparqlQuery } from "@/lib/sparql";
 import { toast } from "sonner";
@@ -57,10 +58,50 @@ export default function Home() {
   const loadContextRecommendation = useCallback(async () => {
     try {
       setLoadingContext(true);
-      const movies = await getMovieExamples(1);
-      if (movies.length > 0) setContextMovie(movies[0]);
+      const recommendation = await sendChatMessage(
+        "Recomiéndame una película basada en mi actividad reciente"
+      );
+
+      const bestMovie = recommendation.moviesWithScores?.[0];
+      if (bestMovie) {
+        setContextMovie({
+          uri: `context:${bestMovie.title.toLowerCase().replace(/\s+/g, "-")}`,
+          title: bestMovie.title,
+          posterUrl: bestMovie.posterUrl,
+          runtime: bestMovie.runtime,
+          year: bestMovie.releaseDate ? Number(bestMovie.releaseDate) || undefined : undefined,
+          genres: bestMovie.genreName ? [bestMovie.genreName] : [],
+          rating: bestMovie.averageRating,
+          description:
+            recommendation.explanation ||
+            "Recomendación personalizada basada en tu contexto actual.",
+          relationReason:
+            typeof bestMovie.compatibilityScore === "number"
+              ? `Compatibilidad estimada: ${Math.round(bestMovie.compatibilityScore * 100)}%`
+              : undefined,
+        });
+        return;
+      }
+
+      const movies = await getMovieExamples(3);
+      const nonDemoMovie = movies.find(
+        (movie) => movie.title.trim().toLowerCase() !== "demo movie"
+      );
+      if (nonDemoMovie) {
+        setContextMovie(nonDemoMovie);
+      } else if (movies.length > 0) {
+        setContextMovie(movies[0]);
+      } else {
+        setContextMovie(null);
+      }
     } catch (error) {
       console.error("Error cargando recomendación contextual:", error);
+      try {
+        const movies = await getMovieExamples(1);
+        setContextMovie(movies[0] || null);
+      } catch {
+        setContextMovie(null);
+      }
     } finally {
       setLoadingContext(false);
     }

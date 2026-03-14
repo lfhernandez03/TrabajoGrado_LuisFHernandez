@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Movie } from "@/services/movies.service";
@@ -24,17 +25,25 @@ export function MovieCard({
   const formattedRuntime = movie.runtime
     ? `${Math.floor(movie.runtime / 60)}h ${movie.runtime % 60}m`
     : "—";
-  const classification = movie.certification || "NR";
+  const classification = movie.certification;
+  const hasRating = typeof movie.rating === "number";
+  const primaryGenre = movie.genres?.[0];
+  const descriptionText =
+    movie.description ||
+    movie.relationReason ||
+    "Recomendación personalizada basada en tu actividad reciente.";
 
   return (
     <Card className="relative overflow-hidden rounded-xl border-border bg-card hover:border-accent/60 transition-all">
       <CardContent className="relative p-0">
         {hasPoster ? (
           <div className="absolute inset-0 pointer-events-none">
-            <img
+            <Image
               src={normalizedPosterUrl}
               alt=""
               aria-hidden="true"
+              fill
+              sizes="100vw"
               className="h-full w-full object-cover blur-3xl scale-125 opacity-25"
             />
           </div>
@@ -43,17 +52,20 @@ export function MovieCard({
         )}
 
         <div className="relative flex gap-4 min-h-52 p-4">
-          <div className="w-36 shrink-0 rounded-xl shadow-lg overflow-hidden">
+          <div className="relative w-36 shrink-0 rounded-xl shadow-lg overflow-hidden">
             {hasPoster ? (
-              <img
+              <Image
                 src={normalizedPosterUrl}
                 alt={`Póster de ${movie.title}`}
+                fill
+                sizes="(max-width: 768px) 144px, 144px"
                 className="h-full w-full object-cover"
-                loading="lazy"
                 onError={() => setImageError(true)}
               />
             ) : (
-              <Film className="h-10 w-10 text-muted-foreground/60" />
+              <div className="h-full min-h-52 flex items-center justify-center bg-muted/20">
+                <Film className="h-10 w-10 text-muted-foreground/60" />
+              </div>
             )}
           </div>
 
@@ -102,26 +114,28 @@ export function MovieCard({
 
               <div className="flex items-center gap-2 mb-4 text-sm text-foreground">
                 <Star className="h-4 w-4 text-accent" />
-                {movie.rating && (
+                {hasRating && (
                   <span className="font-medium">
                     {movie.rating.toFixed(1)}
                   </span>
                 )}
                 <span className="text-muted-foreground">Calificación</span>
-                <span className="text-muted-foreground">·</span>
-                <span className="text-muted-foreground">{classification}</span>
-                {movie.genres && movie.genres.length > 0 && (
+                {classification && (
                   <>
                     <span className="text-muted-foreground">·</span>
-                    <span className="text-muted-foreground">
-                      {movie.genres[0]}
-                    </span>
+                    <span className="text-muted-foreground">{classification}</span>
+                  </>
+                )}
+                {primaryGenre && (
+                  <>
+                    <span className="text-muted-foreground">·</span>
+                    <span className="text-muted-foreground">{primaryGenre}</span>
                   </>
                 )}
               </div>
 
               <p className="text-base leading-6 text-muted-foreground line-clamp-4">
-                {movie.description || "Descripción de la película"}
+                {descriptionText}
               </p>
             </div>
 

@@ -1,7 +1,21 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import { toast } from 'sonner';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+const API_HOST = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+const API_PREFIX = process.env.NEXT_PUBLIC_API_PREFIX || '/api/v1';
+
+const normalizedHost = API_HOST.replace(/\/+$/, '');
+const normalizedPrefix = API_PREFIX
+  ? API_PREFIX.startsWith('/')
+    ? API_PREFIX
+    : `/${API_PREFIX}`
+  : '';
+
+const API_URL = normalizedPrefix
+  ? normalizedHost.endsWith(normalizedPrefix)
+    ? normalizedHost
+    : `${normalizedHost}${normalizedPrefix}`
+  : normalizedHost;
 
 // Crear instancia de axios
 const api = axios.create({
@@ -36,7 +50,8 @@ api.interceptors.response.use(
   (error: AxiosError) => {
     if (error.response) {
       const status = error.response.status;
-      const message = (error.response.data as { message?: string })?.message || error.message;
+      const responseData = error.response.data as { message?: string; detail?: string } | undefined;
+      const message = responseData?.detail || responseData?.message || error.message;
 
       switch (status) {
         case 401:

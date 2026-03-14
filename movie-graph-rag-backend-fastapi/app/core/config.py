@@ -18,6 +18,7 @@ class Settings(BaseSettings):
     jwt_expire_minutes: int = 1440
     groq_model: str = "llama-3.1-8b-instant"
     admin_emails: str = ""
+    cors_allowed_origins: str = "http://localhost:3000"
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 

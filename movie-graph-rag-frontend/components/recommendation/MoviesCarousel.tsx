@@ -29,7 +29,10 @@ export function MoviesCarousel({
     try {
       setLoading(true);
       const data = await getMovieExamples(9); // Cargar 9 películas para 3 páginas
-      setMovies(data);
+      const filtered = data.filter(
+        (movie) => movie.title.trim().toLowerCase() !== "demo movie"
+      );
+      setMovies(filtered.length > 0 ? filtered : data);
     } catch (error) {
       console.error("Error cargando películas:", error);
       toast.error("Error al cargar las películas de ejemplo");

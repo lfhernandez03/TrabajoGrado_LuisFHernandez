@@ -37,7 +37,9 @@ class AuthService {
     } catch (error) {
       if (error instanceof AxiosError) {
         const message =
-          error.response?.data?.message || "Error al iniciar sesión";
+          error.response?.data?.detail ||
+          error.response?.data?.message ||
+          "Error al iniciar sesión";
         throw new Error(message);
       }
       throw new Error("Error de conexión con el servidor");
@@ -55,7 +57,10 @@ class AuthService {
       return response.data;
     } catch (error) {
       if (error instanceof AxiosError) {
-        const message = error.response?.data?.message || "Error al registrarse";
+        const message =
+          error.response?.data?.detail ||
+          error.response?.data?.message ||
+          "Error al registrarse";
         throw new Error(message);
       }
       throw new Error("Error de conexión con el servidor");
@@ -72,7 +77,7 @@ class AuthService {
     }
 
     try {
-      const response = await api.get<AuthResponse["user"]>("/auth/profile");
+      const response = await api.get<AuthResponse["user"]>("/auth/me");
 
       this.setUser(response.data);
       return response.data;

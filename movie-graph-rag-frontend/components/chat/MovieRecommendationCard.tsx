@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Film, Star, Clock } from "lucide-react";
@@ -28,11 +29,12 @@ export function MovieRecommendationCard({ movie }: MovieRecommendationCardProps)
     <div className="bg-background/60 border border-border/50 rounded-lg p-3 flex items-center gap-3">
       <div className="shrink-0 h-14 w-10 bg-primary/10 rounded-md overflow-hidden flex items-center justify-center p-1">
         {hasPoster ? (
-          <img
+          <Image
             src={normalizedPosterUrl}
             alt={`Póster de ${movie.title}`}
+            width={40}
+            height={56}
             className="h-full w-full object-contain"
-            loading="lazy"
             onError={() => setImageError(true)}
           />
         ) : (
