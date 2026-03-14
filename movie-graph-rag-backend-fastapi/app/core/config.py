@@ -11,6 +11,8 @@ class Settings(BaseSettings):
     groq_api_key: str = ""
     fuseki_url: str = "http://localhost:3030"
     fuseki_dataset: str = "movies"
+    fuseki_timeout_seconds: int = 8
+    fuseki_max_retries: int = 1
     jwt_secret: str = "change_me"
     jwt_algorithm: str = "HS256"
     jwt_expire_minutes: int = 1440

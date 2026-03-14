@@ -41,11 +41,14 @@ tests/
 - MongoDB accesible por `MONGO_URI`
 - Opcional: `GROQ_API_KEY` (y `GROQ_MODEL`) para generar explicaciones narrativas con LLM
 - Opcional: `ADMIN_EMAILS` (lista separada por comas) para asignar rol `admin` al registrar
+- Opcional: `FUSEKI_TIMEOUT_SECONDS` y `FUSEKI_MAX_RETRIES` para ajustar estabilidad/latencia de consultas SPARQL
 
 ## Recommendation v1.5
 
 - `POST /api/v1/recommendation` ahora genera `rdfGenerated` contextual y ejecuta `sparqlQuery` real sobre Fuseki.
+- El retrieval usa estrategia progresiva: `strict` (género+tiempo) → `relaxed_runtime` → `relaxed_genre` → `broad`.
 - Si Fuseki no responde o no retorna resultados, hace fallback a señales de favoritos para mantener disponibilidad.
+- Las escrituras de historial/métricas son resilientes: si fallan, la recomendación igual se retorna y el error queda en `debug.errors`.
 - `POST /api/v1/recommendation/debug` devuelve la misma recomendación + diagnóstico (`source`, `fallbackUsed`, `errors`) y tiempos por etapa (`contextExtraction`, `rdfAndSparqlBuild`, `fusekiQuery`, `scoring`, `llmExplanation`, `historyWrite`, `total`).
 
 ## Instalación

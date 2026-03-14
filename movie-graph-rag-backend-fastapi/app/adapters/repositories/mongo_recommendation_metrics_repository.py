@@ -82,7 +82,9 @@ class MongoRecommendationMetricsRepositoryAdapter(RecommendationMetricsRepositor
 
         for row in rows:
             source = row.get("source", "unknown")
-            if source not in source_counts:
+            if isinstance(source, str) and source.startswith("fuseki"):
+                source_counts["fuseki"] += 1
+            elif source not in source_counts:
                 source_counts["unknown"] += 1
             else:
                 source_counts[source] += 1

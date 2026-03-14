@@ -42,6 +42,14 @@ class RecommendationUseCase:
         def elapsed_ms(start_time: float) -> int:
             return max(0, int((perf_counter() - start_time) * 1000))
 
+        def safe_rdf_literal(value: str) -> str:
+            return (
+                value.replace("\\", "\\\\")
+                .replace('"', '\\"')
+                .replace("\n", " ")
+                .replace("\r", " ")
+            )
+
         context_start = perf_counter()
 
         social_context = None
@@ -126,9 +134,10 @@ class RecommendationUseCase:
                 else "unknown"
             )
             genres_literal = ", ".join(preferred_genres) if preferred_genres else "none"
+            safe_query = safe_rdf_literal(query)
             return (
                 "@prefix ctx: <http://www.semanticweb.org/movierecommendation/context/> .\n"
-                f"ctx:{snapshot_id} ctx:userIntent \"{query}\" ;\n"
+                f"ctx:{snapshot_id} ctx:userIntent \"{safe_query}\" ;\n"
                 f"    ctx:companionType \"{social_companion}\" ;\n"
                 f"    ctx:mood \"{mood}\" ;\n"
                 f"    ctx:energy \"{energy}\" ;\n"
@@ -136,16 +145,24 @@ class RecommendationUseCase:
                 f"    ctx:preferredGenres \"{genres_literal}\" ."
             )
 
-        def build_sparql_query() -> str:
+        def build_sparql_query(
+            apply_genre_filter: bool,
+            apply_runtime_filter: bool,
+            limit: int = 30,
+        ) -> str:
             genre_filter = ""
-            if preferred_genres:
+            if apply_genre_filter and preferred_genres:
                 genre_values = " ".join(f'\"{genre}\"' for genre in preferred_genres)
                 genre_filter = (
                     "FILTER(?genreName IN (" + genre_values + "))"
                 )
 
             runtime_filter = ""
-            if requirement_context and requirement_context.get("availableTime"):
+            if (
+                apply_runtime_filter
+                and requirement_context
+                and requirement_context.get("availableTime")
+            ):
                 available_time = requirement_context["availableTime"]
                 runtime_filter = f"FILTER(!BOUND(?runtime) || ?runtime <= {available_time})"
 
@@ -164,14 +181,47 @@ class RecommendationUseCase:
                 f"  {genre_filter}\n"
                 f"  {runtime_filter}\n"
                 "}\n"
-                "ORDER BY DESC(?rating)\n"
-                "LIMIT 20"
+                "ORDER BY DESC(?rating) DESC(?releaseDate)\n"
+                f"LIMIT {limit}"
             )
+
+        def is_runtime_match(runtime_value: int | None) -> bool:
+            if not (requirement_context and requirement_context.get("availableTime")):
+                return True
+            if runtime_value is None:
+                return True
+            return runtime_value <= int(requirement_context["availableTime"])
+
+        def is_genre_match(genre_name: str | None) -> bool:
+            if not preferred_genres:
+                return True
+            if not genre_name:
+                return False
+            return genre_name in preferred_genres
+
+        def score_fuseki_candidate(movie: dict, rank_hint: int) -> float:
+            rating_value = movie.get("averageRating")
+            normalized_rating = 0.6
+            if rating_value is not None:
+                normalized_rating = min(1.0, max(0.45, float(rating_value) / 10))
+
+            genre_bonus = 0.15 if is_genre_match(movie.get("genreName")) else -0.03
+            runtime_bonus = 0.1 if is_runtime_match(movie.get("runtime")) else -0.08
+            ranking_bonus = max(0.0, 0.1 - rank_hint * 0.015)
+
+            final_score = normalized_rating + genre_bonus + runtime_bonus + ranking_bonus
+            return min(0.99, max(0.4, round(final_score, 2)))
 
         build_query_start = perf_counter()
         context_snapshot_id = str(uuid4())
         rdf_generated = build_rdf_context(context_snapshot_id)
-        sparql_query = build_sparql_query()
+        sparql_query = build_sparql_query(
+            apply_genre_filter=bool(preferred_genres),
+            apply_runtime_filter=bool(
+                requirement_context and requirement_context.get("availableTime")
+            ),
+            limit=30,
+        )
         timings["rdfAndSparqlBuild"] = elapsed_ms(build_query_start)
 
         favorites = self.favorites_use_case.get_my_favorites(user_id)
@@ -180,42 +230,125 @@ class RecommendationUseCase:
         fuseki_candidates: list[dict] = []
         fuseki_rows_count = 0
         fuseki_start = perf_counter()
-        try:
-            raw_rows = execute_select_query(sparql_query)
-            fuseki_rows_count = len(raw_rows)
-            for row in raw_rows:
-                title = row.get("title")
-                if not title:
-                    continue
-                rating_value = None
-                if row.get("rating") is not None:
-                    try:
-                        rating_value = float(row["rating"])
-                    except ValueError:
-                        rating_value = None
+        fuseki_strategy = "strict"
+        query_attempts: list[tuple[str, str]] = []
 
-                runtime_value = None
-                if row.get("runtime") is not None:
-                    try:
-                        runtime_value = int(float(row["runtime"]))
-                    except ValueError:
-                        runtime_value = None
+        has_genre_constraint = bool(preferred_genres)
+        has_runtime_constraint = bool(
+            requirement_context and requirement_context.get("availableTime")
+        )
 
-                release_date = row.get("releaseDate")
-                release_year = None
-                if release_date:
-                    release_year = str(release_date)[:4]
+        query_attempts.append(
+            (
+                "strict",
+                build_sparql_query(
+                    apply_genre_filter=has_genre_constraint,
+                    apply_runtime_filter=has_runtime_constraint,
+                    limit=30,
+                ),
+            )
+        )
 
-                fuseki_candidates.append(
-                    {
-                        "title": title,
-                        "posterUrl": row.get("posterUrl"),
-                        "runtime": runtime_value,
-                        "genreName": row.get("genreName"),
-                        "releaseDate": release_year,
-                        "averageRating": rating_value,
-                    }
+        if has_genre_constraint and has_runtime_constraint:
+            query_attempts.append(
+                (
+                    "relaxed_runtime",
+                    build_sparql_query(
+                        apply_genre_filter=True,
+                        apply_runtime_filter=False,
+                        limit=40,
+                    ),
                 )
+            )
+
+        if has_genre_constraint:
+            query_attempts.append(
+                (
+                    "relaxed_genre",
+                    build_sparql_query(
+                        apply_genre_filter=False,
+                        apply_runtime_filter=has_runtime_constraint,
+                        limit=40,
+                    ),
+                )
+            )
+
+        query_attempts.append(
+            (
+                "broad",
+                build_sparql_query(
+                    apply_genre_filter=False,
+                    apply_runtime_filter=False,
+                    limit=60,
+                ),
+            )
+        )
+
+        unique_attempts: list[tuple[str, str]] = []
+        seen_queries: set[str] = set()
+        for attempt_name, attempt_query in query_attempts:
+            if attempt_query in seen_queries:
+                continue
+            seen_queries.add(attempt_query)
+            unique_attempts.append((attempt_name, attempt_query))
+
+        query_attempts = unique_attempts
+
+        try:
+            seen_titles: set[str] = set()
+
+            selected_query = sparql_query
+            for attempt_name, attempt_query in query_attempts:
+                selected_query = attempt_query
+                raw_rows = execute_select_query(attempt_query)
+                fuseki_rows_count += len(raw_rows)
+
+                for row in raw_rows:
+                    title = row.get("title")
+                    if not title:
+                        continue
+
+                    normalized_title = title.strip().lower()
+                    if normalized_title in seen_titles:
+                        continue
+
+                    rating_value = None
+                    if row.get("rating") is not None:
+                        try:
+                            rating_value = float(row["rating"])
+                        except ValueError:
+                            rating_value = None
+
+                    runtime_value = None
+                    if row.get("runtime") is not None:
+                        try:
+                            runtime_value = int(float(row["runtime"]))
+                        except ValueError:
+                            runtime_value = None
+
+                    release_date = row.get("releaseDate")
+                    release_year = None
+                    if release_date:
+                        release_year = str(release_date)[:4]
+
+                    fuseki_candidates.append(
+                        {
+                            "title": title,
+                            "posterUrl": row.get("posterUrl"),
+                            "runtime": runtime_value,
+                            "genreName": row.get("genreName"),
+                            "releaseDate": release_year,
+                            "averageRating": rating_value,
+                            "queryStrategy": attempt_name,
+                        }
+                    )
+                    seen_titles.add(normalized_title)
+
+                if len(fuseki_candidates) >= 5:
+                    fuseki_strategy = attempt_name
+                    break
+
+            sparql_query = selected_query
         except FusekiQueryError as exc:
             fuseki_candidates = []
             debug_errors.append(f"fuseki_query_error: {exc}")
@@ -225,17 +358,30 @@ class RecommendationUseCase:
         scoring_start = perf_counter()
         recommendation_source = "fuseki"
         if fuseki_candidates:
-            for index, movie in enumerate(fuseki_candidates[:5]):
-                base_score = 0.5
-                if movie.get("averageRating") is not None:
-                    base_score = min(1.0, max(0.5, float(movie["averageRating"]) / 10))
-                score = min(0.99, round(base_score + max(0, 0.12 - index * 0.02), 2))
+            sorted_candidates = sorted(
+                fuseki_candidates,
+                key=lambda movie: (
+                    is_genre_match(movie.get("genreName")),
+                    is_runtime_match(movie.get("runtime")),
+                    (movie.get("averageRating") or 0),
+                ),
+                reverse=True,
+            )
+
+            for index, movie in enumerate(sorted_candidates[:5]):
+                score = score_fuseki_candidate(movie, index)
                 movies_with_scores.append(
                     {
-                        **movie,
+                        "title": movie.get("title"),
+                        "posterUrl": movie.get("posterUrl"),
+                        "runtime": movie.get("runtime"),
+                        "genreName": movie.get("genreName"),
+                        "releaseDate": movie.get("releaseDate"),
+                        "averageRating": movie.get("averageRating"),
                         "compatibilityScore": score,
                     }
                 )
+            recommendation_source = f"fuseki_{fuseki_strategy}"
         else:
             recommendation_source = "favorites_fallback"
             for index, movie in enumerate(top_candidates):
@@ -303,19 +449,22 @@ class RecommendationUseCase:
         }
 
         history_start = perf_counter()
-        self.history_use_case.create_entry(
-            QueryHistory(
-                userId=user_id,
-                query=query,
-                rdfGenerated=response["rdfGenerated"],
-                sparqlExecuted=response["sparqlQuery"],
-                contextExtracted=context_extracted,
-                resultsFound=movies_with_scores,
-                explanation=explanation,
-                executionTimeMs=execution_time_ms,
-                wasSuccessful=len(movies_with_scores) > 0,
+        try:
+            self.history_use_case.create_entry(
+                QueryHistory(
+                    userId=user_id,
+                    query=query,
+                    rdfGenerated=response["rdfGenerated"],
+                    sparqlExecuted=response["sparqlQuery"],
+                    contextExtracted=context_extracted,
+                    resultsFound=movies_with_scores,
+                    explanation=explanation,
+                    executionTimeMs=execution_time_ms,
+                    wasSuccessful=len(movies_with_scores) > 0,
+                )
             )
-        )
+        except Exception as exc:
+            debug_errors.append(f"history_write_error: {exc}")
         timings["historyWrite"] = elapsed_ms(history_start)
         timings["total"] = max(1, elapsed_ms(total_start))
 
@@ -325,7 +474,7 @@ class RecommendationUseCase:
                     userId=user_id,
                     query=query,
                     source=recommendation_source,
-                    fallbackUsed=recommendation_source != "fuseki",
+                    fallbackUsed=not recommendation_source.startswith("fuseki"),
                     fusekiRows=fuseki_rows_count,
                     errors=debug_errors,
                     timingsMs=timings,
@@ -340,7 +489,7 @@ class RecommendationUseCase:
         debug_payload = {
             "source": recommendation_source,
             "fusekiRows": fuseki_rows_count,
-            "fallbackUsed": recommendation_source != "fuseki",
+            "fallbackUsed": not recommendation_source.startswith("fuseki"),
             "errors": debug_errors,
             "timingsMs": timings,
         }
