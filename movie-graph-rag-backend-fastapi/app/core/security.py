@@ -16,10 +16,10 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
     return pwd_context.verify(plain_password, hashed_password)
 
 
-def create_access_token(subject: str, email: str) -> str:
+def create_access_token(subject: str, email: str, role: str = "user") -> str:
     expires_delta = timedelta(minutes=settings.jwt_expire_minutes)
     expire = datetime.now(timezone.utc) + expires_delta
-    payload = {"sub": subject, "email": email, "exp": expire}
+    payload = {"sub": subject, "email": email, "role": role, "exp": expire}
     return jwt.encode(payload, settings.jwt_secret, algorithm=settings.jwt_algorithm)
 
 
@@ -32,8 +32,9 @@ def decode_access_token(token: str) -> dict[str, str]:
         )
         subject = payload.get("sub")
         email = payload.get("email")
+        role = payload.get("role", "user")
         if not subject or not email:
             raise ValueError("Invalid token payload")
-        return {"sub": subject, "email": email}
+        return {"sub": subject, "email": email, "role": role}
     except JWTError as exc:
         raise ValueError("Invalid or expired token") from exc

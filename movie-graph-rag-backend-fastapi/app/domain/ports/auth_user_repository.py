@@ -13,5 +13,11 @@ class AuthUserRepositoryPort(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def create(self, email: str, name: str, password_hash: str) -> AuthUser:
+    def create(
+        self,
+        email: str,
+        name: str,
+        password_hash: str,
+        role: str = "user",
+    ) -> AuthUser:
         raise NotImplementedError

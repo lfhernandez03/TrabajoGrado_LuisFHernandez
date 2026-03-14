@@ -9,6 +9,9 @@ from app.adapters.repositories.mongo_movie_catalog_repository import (
 from app.adapters.repositories.mongo_query_history_repository import (
     MongoQueryHistoryRepositoryAdapter,
 )
+from app.adapters.repositories.mongo_recommendation_metrics_repository import (
+    MongoRecommendationMetricsRepositoryAdapter,
+)
 from app.adapters.repositories.mongo_user_favorites_repository import (
     MongoUserFavoritesRepositoryAdapter,
 )
@@ -16,6 +19,7 @@ from app.application.use_cases.auth_user import AuthUserUseCase
 from app.application.use_cases.movies import MoviesUseCase
 from app.application.use_cases.query_history import QueryHistoryUseCase
 from app.application.use_cases.recommendation import RecommendationUseCase
+from app.application.use_cases.recommendation_metrics import RecommendationMetricsUseCase
 from app.application.use_cases.user_favorites import UserFavoritesUseCase
 from app.core.database import get_database
 from app.core.security import decode_access_token
@@ -64,13 +68,31 @@ def get_query_history_use_case(
     return QueryHistoryUseCase(repository=repository)
 
 
+def get_recommendation_metrics_repository(
+    db: Database = Depends(get_database),
+) -> MongoRecommendationMetricsRepositoryAdapter:
+    return MongoRecommendationMetricsRepositoryAdapter(db=db)
+
+
+def get_recommendation_metrics_use_case(
+    repository: MongoRecommendationMetricsRepositoryAdapter = Depends(
+        get_recommendation_metrics_repository
+    ),
+) -> RecommendationMetricsUseCase:
+    return RecommendationMetricsUseCase(repository=repository)
+
+
 def get_recommendation_use_case(
     favorites_use_case: UserFavoritesUseCase = Depends(get_user_favorites_use_case),
     history_use_case: QueryHistoryUseCase = Depends(get_query_history_use_case),
+    metrics_use_case: RecommendationMetricsUseCase = Depends(
+        get_recommendation_metrics_use_case
+    ),
 ) -> RecommendationUseCase:
     return RecommendationUseCase(
         favorites_use_case=favorites_use_case,
         history_use_case=history_use_case,
+        metrics_use_case=metrics_use_case,
     )
 
 
@@ -105,3 +127,14 @@ def get_current_user(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid authentication credentials",
         ) from exc
+
+
+def get_current_admin(
+    current_user: AuthUser = Depends(get_current_user),
+) -> AuthUser:
+    if current_user.role != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin role required",
+        )
+    return current_user

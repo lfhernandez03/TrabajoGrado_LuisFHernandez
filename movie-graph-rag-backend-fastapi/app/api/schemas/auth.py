@@ -16,6 +16,7 @@ class AuthUserResponse(BaseModel):
     id: str
     email: EmailStr
     name: str
+    role: str
 
 
 class AuthResponse(BaseModel):

@@ -53,7 +53,12 @@ def register(
         )
         return AuthResponse(
             access_token=token,
-            user=AuthUserResponse(id=user.id, email=user.email, name=user.name),
+            user=AuthUserResponse(
+                id=user.id,
+                email=user.email,
+                name=user.name,
+                role=user.role,
+            ),
         )
     except Exception as exc:
         _raise_http_from_auth_error(exc, status.HTTP_409_CONFLICT)
@@ -68,7 +73,12 @@ def login(
         token, user = use_case.login(email=payload.email, password=payload.password)
         return AuthResponse(
             access_token=token,
-            user=AuthUserResponse(id=user.id, email=user.email, name=user.name),
+            user=AuthUserResponse(
+                id=user.id,
+                email=user.email,
+                name=user.name,
+                role=user.role,
+            ),
         )
     except Exception as exc:
         _raise_http_from_auth_error(exc, status.HTTP_401_UNAUTHORIZED)
@@ -95,4 +105,5 @@ def me(current_user: AuthUser = Depends(get_current_user)) -> AuthUserResponse:
         id=current_user.id,
         email=current_user.email,
         name=current_user.name,
+        role=current_user.role,
     )

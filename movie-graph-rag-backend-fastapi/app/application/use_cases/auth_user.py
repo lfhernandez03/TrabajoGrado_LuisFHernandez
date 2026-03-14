@@ -1,4 +1,5 @@
 from app.core.security import create_access_token, hash_password, verify_password
+from app.core.config import settings
 from app.domain.entities.auth_user import AuthUser
 from app.domain.errors import (
     EmailAlreadyRegisteredError,
@@ -24,12 +25,14 @@ class AuthUserUseCase:
         if self.repository.find_by_email(email):
             raise EmailAlreadyRegisteredError()
 
+        role = self._resolve_role_for_email(email)
         user = self.repository.create(
             email=email,
             name=name,
             password_hash=hash_password(password),
+            role=role,
         )
-        token = create_access_token(subject=user.id, email=user.email)
+        token = create_access_token(subject=user.id, email=user.email, role=user.role)
         return token, user
 
     def login(self, email: str, password: str) -> tuple[str, AuthUser]:
@@ -39,7 +42,7 @@ class AuthUserUseCase:
         if not user or not verify_password(password, user.password_hash):
             raise InvalidCredentialsError()
 
-        token = create_access_token(subject=user.id, email=user.email)
+        token = create_access_token(subject=user.id, email=user.email, role=user.role)
         return token, user
 
     def get_me(self, user_id: str) -> AuthUser:
@@ -47,3 +50,13 @@ class AuthUserUseCase:
         if not user:
             raise UserNotFoundError()
         return user
+
+    def _resolve_role_for_email(self, email: str) -> str:
+        admin_emails = {
+            item.strip().lower()
+            for item in settings.admin_emails.split(",")
+            if item.strip()
+        }
+        if email.lower() in admin_emails:
+            return "admin"
+        return "user"

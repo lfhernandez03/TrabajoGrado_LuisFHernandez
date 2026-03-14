@@ -3,10 +3,12 @@ from time import perf_counter
 from uuid import uuid4
 
 from app.application.use_cases.query_history import QueryHistoryUseCase
+from app.application.use_cases.recommendation_metrics import RecommendationMetricsUseCase
 from app.application.use_cases.user_favorites import UserFavoritesUseCase
 from app.core.fuseki_client import FusekiQueryError, execute_select_query
 from app.core.recommendation_llm import generate_recommendation_explanation
 from app.domain.entities.query_history import QueryHistory
+from app.domain.entities.recommendation_metric import RecommendationMetric
 
 
 class RecommendationUseCase:
@@ -14,9 +16,11 @@ class RecommendationUseCase:
         self,
         favorites_use_case: UserFavoritesUseCase,
         history_use_case: QueryHistoryUseCase,
+        metrics_use_case: RecommendationMetricsUseCase,
     ) -> None:
         self.favorites_use_case = favorites_use_case
         self.history_use_case = history_use_case
+        self.metrics_use_case = metrics_use_case
 
     def get_recommendation(self, query: str, user_id: str) -> dict:
         response, _ = self._build_recommendation(query, user_id)
@@ -314,6 +318,24 @@ class RecommendationUseCase:
         )
         timings["historyWrite"] = elapsed_ms(history_start)
         timings["total"] = max(1, elapsed_ms(total_start))
+
+        try:
+            self.metrics_use_case.create_entry(
+                RecommendationMetric(
+                    userId=user_id,
+                    query=query,
+                    source=recommendation_source,
+                    fallbackUsed=recommendation_source != "fuseki",
+                    fusekiRows=fuseki_rows_count,
+                    errors=debug_errors,
+                    timingsMs=timings,
+                    moviesFound=len(movies_with_scores),
+                    executionTimeMs=execution_time_ms,
+                    createdAt=now,
+                )
+            )
+        except Exception as exc:
+            debug_errors.append(f"metrics_write_error: {exc}")
 
         debug_payload = {
             "source": recommendation_source,

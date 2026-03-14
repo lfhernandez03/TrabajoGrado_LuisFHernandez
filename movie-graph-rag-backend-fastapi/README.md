@@ -40,6 +40,7 @@ tests/
 - Python 3.11+
 - MongoDB accesible por `MONGO_URI`
 - Opcional: `GROQ_API_KEY` (y `GROQ_MODEL`) para generar explicaciones narrativas con LLM
+- Opcional: `ADMIN_EMAILS` (lista separada por comas) para asignar rol `admin` al registrar
 
 ## Recommendation v1.5
 
@@ -73,7 +74,9 @@ La API abre conexión a MongoDB al iniciar y la cierra al apagar.
 - `POST /api/v1/auth/register`
 - `POST /api/v1/auth/login`
 - `POST /api/v1/auth/token` (OAuth2 form login para Swagger Authorize)
-- `GET /api/v1/auth/me`
+- `GET /api/v1/auth/me` (incluye `role`)
+- `GET /api/v1/admin/whoami` (requiere rol `admin`)
+- `GET /api/v1/admin/metrics/recommendation?recentLimit=20&summaryLimit=200` (requiere rol `admin`)
 - `GET /api/v1/users/me/favorites`
 - `POST /api/v1/users/me/favorites`
 - `DELETE /api/v1/users/me/favorites`

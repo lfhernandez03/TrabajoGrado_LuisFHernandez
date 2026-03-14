@@ -19,6 +19,7 @@ class MongoAuthUserRepositoryAdapter(AuthUserRepositoryPort):
             id=str(document["_id"]),
             email=document["email"],
             name=document["name"],
+            role=document.get("role", "user"),
             password_hash=document["password_hash"],
             created_at=document.get("created_at", datetime.utcnow()),
         )
@@ -40,11 +41,18 @@ class MongoAuthUserRepositoryAdapter(AuthUserRepositoryPort):
             return None
         return self._to_entity(document)
 
-    def create(self, email: str, name: str, password_hash: str) -> AuthUser:
+    def create(
+        self,
+        email: str,
+        name: str,
+        password_hash: str,
+        role: str = "user",
+    ) -> AuthUser:
         now = datetime.utcnow()
         document = {
             "email": email.lower(),
             "name": name,
+            "role": role,
             "password_hash": password_hash,
             "created_at": now,
         }

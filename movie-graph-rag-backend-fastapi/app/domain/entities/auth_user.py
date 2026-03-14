@@ -8,4 +8,5 @@ class AuthUser:
     email: str
     name: str
     password_hash: str
+    role: str = "user"
     created_at: datetime = field(default_factory=datetime.utcnow)
