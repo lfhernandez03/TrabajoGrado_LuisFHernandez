@@ -1,0 +1,201 @@
+from __future__ import annotations
+
+import math
+from collections import Counter
+from datetime import datetime
+
+from app.application.use_cases.query_history import QueryHistoryUseCase
+from app.application.use_cases.user_favorites import UserFavoritesUseCase
+from app.domain.entities.query_history import QueryHistory
+
+
+class RecommendationSignalService:
+    def __init__(
+        self,
+        favorites_use_case: UserFavoritesUseCase,
+        history_use_case: QueryHistoryUseCase,
+        *,
+        signal_decay_lambda: float,
+        explicit_signal_base: float,
+        implicit_signal_base: float,
+        profile_cache_ttl_seconds: int = 180,
+    ) -> None:
+        self.favorites_use_case = favorites_use_case
+        self.history_use_case = history_use_case
+        self.signal_decay_lambda = signal_decay_lambda
+        self.explicit_signal_base = explicit_signal_base
+        self.implicit_signal_base = implicit_signal_base
+        self.profile_cache_ttl_seconds = profile_cache_ttl_seconds
+
+        self._profile_cache: dict[str, dict[str, float]] = {}
+        self._profile_cache_updated_at: dict[str, datetime] = {}
+
+    def decayed_signal_weight(
+        self,
+        *,
+        base_weight: float,
+        interaction_at: datetime | None,
+        now_ts: datetime,
+    ) -> float:
+        if not interaction_at:
+            return base_weight
+        try:
+            days_since = max(
+                0.0,
+                (now_ts - interaction_at.replace(tzinfo=None)).total_seconds() / 86400,
+            )
+        except Exception:
+            return base_weight
+        return base_weight * math.exp(-self.signal_decay_lambda * days_since)
+
+    def build_recent_title_set(
+        self,
+        history_entries: list[QueryHistory],
+        limit: int = 25,
+    ) -> set[str]:
+        recent_titles: set[str] = set()
+        for entry in history_entries:
+            results = entry.resultsFound or []
+            if not isinstance(results, list):
+                continue
+            for result in results:
+                if not isinstance(result, dict):
+                    continue
+                title = result.get("title")
+                if not title:
+                    continue
+                normalized = str(title).strip().lower()
+                if normalized:
+                    recent_titles.add(normalized)
+                if len(recent_titles) >= max(1, limit):
+                    return recent_titles
+        return recent_titles
+
+    def _build_user_genre_profile(self, user_id: str, history_limit: int = 20) -> dict[str, float]:
+        profile: dict[str, float] = {}
+
+        def add_signal(raw_genre: str | None, weight: float) -> None:
+            if not raw_genre:
+                return
+            genre = str(raw_genre).strip().lower()
+            if not genre:
+                return
+            profile[genre] = profile.get(genre, 0.0) + weight
+
+        try:
+            favorites = self.favorites_use_case.get_my_favorites(user_id)
+        except Exception:
+            favorites = []
+        for movie in favorites:
+            for genre in movie.genres or []:
+                add_signal(genre, 1.0)
+
+        try:
+            history = self.history_use_case.find_by_user(user_id=user_id, limit=history_limit)
+        except Exception:
+            history = []
+        for entry in history:
+            for result in entry.resultsFound or []:
+                if not isinstance(result, dict):
+                    continue
+                add_signal(result.get("genreName"), 0.7)
+                result_genres = result.get("genres")
+                if isinstance(result_genres, list):
+                    for genre in result_genres:
+                        add_signal(genre, 0.7)
+
+        return profile
+
+    def get_user_genre_profile(self, user_id: str, history_limit: int = 20) -> dict[str, float]:
+        now = datetime.utcnow()
+        last_updated = self._profile_cache_updated_at.get(user_id)
+        is_stale = (
+            last_updated is None
+            or (now - last_updated).total_seconds() > self.profile_cache_ttl_seconds
+        )
+
+        if user_id not in self._profile_cache or is_stale:
+            self._profile_cache[user_id] = self._build_user_genre_profile(
+                user_id=user_id, history_limit=history_limit
+            )
+            self._profile_cache_updated_at[user_id] = now
+        return self._profile_cache[user_id]
+
+    def collect_activity_snapshot(self, user_id: str) -> dict:
+        favorites = self.favorites_use_case.get_my_favorites(user_id)
+        history = self.history_use_case.find_by_user(user_id=user_id, limit=20)
+
+        genre_counter: Counter[str] = Counter()
+        director_counter: Counter[str] = Counter()
+        recent_titles: list[str] = []
+        now_ts = datetime.utcnow()
+
+        for movie in favorites:
+            weight = self.decayed_signal_weight(
+                base_weight=self.explicit_signal_base,
+                interaction_at=movie.addedAt,
+                now_ts=now_ts,
+            )
+            for genre in movie.genres or []:
+                if genre:
+                    genre_counter[str(genre).strip()] += weight
+            if movie.director:
+                director_counter[str(movie.director).strip()] += weight
+            if movie.title and len(recent_titles) < 4:
+                recent_titles.append(movie.title.strip())
+
+        ignored_queries = {
+            "busqueda de peliculas",
+            "búsqueda de películas",
+            "recomiéndame una película basada en mi actividad reciente",
+        }
+        ignored_prefixes = (
+            "recomiéndame una película basada en mi actividad reciente",
+            "recomiendame una pelicula basada en mi actividad reciente",
+        )
+        recent_queries: list[str] = []
+
+        for entry in history:
+            raw_query = (entry.query or "").strip()
+            normalized = raw_query.lower()
+            if not raw_query:
+                continue
+            if normalized in ignored_queries:
+                continue
+            if any(normalized.startswith(prefix) for prefix in ignored_prefixes):
+                continue
+            if normalized.startswith("connection "):
+                continue
+            if raw_query not in recent_queries and len(recent_queries) < 3:
+                recent_queries.append(raw_query)
+
+            weight = self.decayed_signal_weight(
+                base_weight=self.implicit_signal_base,
+                interaction_at=entry.createdAt,
+                now_ts=now_ts,
+            )
+
+            for result in entry.resultsFound or []:
+                if not isinstance(result, dict):
+                    continue
+                if result.get("genreName"):
+                    genre_counter[str(result["genreName"]).strip()] += weight
+                if result.get("director"):
+                    director_counter[str(result["director"]).strip()] += weight
+                result_genres = result.get("genres")
+                if isinstance(result_genres, list):
+                    for genre in result_genres:
+                        if genre:
+                            genre_counter[str(genre).strip()] += weight
+                if result.get("title") and len(recent_titles) < 6:
+                    title = str(result["title"]).strip()
+                    if title and title not in recent_titles:
+                        recent_titles.append(title)
+
+        return {
+            "favorites": favorites,
+            "history": history,
+            "genre_counter": genre_counter,
+            "director_counter": director_counter,
+            "recent_titles": recent_titles,
+        }

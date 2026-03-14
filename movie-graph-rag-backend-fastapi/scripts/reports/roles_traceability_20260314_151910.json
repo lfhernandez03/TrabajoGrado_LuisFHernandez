@@ -1,0 +1,60 @@
+{
+  "generatedAt": "2026-03-14T15:19:10.090584",
+  "summary": {
+    "passed": 9,
+    "total": 9,
+    "allPassed": true
+  },
+  "context": {
+    "baseUrl": "http://127.0.0.1:8000/api/v1",
+    "userId": "69b5c2b925c8c9604935cc62",
+    "snapshotId": "72aeec75-9eeb-44ed-8d8c-cfa8198290be"
+  },
+  "checks": [
+    {
+      "name": "Auth register",
+      "passed": true,
+      "detail": "status=201, user_id=69b5c2b925c8c9604935cc62"
+    },
+    {
+      "name": "Recommendation debug call",
+      "passed": true,
+      "detail": "status=200"
+    },
+    {
+      "name": "Rol 1 injection flag",
+      "passed": true,
+      "detail": "contextGraphInjected=True"
+    },
+    {
+      "name": "Rol 2 history graph exists",
+      "passed": true,
+      "detail": "history_exists=True"
+    },
+    {
+      "name": "Rol 2 history rows",
+      "passed": true,
+      "detail": "rows=1"
+    },
+    {
+      "name": "Rol 2 snapshot archived",
+      "passed": true,
+      "detail": "snapshot_id=72aeec75-9eeb-44ed-8d8c-cfa8198290be"
+    },
+    {
+      "name": "Rol 1 session cleanup",
+      "passed": true,
+      "detail": "session_graph=http://session/72aeec75-9eeb-44ed-8d8c-cfa8198290be"
+    },
+    {
+      "name": "Activity recommendation call",
+      "passed": true,
+      "detail": "status=200"
+    },
+    {
+      "name": "Activity profile source",
+      "passed": true,
+      "detail": "debugPayload={'profileSource': 'fuseki_history', 'dominantMood': 'relajado', 'dominantCompanion': 'familia con niños'}"
+    }
+  ]
+}

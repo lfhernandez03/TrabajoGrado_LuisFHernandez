@@ -53,6 +53,7 @@ class RecommendationResponse(BaseModel):
     moviesWithScores: list[RecommendedMovieResponse]
     explanation: str
     executionTimeMs: int
+    debugPayload: dict | None = None
 
 
 class RecommendationDebugTimings(BaseModel):
@@ -69,6 +70,7 @@ class RecommendationDebugMeta(BaseModel):
     source: str
     fusekiRows: int
     fallbackUsed: bool
+    contextGraphInjected: bool | None = None
     errors: list[str]
     timingsMs: RecommendationDebugTimings
 

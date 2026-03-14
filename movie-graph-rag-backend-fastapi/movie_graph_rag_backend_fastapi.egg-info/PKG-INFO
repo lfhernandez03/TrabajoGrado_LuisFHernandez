@@ -11,6 +11,7 @@ Requires-Dist: pydantic-settings>=2.4.0
 Requires-Dist: python-dotenv>=1.0.1
 Requires-Dist: python-jose[cryptography]>=3.3.0
 Requires-Dist: passlib[bcrypt]>=1.7.4
+Requires-Dist: bcrypt<5.0.0,>=4.0.1
 Requires-Dist: email-validator>=2.2.0
 Requires-Dist: pymongo>=4.8.0
 Provides-Extra: dev
@@ -60,6 +61,17 @@ tests/
 
 - Python 3.11+
 - MongoDB accesible por `MONGO_URI`
+- Opcional: `GROQ_API_KEY` (y `GROQ_MODEL`) para generar explicaciones narrativas con LLM
+- Opcional: `ADMIN_EMAILS` (lista separada por comas) para asignar rol `admin` al registrar
+- Opcional: `FUSEKI_TIMEOUT_SECONDS` y `FUSEKI_MAX_RETRIES` para ajustar estabilidad/latencia de consultas SPARQL
+
+## Recommendation v1.5
+
+- `POST /api/v1/recommendation` ahora genera `rdfGenerated` contextual y ejecuta `sparqlQuery` real sobre Fuseki.
+- El retrieval usa estrategia progresiva: `strict` (género+tiempo) → `relaxed_runtime` → `relaxed_genre` → `broad`.
+- Si Fuseki no responde o no retorna resultados, hace fallback a señales de favoritos para mantener disponibilidad.
+- Las escrituras de historial/métricas son resilientes: si fallan, la recomendación igual se retorna y el error queda en `debug.errors`.
+- `POST /api/v1/recommendation/debug` devuelve la misma recomendación + diagnóstico (`source`, `fallbackUsed`, `errors`) y tiempos por etapa (`contextExtraction`, `rdfAndSparqlBuild`, `fusekiQuery`, `scoring`, `llmExplanation`, `historyWrite`, `total`).
 
 ## Instalación
 
@@ -86,7 +98,23 @@ La API abre conexión a MongoDB al iniciar y la cierra al apagar.
 - `GET /api/v1/health/db`
 - `POST /api/v1/auth/register`
 - `POST /api/v1/auth/login`
-- `GET /api/v1/auth/me`
+- `POST /api/v1/auth/token` (OAuth2 form login para Swagger Authorize)
+- `GET /api/v1/auth/me` (incluye `role`)
+- `GET /api/v1/admin/whoami` (requiere rol `admin`)
+- `GET /api/v1/admin/metrics/recommendation?recentLimit=20&summaryLimit=200` (requiere rol `admin`)
+- `GET /api/v1/users/me/favorites`
+- `POST /api/v1/users/me/favorites`
+- `DELETE /api/v1/users/me/favorites`
+- `POST /api/v1/history/me`
+- `GET /api/v1/history/me?limit=10`
+- `GET /api/v1/history/{id}`
+- `GET /api/v1/recommendation?query=...`
+- `POST /api/v1/recommendation`
+- `POST /api/v1/recommendation/debug`
+- `GET /api/v1/movies/examples?limit=3`
+- `GET /api/v1/movies/autocomplete?q=...&limit=8`
+- `GET /api/v1/movies/search?...`
+- `GET /api/v1/movies/connections?from=...&to=...&maxDepth=3`
 
 ## Siguiente fase de migración
 
