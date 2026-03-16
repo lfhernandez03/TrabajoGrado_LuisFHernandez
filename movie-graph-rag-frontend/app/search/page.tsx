@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, Suspense, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
@@ -40,6 +40,12 @@ import {
   searchMovies,
   MovieSuggestion,
 } from "@/services/movies.service";
+import {
+  addMyFavorite,
+  FavoriteMovie,
+  getMyFavorites,
+  removeMyFavorite,
+} from "@/services/favorites.service";
 import { toast } from "sonner";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -58,6 +64,42 @@ function SearchResultsContent() {
   const [executionTime, setExecutionTime] = useState<number>(0);
   const [selectedMovie, setSelectedMovie] = useState<Movie | null>(null);
   const [showDetailsDialog, setShowDetailsDialog] = useState(false);
+  const [favorites, setFavorites] = useState<FavoriteMovie[]>([]);
+
+  const loadFavorites = useCallback(async () => {
+    try {
+      const list = await getMyFavorites();
+      setFavorites(list);
+    } catch (error) {
+      console.error("Error cargando favoritos:", error);
+    }
+  }, []);
+
+  const isFavorite = useCallback(
+    (movieUri: string) => favorites.some((favorite) => favorite.uri === movieUri),
+    [favorites],
+  );
+
+  const handleToggleFavorite = useCallback(
+    async (movie: Movie) => {
+      try {
+        const wasFavorite = isFavorite(movie.uri);
+        const updatedFavorites = wasFavorite
+          ? await removeMyFavorite(movie.uri)
+          : await addMyFavorite(movie);
+        setFavorites(updatedFavorites);
+        toast.success(
+          wasFavorite
+            ? `"${movie.title}" se eliminó de favoritos`
+            : `"${movie.title}" se agregó a favoritos`,
+        );
+      } catch (error) {
+        console.error("Error actualizando favorito:", error);
+        toast.error("No se pudo actualizar favoritos");
+      }
+    },
+    [isFavorite],
+  );
 
   // Execute search on mount if query param exists
   useEffect(() => {
@@ -65,8 +107,9 @@ function SearchResultsContent() {
       setSearchQuery(queryParam);
       executeSearch(queryParam);
     }
+    loadFavorites();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [queryParam]);
+  }, [queryParam, loadFavorites]);
 
   const generateSparqlLog = (term: string) => {
     return `PREFIX movie: <http://www.semanticweb.org/movierecommendation/ontologies/2025/movie-ontology#>
@@ -367,6 +410,14 @@ LIMIT 36`;
                             <Sparkles className="h-3.5 w-3.5 mr-1" />
                             Similares
                           </Button>
+                          <Button
+                            size="sm"
+                            variant={isFavorite(seedMovie.uri) ? "default" : "outline"}
+                            onClick={() => handleToggleFavorite(seedMovie)}
+                            className="flex-1 md:flex-none"
+                          >
+                            {isFavorite(seedMovie.uri) ? "En favoritos" : "Guardar"}
+                          </Button>
                         </div>
                       </div>
                     </CardContent>
@@ -388,6 +439,8 @@ LIMIT 36`;
                         movie={movie}
                         onViewDetails={handleViewDetails}
                         onRecommendSimilar={handleRecommendSimilar}
+                        isFavorite={isFavorite(movie.uri)}
+                        onToggleFavorite={handleToggleFavorite}
                       />
                     ))}
                   </div>

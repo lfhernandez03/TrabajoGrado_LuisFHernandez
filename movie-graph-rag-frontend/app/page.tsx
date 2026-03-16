@@ -15,6 +15,12 @@ import {
 import { Movie, searchMovies, getMovieExamples } from "@/services/movies.service";
 import { getActivityRecommendation } from "@/services/chat.service";
 import { getMyHistory, HistoryEntry } from "@/services/history.service";
+import {
+  addMyFavorite,
+  FavoriteMovie,
+  getMyFavorites,
+  removeMyFavorite,
+} from "@/services/favorites.service";
 import { buildDisplaySparqlQuery } from "@/lib/sparql";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
@@ -40,6 +46,8 @@ export default function Home() {
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
 
+  const [favorites, setFavorites] = useState<FavoriteMovie[]>([]);
+
   // Context recommendation
   const [contextMovie, setContextMovie] = useState<Movie | null>(null);
   const [loadingContext, setLoadingContext] = useState(true);
@@ -62,17 +70,37 @@ export default function Home() {
 
       const bestMovie = recommendation.moviesWithScores?.[0];
       if (bestMovie) {
+        const canonicalResults = await searchMovies({ q: bestMovie.title, limit: 8 });
+        const normalizedBestTitle = bestMovie.title.trim().toLowerCase();
+        const canonicalMovie = canonicalResults.find(
+          (movie) => movie.title.trim().toLowerCase() === normalizedBestTitle,
+        );
+
+        if (canonicalMovie) {
+          setContextMovie({
+            ...canonicalMovie,
+            posterUrl: canonicalMovie.posterUrl || bestMovie.posterUrl,
+            runtime: canonicalMovie.runtime ?? bestMovie.runtime,
+            rating: canonicalMovie.rating ?? bestMovie.averageRating,
+            relationReason:
+              typeof bestMovie.compatibilityScore === "number"
+                ? `Compatibilidad estimada: ${Math.round(bestMovie.compatibilityScore * 100)}%`
+                : canonicalMovie.relationReason,
+          });
+          return;
+        }
+
         setContextMovie({
-          uri: `context:${bestMovie.title.toLowerCase().replace(/\s+/g, "-")}`,
+          uri:
+            bestMovie.uri ||
+            `context:${bestMovie.title.toLowerCase().replace(/\s+/g, "-")}`,
           title: bestMovie.title,
           posterUrl: bestMovie.posterUrl,
           runtime: bestMovie.runtime,
           year: bestMovie.releaseDate ? Number(bestMovie.releaseDate) || undefined : undefined,
           genres: bestMovie.genreName ? [bestMovie.genreName] : [],
           rating: bestMovie.averageRating,
-          description:
-            recommendation.explanation ||
-            "Recomendación personalizada basada en tu contexto actual.",
+          description: bestMovie.description,
           relationReason:
             typeof bestMovie.compatibilityScore === "number"
               ? `Compatibilidad estimada: ${Math.round(bestMovie.compatibilityScore * 100)}%`
@@ -105,10 +133,48 @@ export default function Home() {
     }
   }, []);
 
+  const loadFavorites = useCallback(async () => {
+    try {
+      const list = await getMyFavorites();
+      setFavorites(list);
+    } catch (error) {
+      console.error("Error cargando favoritos:", error);
+    }
+  }, []);
+
+  const isFavorite = useCallback(
+    (movieUri: string) => favorites.some((favorite) => favorite.uri === movieUri),
+    [favorites],
+  );
+
+  const handleToggleFavorite = useCallback(
+    async (movie: Movie) => {
+      try {
+        const wasFavorite = isFavorite(movie.uri);
+        const updatedFavorites = wasFavorite
+          ? await removeMyFavorite(movie.uri)
+          : await addMyFavorite(movie);
+
+        setFavorites(updatedFavorites);
+
+        if (wasFavorite) {
+          toast.success(`"${movie.title}" se eliminó de favoritos`);
+        } else {
+          toast.success(`"${movie.title}" se agregó a favoritos`);
+        }
+      } catch (error) {
+        console.error("Error actualizando favorito:", error);
+        toast.error("No se pudo actualizar favoritos");
+      }
+    },
+    [isFavorite],
+  );
+
   useEffect(() => {
     loadHistory();
     loadContextRecommendation();
-  }, [loadHistory, loadContextRecommendation]);
+    loadFavorites();
+  }, [loadHistory, loadContextRecommendation, loadFavorites]);
 
   const performSearch = useCallback(
     async (query: string, limit = 9) => {
@@ -192,6 +258,7 @@ export default function Home() {
         searchQuery={searchQuery}
         onSearchQueryChange={setSearchQuery}
         onSearch={handleSearch}
+        onNavigateFavorites={() => router.push("/favorites")}
         onOpenHistory={() => setShowHistoryDialog(true)}
         onNavigateChat={() => router.push("/chat")}
         isSearching={isSearching}
@@ -205,6 +272,8 @@ export default function Home() {
             lastSparqlQuery={lastSparqlQuery}
             onViewDetails={handleViewDetails}
             onRecommendSimilar={handleRecommendSimilar}
+            isFavorite={isFavorite}
+            onToggleFavorite={handleToggleFavorite}
           />
         )}
 
@@ -216,11 +285,15 @@ export default function Home() {
               isLoading={loadingContext}
               onViewDetails={handleViewDetails}
               onRecommendSimilar={handleRecommendSimilar}
+              isFavorite={isFavorite}
+              onToggleFavorite={handleToggleFavorite}
             />
             <DiscoverySection />
             <FeaturedMoviesSection
               onViewDetails={handleViewDetails}
               onRecommendSimilar={(movie: Movie) => navigateToSearch(movie.title)}
+              isFavorite={isFavorite}
+              onToggleFavorite={handleToggleFavorite}
             />
           </>
         )}

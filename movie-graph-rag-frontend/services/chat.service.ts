@@ -23,10 +23,16 @@ export interface ChatRecommendationResponse {
   sparqlQuery?: string;
   moviesFound: number;
   moviesWithScores: {
+    uri?: string;
     title: string;
     posterUrl?: string;
     runtime?: number;
     genreName?: string;
+    genres?: string[];
+    description?: string;
+    director?: string;
+    year?: number;
+    certification?: string;
     releaseDate?: string;
     averageRating?: number;
     compatibilityScore?: number;

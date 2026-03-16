@@ -5,4 +5,5 @@ export { DiscoverySection } from "./DiscoverySection";
 export { FeaturedMoviesSection } from "./FeaturedMoviesSection";
 export { MovieDetailsDialog } from "./MovieDetailsDialog";
 export { HistoryDialog } from "./HistoryDialog";
+export { FavoritesDialog } from "./FavoritesDialog";
 export { FloatingChatButton } from "./FloatingChatButton";

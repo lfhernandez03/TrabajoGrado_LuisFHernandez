@@ -8,6 +8,7 @@ interface SearchBarProps {
   searchQuery: string;
   onSearchQueryChange: (value: string) => void;
   onSearch: () => void;
+  onNavigateFavorites: () => void;
   onOpenHistory: () => void;
   onNavigateChat: () => void;
   isSearching: boolean;
@@ -17,6 +18,7 @@ export function SearchBar({
   searchQuery,
   onSearchQueryChange,
   onSearch,
+  onNavigateFavorites,
   onOpenHistory,
   onNavigateChat,
   isSearching,
@@ -52,6 +54,7 @@ export function SearchBar({
           variant="ghost"
           size="icon"
           className="shrink-0 text-muted-foreground hover:text-primary"
+          onClick={onNavigateFavorites}
           title="Favoritos"
         >
           <Heart className="h-5 w-5" />

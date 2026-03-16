@@ -6,11 +6,15 @@ import { Movie } from "@/services/movies.service";
 interface FeaturedMoviesSectionProps {
   onViewDetails: (movie: Movie) => void;
   onRecommendSimilar: (movie: Movie) => void;
+  isFavorite: (movieUri: string) => boolean;
+  onToggleFavorite: (movie: Movie) => void;
 }
 
 export function FeaturedMoviesSection({
   onViewDetails,
   onRecommendSimilar,
+  isFavorite,
+  onToggleFavorite,
 }: FeaturedMoviesSectionProps) {
   return (
     <section className="mb-10">
@@ -25,6 +29,8 @@ export function FeaturedMoviesSection({
         itemsPerPage={3}
         onViewDetails={onViewDetails}
         onRecommendSimilar={onRecommendSimilar}
+        isFavorite={isFavorite}
+        onToggleFavorite={onToggleFavorite}
       />
     </section>
   );

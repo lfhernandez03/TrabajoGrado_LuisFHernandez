@@ -11,6 +11,8 @@ interface ContextRecommendationProps {
   isLoading: boolean;
   onViewDetails: (movie: Movie) => void;
   onRecommendSimilar: (movie: Movie) => void;
+  isFavorite: (movieUri: string) => boolean;
+  onToggleFavorite: (movie: Movie) => void;
 }
 
 export function ContextRecommendation({
@@ -19,6 +21,8 @@ export function ContextRecommendation({
   isLoading,
   onViewDetails,
   onRecommendSimilar,
+  isFavorite,
+  onToggleFavorite,
 }: ContextRecommendationProps) {
   return (
     <section className="mb-10">
@@ -49,6 +53,8 @@ export function ContextRecommendation({
               movie={contextMovie}
               onViewDetails={onViewDetails}
               onRecommendSimilar={onRecommendSimilar}
+              isFavorite={isFavorite(contextMovie.uri)}
+              onToggleFavorite={onToggleFavorite}
             />
           ) : null}
         </div>

@@ -10,12 +10,16 @@ interface MovieCardProps {
   movie: Movie;
   onViewDetails?: (movie: Movie) => void;
   onRecommendSimilar?: (movie: Movie) => void;
+  isFavorite?: boolean;
+  onToggleFavorite?: (movie: Movie) => void;
 }
 
 export function MovieCard({
   movie,
   onViewDetails,
   onRecommendSimilar,
+  isFavorite = false,
+  onToggleFavorite,
 }: MovieCardProps) {
   const [imageError, setImageError] = useState(false);
   const normalizedPosterUrl = movie.posterUrl?.startsWith("/")
@@ -99,10 +103,17 @@ export function MovieCard({
                   )}
                   <button
                     type="button"
-                    aria-label={`Marcar ${movie.title} como favorito`}
-                    className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-background/45 backdrop-blur-md hover:text-accent hover:bg-background/65 transition-colors"
+                    aria-label={
+                      isFavorite
+                        ? `Quitar ${movie.title} de favoritos`
+                        : `Marcar ${movie.title} como favorito`
+                    }
+                    className={`inline-flex h-8 w-8 items-center justify-center rounded-full bg-background/45 backdrop-blur-md hover:bg-background/65 transition-colors ${
+                      isFavorite ? "text-accent" : "hover:text-accent"
+                    }`}
+                    onClick={() => onToggleFavorite?.(movie)}
                   >
-                    <Heart className="h-4 w-4" />
+                    <Heart className={`h-4 w-4 ${isFavorite ? "fill-current" : ""}`} />
                   </button>
                 </div>
               </div>

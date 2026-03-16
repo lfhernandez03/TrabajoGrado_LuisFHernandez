@@ -2,8 +2,12 @@
 
 Starter project para migrar `movie-graph-rag-backend` (NestJS) a FastAPI.
 
-& "c:\Users\luish\Documents\GitHub\TrabajoGrado_LuisFHernandez\.venv\Scripts\Activate.ps1"
+## Arranque rápido (Windows PowerShell)
+
+```powershell
+cd movie-graph-rag-backend-fastapi.venv\Scripts\Activate.ps1
 uvicorn app.main:app --reload --port 8000
+```
 
 ## Objetivo inicial
 

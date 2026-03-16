@@ -10,12 +10,16 @@ interface MoviesCarouselProps {
   itemsPerPage?: number;
   onViewDetails?: (movie: Movie) => void;
   onRecommendSimilar?: (movie: Movie) => void;
+  isFavorite?: (movieUri: string) => boolean;
+  onToggleFavorite?: (movie: Movie) => void;
 }
 
 export function MoviesCarousel({ 
   itemsPerPage = 3,
   onViewDetails,
-  onRecommendSimilar 
+  onRecommendSimilar,
+  isFavorite,
+  onToggleFavorite,
 }: MoviesCarouselProps) {
   const [movies, setMovies] = useState<Movie[]>([]);
   const [currentPage, setCurrentPage] = useState(0);
@@ -72,6 +76,8 @@ export function MoviesCarousel({
             movie={movie}
             onViewDetails={onViewDetails}
             onRecommendSimilar={onRecommendSimilar}
+            isFavorite={isFavorite?.(movie.uri)}
+            onToggleFavorite={onToggleFavorite}
           />
         ))}
       </div>

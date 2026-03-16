@@ -19,6 +19,8 @@ interface SearchResultsProps {
   lastSparqlQuery: string;
   onViewDetails: (movie: Movie) => void;
   onRecommendSimilar: (movie: Movie) => void;
+  isFavorite: (movieUri: string) => boolean;
+  onToggleFavorite: (movie: Movie) => void;
 }
 
 export function SearchResults({
@@ -27,6 +29,8 @@ export function SearchResults({
   lastSparqlQuery,
   onViewDetails,
   onRecommendSimilar,
+  isFavorite,
+  onToggleFavorite,
 }: SearchResultsProps) {
   const [showSparqlLog, setShowSparqlLog] = useState(false);
 
@@ -83,6 +87,8 @@ export function SearchResults({
               movie={movie}
               onViewDetails={onViewDetails}
               onRecommendSimilar={onRecommendSimilar}
+              isFavorite={isFavorite(movie.uri)}
+              onToggleFavorite={onToggleFavorite}
             />
           ))}
         </div>
