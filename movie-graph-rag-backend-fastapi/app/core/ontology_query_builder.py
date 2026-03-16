@@ -23,6 +23,7 @@ MOOD_ES_MAP = {
     "nostalgic": "nostalgico",
     "adventurous": "aventurero",
     "nervous": "nervioso",
+    "adventurer": "aventurero",
     "neutral": None,
 }
 
@@ -96,7 +97,7 @@ def build_context_triples_turtle(
         f"    context:snapshotID \"{safe_snapshot_id}\"^^xsd:string ;",
         f"    context:requestTimestamp \"{iso_timestamp}\"^^xsd:dateTime ;",
         f"    context:userIntent \"{safe_intent}\"^^xsd:string ;",
-        f"    context:hourOfDay \"{now.hour}\"^^xsd:integer ;",
+        f"    context:hourOfDay {now.hour} ;",
         f"    context:dayOfWeek \"{_escape_turtle_literal(day_name)}\"^^xsd:string .",
     ]
 
@@ -121,7 +122,7 @@ def build_context_triples_turtle(
                 f"contextdata:Session_{safe_snapshot_id} context:withCompanion contextdata:Social_{safe_snapshot_id} .",
                 f"contextdata:Social_{safe_snapshot_id} a context:SocialContext ;",
                 f"    context:companionType \"{_escape_turtle_literal(companion_es)}\"^^xsd:string ;",
-                f"    context:hasChildren \"{str(has_children).lower()}\"^^xsd:boolean .",
+                f"    context:hasChildren {str(has_children).lower()} .",
             ]
         )
 
@@ -137,7 +138,7 @@ def build_context_triples_turtle(
 
         if has_runtime:
             lines.append(
-                f"contextdata:Req_{safe_snapshot_id} context:availableTime \"{int(ctx.runtime_max)}\"^^xsd:integer ."
+                f"contextdata:Req_{safe_snapshot_id} context:availableTime {int(ctx.runtime_max)} ."
             )
 
         if has_exclusions:
@@ -159,7 +160,7 @@ def inject_context_snapshot(snapshot_id: str, ctx: QueryContext, user_id: str, n
             if not stripped:
                 continue
             if stripped.startswith("@prefix") and stripped.endswith("."):
-                prefix_lines.append(f"PREFIX {stripped[8:-1].strip()}")
+                prefix_lines.append(f"PREFIX {stripped[len('@prefix'):].rstrip('.').strip()}")
                 continue
             body_lines.append(line)
 
@@ -346,3 +347,87 @@ def build_cross_ontology_sparql_from_signals(
     if not _is_valid_sparql_query(candidate):
         return _safe_cross_ontology_fallback(limit=safe_limit)
     return candidate
+
+
+def build_cross_ontology_sparql(
+    ctx: QueryContext,
+    excluded_normalized: set[str],
+) -> list[tuple[str, str]]:
+    """Translate QueryContext to Spanish signals and build progressive ontology attempt chain.
+
+    Returns a list of (attempt_name, sparql_query) tuples compatible with the
+    ontology_attempts parameter of build_query_attempts in recommendation_components.py.
+    """
+    social_context = ctx.social_context or {}
+    has_children = bool(social_context.get("hasChildren", False))
+    companion_type = social_context.get("companionType") if social_context else None
+
+    mood_es = translate_mood(ctx.mood)
+    companion_es = translate_companion(companion_type, has_children)
+    energy_hint = translate_energy(ctx.mood) if ctx.mood else None
+    runtime_max = ctx.runtime_max
+
+    attempts: list[tuple[str, str]] = []
+
+    if mood_es and companion_es:
+        attempts.append((
+            "ontology_full",
+            build_cross_ontology_sparql_from_signals(
+                mood_es=mood_es,
+                companion_es=companion_es,
+                energy_es=energy_hint,
+                has_children=has_children,
+                runtime_max=runtime_max,
+                excluded_normalized=excluded_normalized,
+                limit=30,
+            ),
+        ))
+        attempts.append((
+            "ontology_mood_companion",
+            build_cross_ontology_sparql_from_signals(
+                mood_es=mood_es,
+                companion_es=companion_es,
+                energy_es=None,
+                has_children=has_children,
+                runtime_max=None,
+                excluded_normalized=excluded_normalized,
+                limit=40,
+            ),
+        ))
+
+    if mood_es:
+        attempts.append((
+            "ontology_mood_only",
+            build_cross_ontology_sparql_from_signals(
+                mood_es=mood_es,
+                companion_es=None,
+                energy_es=energy_hint,
+                has_children=has_children,
+                runtime_max=runtime_max,
+                excluded_normalized=excluded_normalized,
+                limit=40,
+            ),
+        ))
+
+    if companion_es:
+        attempts.append((
+            "ontology_companion_only",
+            build_cross_ontology_sparql_from_signals(
+                mood_es=None,
+                companion_es=companion_es,
+                energy_es=None,
+                has_children=has_children,
+                runtime_max=None,
+                excluded_normalized=excluded_normalized,
+                limit=40,
+            ),
+        ))
+
+    seen: set[str] = set()
+    unique: list[tuple[str, str]] = []
+    for name, query in attempts:
+        if query not in seen:
+            seen.add(query)
+            unique.append((name, query))
+
+    return unique

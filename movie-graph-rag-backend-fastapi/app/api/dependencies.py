@@ -1,4 +1,4 @@
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordBearer
 from pymongo.database import Database
 
@@ -83,17 +83,22 @@ def get_recommendation_metrics_use_case(
 
 
 def get_recommendation_use_case(
+    request: Request,
     favorites_use_case: UserFavoritesUseCase = Depends(get_user_favorites_use_case),
     history_use_case: QueryHistoryUseCase = Depends(get_query_history_use_case),
     metrics_use_case: RecommendationMetricsUseCase = Depends(
         get_recommendation_metrics_use_case
     ),
 ) -> RecommendationUseCase:
-    return RecommendationUseCase(
-        favorites_use_case=favorites_use_case,
-        history_use_case=history_use_case,
-        metrics_use_case=metrics_use_case,
-    )
+    recommendation_use_case = getattr(request.app.state, "recommendation_use_case", None)
+    if recommendation_use_case is None:
+        recommendation_use_case = RecommendationUseCase(
+            favorites_use_case=favorites_use_case,
+            history_use_case=history_use_case,
+            metrics_use_case=metrics_use_case,
+        )
+        request.app.state.recommendation_use_case = recommendation_use_case
+    return recommendation_use_case
 
 
 def get_movie_catalog_repository(

@@ -57,13 +57,14 @@ def safe_fallback_sparql_query(limit: int = 60) -> str:
     return (
         "PREFIX movie: <http://www.semanticweb.org/movierecommendation/ontologies/2025/movie-ontology#>\n"
         "PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>\n"
+        "PREFIX schema1: <http://schema.org/>\n"
         "SELECT DISTINCT ?movie ?title ?genreName ?runtime ?rating ?posterUrl ?releaseDate\n"
         "WHERE {\n"
         "  ?movie rdf:type movie:FeatureFilm ; movie:hasTitle ?title .\n"
         "  OPTIONAL { ?movie movie:hasMainGenre/movie:genreName ?genreName }\n"
         "  OPTIONAL { ?movie movie:runtime ?runtime }\n"
         "  OPTIONAL { ?movie movie:hasAverageRating ?rating }\n"
-        "  OPTIONAL { ?movie movie:hasPosterUrl ?posterUrl }\n"
+        "  OPTIONAL { ?movie schema1:image ?posterUrl }\n"
         "  OPTIONAL { ?movie movie:releaseDate ?releaseDate }\n"
         "}\n"
         "ORDER BY DESC(?rating) DESC(?releaseDate)\n"
@@ -137,11 +138,12 @@ def build_sparql_query(
 
     director_block = ""
     if director:
-        director_block = "  OPTIONAL { ?movie movie:hasDirector/movie:directorName ?directorName }\n"
+        director_block = "  OPTIONAL { ?movie movie:hasDirector/movie:hasName ?directorName }\n"
 
     candidate = (
         "PREFIX movie: <http://www.semanticweb.org/movierecommendation/ontologies/2025/movie-ontology#>\n"
         "PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>\n"
+        "PREFIX schema1: <http://schema.org/>\n"
         "SELECT DISTINCT ?movie ?title ?genreName ?runtime ?rating ?posterUrl ?releaseDate\n"
         "WHERE {\n"
         "  ?movie rdf:type movie:FeatureFilm ;\n"
@@ -149,7 +151,7 @@ def build_sparql_query(
         "  OPTIONAL { ?movie movie:hasMainGenre/movie:genreName ?genreName }\n"
         "  OPTIONAL { ?movie movie:runtime ?runtime }\n"
         "  OPTIONAL { ?movie movie:hasAverageRating ?rating }\n"
-        "  OPTIONAL { ?movie movie:hasPosterUrl ?posterUrl }\n"
+        "  OPTIONAL { ?movie schema1:image ?posterUrl }\n"
         "  OPTIONAL { ?movie movie:releaseDate ?releaseDate }\n"
         f"{director_block}"
         f"  {genre_filter}\n"
@@ -169,6 +171,7 @@ def build_sparql_query(
 
 def build_query_attempts(
     *,
+    ontology_attempts: list[tuple[str, str]] | None = None,
     preferred_genres: list[str],
     runtime_max: int | None,
     director_hint: str | None,
@@ -176,7 +179,7 @@ def build_query_attempts(
     year_max: int | None,
     excluded_titles: set[str],
 ) -> list[tuple[str, str]]:
-    query_attempts: list[tuple[str, str]] = []
+    query_attempts: list[tuple[str, str]] = list(ontology_attempts) if ontology_attempts else []
     has_genre_constraint = bool(preferred_genres)
     has_runtime_constraint = bool(runtime_max)
     excluded_for_query = sorted(excluded_titles)[:10]
@@ -264,6 +267,12 @@ def build_rdf_context(
     requirement_context: dict | None,
     preferred_genres: list[str],
 ) -> str:
+    """Generate a simplified RDF context string for logging and response payload only.
+
+    This is NOT inserted into Fuseki. The authoritative RDF context is written
+    to Fuseki by inject_context_snapshot() using the real context-ontology namespaces.
+    This function produces a human-readable summary stored in QueryHistory.rdfGenerated.
+    """
     social_companion = social_context["companionType"] if social_context else "unknown"
     mood = emotional_context["moodDescription"] if emotional_context else "neutral"
     energy = emotional_context["desiredEnergyLevel"] if emotional_context else "medium"

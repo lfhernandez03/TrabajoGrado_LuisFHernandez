@@ -14,11 +14,13 @@ def _engagement_score(metric: RecommendationMetric) -> float:
     fallback_component = 0.0 if metric.fallbackUsed else 1.0
     latency_component = 1.0 - _clamp((metric.executionTimeMs or 0) / 5000.0, 0.0, 1.0)
     errors_component = 0.0 if (metric.errors or []) else 1.0
+    ontology_component = 1.0 if getattr(metric, "ontologyNavigationUsed", False) else 0.0
     score = (
-        0.50 * movies_component
-        + 0.25 * fallback_component
+        0.45 * movies_component
+        + 0.20 * fallback_component
         + 0.15 * latency_component
         + 0.10 * errors_component
+        + 0.10 * ontology_component
     )
     return _clamp(score, 0.0, 1.0)
 
@@ -47,7 +49,7 @@ def adapt_scoring_weights(
     default_weights: dict[str, float],
     metrics: list[RecommendationMetric],
 ) -> dict[str, float]:
-    if len(metrics) < 8:
+    if len(metrics) < 20:
         return dict(current_weights)
 
     scored_metrics = [(metric, _engagement_score(metric)) for metric in metrics]
@@ -61,10 +63,31 @@ def adapt_scoring_weights(
         "fuseki_broad": {"novelty": 0.35, "freshness": 0.10, "rating": 0.10},
         "favorites_fallback": {"rating": 0.20, "degree": -0.15, "novelty": -0.10},
         "safe_fallback": {"rating": 0.10, "novelty": 0.10},
+        "ontology_full": {
+            "rating": 0.20,
+            "novelty": 0.15,
+            "genre_bonus": 0.25,
+        },
+        "ontology_mood_companion": {
+            "rating": 0.25,
+            "novelty": 0.10,
+            "genre_bonus": 0.20,
+        },
+        "ontology_mood_only": {
+            "rating": 0.30,
+            "genre_bonus": 0.15,
+            "novelty": 0.08,
+        },
+        "ontology_companion_only": {
+            "rating": 0.30,
+            "genre_bonus": 0.15,
+            "novelty": 0.05,
+        },
     }
 
     updated_weights = dict(current_weights)
-    adjustments: dict[str, float] = {key: 0.0 for key in updated_weights.keys()}
+    all_keys = set(current_weights.keys()) | set(default_weights.keys())
+    adjustments: dict[str, float] = {key: 0.0 for key in all_keys}
 
     source_scores: dict[str, list[float]] = {}
     for metric, score in scored_metrics:

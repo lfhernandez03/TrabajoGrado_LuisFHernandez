@@ -49,6 +49,7 @@ def build_recommendation_response(
     movies_with_scores: list[dict],
     explanation: str,
     execution_time_ms: int,
+    semantic_explanation: str = "",
 ) -> dict:
     return {
         "query": query,
@@ -58,6 +59,7 @@ def build_recommendation_response(
         "moviesFound": len(movies_with_scores),
         "moviesWithScores": movies_with_scores,
         "explanation": explanation,
+        "semanticExplanation": semantic_explanation,
         "executionTimeMs": execution_time_ms,
     }
 
@@ -68,11 +70,18 @@ def build_debug_payload(
     fuseki_rows_count: int,
     debug_errors: list[str],
     timings: dict[str, int],
+    ontology_navigation_used: bool = False,
+    context_graph_injected: bool = False,
 ) -> dict:
+    _non_fallback_prefixes = ("fuseki", "ontology")
     return {
         "source": recommendation_source,
         "fusekiRows": fuseki_rows_count,
-        "fallbackUsed": not recommendation_source.startswith("fuseki"),
+        "fallbackUsed": not any(
+            recommendation_source.startswith(p) for p in _non_fallback_prefixes
+        ),
         "errors": debug_errors,
         "timingsMs": timings,
+        "ontologyNavigationUsed": ontology_navigation_used,
+        "contextGraphInjected": context_graph_injected,
     }

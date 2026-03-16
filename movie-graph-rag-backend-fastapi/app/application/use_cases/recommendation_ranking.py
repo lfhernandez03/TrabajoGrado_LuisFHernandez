@@ -155,14 +155,33 @@ def score_fuseki_candidate(
         - rank_hint * scoring_weights.get("ranking_decay", 0.015),
     )
 
-    final_score = (
-        normalized
-        + scoring_weights.get("freshness", 0.08) * freshness
-        + scoring_weights.get("novelty", 0.0) * novelty
-        + genre_bonus
-        + runtime_bonus
-        + ranking_bonus
-    )
+    semantic_overall = None
+    semantic_scores = movie.get("semanticScores")
+    if isinstance(semantic_scores, dict):
+        val = semantic_scores.get("overallCompatibility")
+        if val is not None:
+            try:
+                semantic_overall = float(val)
+            except Exception:
+                pass
+
+    if semantic_overall is not None:
+        final_score = (
+            0.55 * normalized
+            + 0.35 * semantic_overall
+            + scoring_weights.get("freshness", 0.08) * freshness
+            + scoring_weights.get("novelty", 0.0) * novelty
+            + ranking_bonus
+        )
+    else:
+        final_score = (
+            normalized
+            + scoring_weights.get("freshness", 0.08) * freshness
+            + scoring_weights.get("novelty", 0.0) * novelty
+            + genre_bonus
+            + runtime_bonus
+            + ranking_bonus
+        )
     return min(0.99, max(0.4, round(final_score, 2)))
 
 
@@ -213,6 +232,7 @@ def rank_fuseki_movies(
             "releaseDate": movie.get("releaseDate"),
             "averageRating": movie.get("averageRating"),
             "compatibilityScore": movie["compatibilityScore"],
+            "semanticScores": movie.get("semanticScores"),
         }
         for movie in mmr_select(pre_scored, n=limit, lambda_=mmr_lambda)
     ]
@@ -246,12 +266,31 @@ def score_network_cold_start_movies(
         freshness = freshness_score(movie.get("releaseDate"), current_year)
         novelty = novelty_score(movie, user_genre_profile)
 
-        score = (
-            scoring_weights.get("rating", 0.58) * rating_norm
-            + scoring_weights.get("degree", 0.42) * degree_norm
-            + scoring_weights.get("freshness", 0.08) * freshness
-            + scoring_weights.get("novelty", 0.0) * novelty
-        )
+        semantic_overall = None
+        semantic_scores = movie.get("semanticScores")
+        if isinstance(semantic_scores, dict):
+            val = semantic_scores.get("overallCompatibility")
+            if val is not None:
+                try:
+                    semantic_overall = float(val)
+                except Exception:
+                    pass
+
+        if semantic_overall is not None:
+            score = (
+                scoring_weights.get("rating", 0.45) * rating_norm
+                + scoring_weights.get("degree", 0.35) * degree_norm
+                + scoring_weights.get("freshness", 0.08) * freshness
+                + scoring_weights.get("novelty", 0.0) * novelty
+                + 0.12 * semantic_overall
+            )
+        else:
+            score = (
+                scoring_weights.get("rating", 0.58) * rating_norm
+                + scoring_weights.get("degree", 0.42) * degree_norm
+                + scoring_weights.get("freshness", 0.08) * freshness
+                + scoring_weights.get("novelty", 0.0) * novelty
+            )
 
         movie_with_score = dict(movie)
         movie_with_score["compatibilityScore"] = round(min(0.99, max(0.4, score)), 2)

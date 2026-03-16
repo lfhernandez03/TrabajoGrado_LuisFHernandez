@@ -29,6 +29,8 @@ class RecommendationSignalService:
 
         self._profile_cache: dict[str, dict[str, float]] = {}
         self._profile_cache_updated_at: dict[str, datetime] = {}
+        self._activity_snapshot_cache: dict[str, dict] = {}
+        self._activity_snapshot_updated_at: dict[str, datetime] = {}
 
     def decayed_signal_weight(
         self,
@@ -72,6 +74,7 @@ class RecommendationSignalService:
         return recent_titles
 
     def _build_user_genre_profile(self, user_id: str, history_limit: int = 20) -> dict[str, float]:
+        now_ts = datetime.utcnow()
         profile: dict[str, float] = {}
 
         def add_signal(raw_genre: str | None, weight: float) -> None:
@@ -87,22 +90,32 @@ class RecommendationSignalService:
         except Exception:
             favorites = []
         for movie in favorites:
+            weight = self.decayed_signal_weight(
+                base_weight=self.explicit_signal_base,
+                interaction_at=movie.addedAt,
+                now_ts=now_ts,
+            )
             for genre in movie.genres or []:
-                add_signal(genre, 1.0)
+                add_signal(genre, weight)
 
         try:
             history = self.history_use_case.find_by_user(user_id=user_id, limit=history_limit)
         except Exception:
             history = []
         for entry in history:
+            entry_weight = self.decayed_signal_weight(
+                base_weight=self.implicit_signal_base,
+                interaction_at=entry.createdAt,
+                now_ts=now_ts,
+            )
             for result in entry.resultsFound or []:
                 if not isinstance(result, dict):
                     continue
-                add_signal(result.get("genreName"), 0.7)
+                add_signal(result.get("genreName"), entry_weight * 0.7)
                 result_genres = result.get("genres")
                 if isinstance(result_genres, list):
                     for genre in result_genres:
-                        add_signal(genre, 0.7)
+                        add_signal(genre, entry_weight * 0.7)
 
         return profile
 
@@ -120,6 +133,29 @@ class RecommendationSignalService:
             )
             self._profile_cache_updated_at[user_id] = now
         return self._profile_cache[user_id]
+
+    def invalidate_profile_cache(self, user_id: str) -> None:
+        self._profile_cache.pop(user_id, None)
+        self._profile_cache_updated_at.pop(user_id, None)
+
+    def get_cached_activity_snapshot(self, user_id: str, max_age_seconds: int = 43200) -> dict | None:
+        cached = self._activity_snapshot_cache.get(user_id)
+        if not cached:
+            return None
+
+        updated_at = self._activity_snapshot_updated_at.get(user_id)
+        if not updated_at:
+            return None
+
+        age_seconds = (datetime.utcnow() - updated_at).total_seconds()
+        if age_seconds > max(1, max_age_seconds):
+            return None
+
+        return cached
+
+    def cache_activity_snapshot(self, user_id: str, payload: dict) -> None:
+        self._activity_snapshot_cache[user_id] = payload
+        self._activity_snapshot_updated_at[user_id] = datetime.utcnow()
 
     def collect_activity_snapshot(self, user_id: str) -> dict:
         favorites = self.favorites_use_case.get_my_favorites(user_id)
@@ -198,4 +234,5 @@ class RecommendationSignalService:
             "genre_counter": genre_counter,
             "director_counter": director_counter,
             "recent_titles": recent_titles,
+            "recent_queries": recent_queries,
         }

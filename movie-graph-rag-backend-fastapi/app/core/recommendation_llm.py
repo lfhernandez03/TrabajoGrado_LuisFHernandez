@@ -47,6 +47,16 @@ def _keyword_extract_context(query_lower: str) -> QueryContext:
         mood = "sad"
     elif any(token in query_lower for token in ["feliz", "happy", "alegre"]):
         mood = "happy"
+    elif any(token in query_lower for token in ["estres", "stress", "agobia", "agotad"]):
+        mood = "stressed"
+    elif any(token in query_lower for token in ["ansios", "nervios", "angustia"]):
+        mood = "anxious"
+    elif any(token in query_lower for token in ["aburrid", "bored", "hastio"]):
+        mood = "bored"
+    elif any(token in query_lower for token in ["nostalgic", "nostálgic", "recuerdo", "añoran"]):
+        mood = "nostalgic"
+    elif any(token in query_lower for token in ["romantic", "romántic", "amor", "enamorad"]):
+        mood = "romantic"
 
     runtime_max = None
     for minutes in [60, 75, 90, 100, 120, 150]:
@@ -109,7 +119,7 @@ _NLU_SYSTEM_PROMPT = (
     "Analiza la consulta del usuario y devuelve SOLO un objeto JSON con esta estructura exacta:\n"
     "{\n"
     '  "intent": "general|action|romance|horror|comedy|family|scifi|thriller|drama",\n'
-    '  "mood": null | "relaxed|excited|sad|happy|neutral",\n'
+    '  "mood": null | "relaxed|excited|sad|happy|neutral|stressed|anxious|bored|curious|romantic|nostalgic|adventurous|nervous",\n'
     '  "social_context": null | {"companionType": "solo|partner|friends|family", '
     '"hasChildren": bool, "numberOfPeople": int},\n'
     '  "genres": ["Action","Drama","Comedy","Romance","Horror","Family",'
@@ -179,12 +189,19 @@ def _build_prompt(
     query: str,
     context_summary: str,
     movies_with_scores: list[dict],
+    semantic_hint: str = "",
 ) -> str:
+    semantic_section = (
+        f"Contexto ontológico inferido: {semantic_hint}\n\n"
+        if semantic_hint
+        else ""
+    )
     if not movies_with_scores:
         return (
             "Eres un asistente de recomendacion de peliculas. "
             "Responde en espanol en 2-3 frases, explica por que no hay recomendaciones "
             "y sugiere agregar favoritos o hacer una consulta mas especifica.\n\n"
+            f"{semantic_section}"
             f"Consulta: {query}\n"
             f"Contexto inferido: {context_summary}"
         )
@@ -198,6 +215,7 @@ def _build_prompt(
         "Eres un asistente de recomendacion de peliculas. "
         "Responde en espanol en maximo 4 frases. "
         "Explica por que estas opciones son relevantes para la consulta y el contexto.\n\n"
+        f"{semantic_section}"
         f"Consulta: {query}\n"
         f"Contexto inferido: {context_summary}\n"
         f"Top recomendaciones:\n{top_text}"
@@ -224,12 +242,13 @@ def generate_recommendation_explanation(
     query: str,
     context_summary: str,
     movies_with_scores: list[dict],
+    semantic_hint: str = "",
 ) -> str:
     api_key = settings.groq_api_key
     if not api_key:
         return _fallback_explanation(query, context_summary, movies_with_scores)
 
-    prompt = _build_prompt(query, context_summary, movies_with_scores)
+    prompt = _build_prompt(query, context_summary, movies_with_scores, semantic_hint)
     payload = {
         "model": settings.groq_model,
         "temperature": 0.4,

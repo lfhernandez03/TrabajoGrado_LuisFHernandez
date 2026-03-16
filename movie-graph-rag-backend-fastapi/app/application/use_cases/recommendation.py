@@ -1,7 +1,12 @@
 from dataclasses import dataclass, field
 from datetime import datetime
+from collections import Counter
+import asyncio
+import logging
 from time import perf_counter
 from uuid import uuid4
+
+from pydantic import BaseModel
 
 from app.application.use_cases.query_history import QueryHistoryUseCase
 from app.application.use_cases.recommendation_adaptive_weights import adapt_scoring_weights
@@ -10,6 +15,8 @@ from app.application.use_cases.recommendation_components import (
     build_rdf_context as rc_build_rdf_context,
     build_sparql_query as rc_build_sparql_query,
     fetch_fuseki_candidates as rc_fetch_fuseki_candidates,
+    parse_optional_float,
+    parse_optional_int,
 )
 from app.application.use_cases.recommendation_metrics import RecommendationMetricsUseCase
 from app.application.use_cases.recommendation_ranking import (
@@ -32,7 +39,7 @@ from app.core.fuseki_client import (
     user_history_graph_exists,
 )
 from app.core.ontology_query_builder import (
-    build_activity_query_from_history,
+    build_cross_ontology_sparql,
     build_cross_ontology_sparql_from_signals,
     delete_context_snapshot,
     inject_context_snapshot,
@@ -44,6 +51,8 @@ from app.core.recommendation_llm import (
 )
 from app.domain.entities.query_history import QueryHistory
 from app.domain.entities.recommendation_metric import RecommendationMetric
+
+logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
 # Scoring weight defaults (can be updated via update_scoring_weights_from_metrics)
@@ -83,6 +92,17 @@ class SparqlParams:
     limit: int = 30
 
 
+class SemanticSnapshot(BaseModel):
+    snapshotID: str
+    requestTimestamp: datetime
+    userIntent: str
+    hourOfDay: int
+    dayOfWeek: str
+    socialContext: dict | None = None
+    emotionalContext: dict | None = None
+    requirementContext: dict | None = None
+
+
 class RecommendationUseCase:
     def __init__(
         self,
@@ -100,6 +120,8 @@ class RecommendationUseCase:
         self.scoring_weights: dict[str, float] = dict(_DEFAULT_SCORING_WEIGHTS)
         self._weights_last_updated: datetime | None = None
         self._weights_refresh_interval_seconds: int = 300
+        self._activity_last_signal_counts: dict[str, tuple[int, int]] = {}
+        self._activity_last_intent: dict[str, str] = {}
         self.signal_service = RecommendationSignalService(
             favorites_use_case=favorites_use_case,
             history_use_case=history_use_case,
@@ -128,8 +150,10 @@ class RecommendationUseCase:
         year_min: int | None,
         year_max: int | None,
         excluded_titles: set[str],
+        ontology_attempts: list[tuple[str, str]] | None = None,
     ) -> list[tuple[str, str]]:
         return rc_build_query_attempts(
+            ontology_attempts=ontology_attempts,
             preferred_genres=preferred_genres,
             runtime_max=runtime_max,
             director_hint=director_hint,
@@ -168,6 +192,110 @@ class RecommendationUseCase:
             minimum_candidates=minimum_candidates,
         )
 
+    def _derive_activity_signals(
+        self,
+        history_rows: list[dict],
+    ) -> tuple[str | None, str | None, str | None, bool]:
+        mood_counter: Counter[str] = Counter()
+        companion_counter: Counter[str] = Counter()
+        energy_counter: Counter[str] = Counter()
+        has_children = False
+
+        for row in history_rows:
+            mood_value = str(row.get("moodDescription") or "").strip()
+            companion_value = str(row.get("companionType") or "").strip()
+            energy_value = str(row.get("desiredEnergyLevel") or "").strip()
+
+            if mood_value:
+                mood_counter[mood_value] += 1
+            if companion_value:
+                companion_counter[companion_value] += 1
+            if energy_value:
+                energy_counter[energy_value] += 1
+            if companion_value == "familia con niños":
+                has_children = True
+
+        mood_es = mood_counter.most_common(1)[0][0] if mood_counter else None
+        companion_es = companion_counter.most_common(1)[0][0] if companion_counter else None
+        energy_es = energy_counter.most_common(1)[0][0] if energy_counter else None
+        return mood_es, companion_es, energy_es, has_children
+
+    def _process_and_score_movies(self, rows: list[dict]) -> list[dict]:
+        movies_with_scores: list[dict] = []
+        for row in rows:
+            title = row.get("title")
+            if not title:
+                continue
+
+            compatibility_score = parse_optional_float(row.get("compatibilityScore"))
+            rating_value = parse_optional_float(row.get("rating"))
+            if compatibility_score is None:
+                compatibility_score = min(0.99, max(0.4, (rating_value or 6.0) / 10.0))
+
+            centrality = parse_optional_float(row.get("centrality"))
+            pagerank = parse_optional_float(row.get("pagerank"))
+            centrality_norm = min(1.0, max(0.0, centrality if centrality is not None else 0.0))
+            pagerank_norm = min(1.0, max(0.0, pagerank if pagerank is not None else 0.0))
+
+            network_score = (
+                0.75 * float(compatibility_score)
+                + 0.15 * centrality_norm
+                + 0.10 * pagerank_norm
+            )
+
+            release_date = row.get("releaseDate")
+            release_year = str(release_date)[:4] if release_date else None
+
+            semantic_scores = {
+                "overallCompatibility": parse_optional_float(row.get("compatibilityScore")),
+                "moodMatchScore": parse_optional_float(row.get("moodMatch")),
+                "socialMatchScore": parse_optional_float(row.get("socialMatch")),
+                "energyMatchScore": parse_optional_float(row.get("energyMatch")),
+            }
+
+            movies_with_scores.append(
+                {
+                    "title": title,
+                    "posterUrl": row.get("posterUrl"),
+                    "runtime": parse_optional_int(row.get("runtime")),
+                    "genreName": row.get("genreName"),
+                    "releaseDate": release_year,
+                    "averageRating": rating_value,
+                    "compatibilityScore": round(min(0.99, max(0.4, network_score)), 2),
+                    "semanticScores": semantic_scores,
+                }
+            )
+
+        movies_with_scores.sort(
+            key=lambda item: (
+                item.get("compatibilityScore") or 0,
+                item.get("averageRating") or 0,
+            ),
+            reverse=True,
+        )
+        return movies_with_scores[:5]
+
+    def _format_recommendation_response(
+        self,
+        *,
+        query: str,
+        snapshot: SemanticSnapshot,
+        sparql_query: str,
+        movies_with_scores: list[dict],
+        explanation: str,
+        execution_time_ms: int,
+    ) -> dict:
+        return {
+            "query": query,
+            "contextExtracted": snapshot.model_dump(mode="python"),
+            "rdfGenerated": "",
+            "sparqlQuery": sparql_query,
+            "moviesFound": len(movies_with_scores),
+            "moviesWithScores": movies_with_scores,
+            "explanation": explanation,
+            "executionTimeMs": execution_time_ms,
+        }
+
     def get_recommendation(self, query: str, user_id: str) -> dict:
         response, _ = self._build_recommendation(query, user_id)
         return response
@@ -189,7 +317,14 @@ class RecommendationUseCase:
     def _get_user_genre_profile(self, user_id: str, history_limit: int = 20) -> dict[str, float]:
         return self.signal_service.get_user_genre_profile(user_id=user_id, history_limit=history_limit)
 
-    def _maybe_refresh_weights(self, user_id: str) -> None:
+    def _maybe_refresh_weights(
+        self,
+        user_id: str,
+        *,
+        favorites_count: int | None = None,
+        history_count: int | None = None,
+        user_intent: str | None = None,
+    ) -> bool:
         now = datetime.utcnow()
         if (
             self._weights_last_updated is None
@@ -198,6 +333,33 @@ class RecommendationUseCase:
         ):
             self.update_scoring_weights_from_metrics(user_id=user_id)
             self._weights_last_updated = now
+
+        if favorites_count is None or history_count is None:
+            return True
+
+        last_intent = self._activity_last_intent.get(user_id)
+        if user_intent and last_intent and user_intent != last_intent:
+            return True
+
+        previous_counts = self._activity_last_signal_counts.get(user_id)
+        if previous_counts is None:
+            return True
+
+        new_favorites = max(0, favorites_count - previous_counts[0])
+        new_history = max(0, history_count - previous_counts[1])
+        new_signals = new_favorites + new_history
+        return new_signals >= 3
+
+    def _mark_activity_recalculated(
+        self,
+        *,
+        user_id: str,
+        favorites_count: int,
+        history_count: int,
+        user_intent: str,
+    ) -> None:
+        self._activity_last_signal_counts[user_id] = (favorites_count, history_count)
+        self._activity_last_intent[user_id] = user_intent
 
     def _build_network_cold_start_recommendation(self, user_id: str) -> dict | None:
         self._maybe_refresh_weights(user_id=user_id)
@@ -219,11 +381,12 @@ class RecommendationUseCase:
         sparql_query = (
             "PREFIX movie: <http://www.semanticweb.org/movierecommendation/ontologies/2025/movie-ontology#>\n"
             "PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>\n"
+            "PREFIX schema1: <http://schema.org/>\n"
             "SELECT ?movie ?title (SAMPLE(?posterUrl) AS ?posterUrl) (SAMPLE(?genreName) AS ?genreName) "
             "(MAX(?ratingRaw) AS ?rating) (SAMPLE(?releaseDate) AS ?releaseDate) (COUNT(DISTINCT ?neighbor) AS ?degree)\n"
             "WHERE {\n"
             "  ?movie rdf:type movie:FeatureFilm ; movie:hasTitle ?title .\n"
-            "  OPTIONAL { ?movie movie:hasPosterUrl ?posterUrl }\n"
+            "  OPTIONAL { ?movie schema1:image ?posterUrl }\n"
             "  OPTIONAL { ?movie movie:hasMainGenre/movie:genreName ?genreName }\n"
             "  OPTIONAL { ?movie movie:hasAverageRating ?ratingRaw }\n"
             "  OPTIONAL { ?movie movie:releaseDate ?releaseDate }\n"
@@ -343,11 +506,46 @@ class RecommendationUseCase:
             except Exception:
                 pass
 
-    def get_activity_recommendation(self, user_id: str) -> dict:
-        self._maybe_refresh_weights(user_id=user_id)
-        snapshot = self.signal_service.collect_activity_snapshot(user_id=user_id)
-        favorites = snapshot["favorites"]
-        history = snapshot["history"]
+    async def get_activity_recommendation(self, user_id: str) -> dict:
+        signal_snapshot = self.signal_service.collect_activity_snapshot(user_id=user_id)
+        favorites = signal_snapshot["favorites"]
+        history = signal_snapshot["history"]
+        recent_queries = signal_snapshot.get("recent_queries") or []
+        current_intent = recent_queries[0] if recent_queries else "activity_recent_profile"
+
+        favorites_count = len(favorites)
+        history_count = len(history)
+        previous_counts = self._activity_last_signal_counts.get(user_id)
+        previous_signals_total = (
+            (previous_counts[0] + previous_counts[1])
+            if previous_counts is not None
+            else 0
+        )
+        current_signals_total = favorites_count + history_count
+        previous_intent = self._activity_last_intent.get(user_id)
+        intent_changed = bool(previous_intent and previous_intent != current_intent)
+        logger.info(
+            "Checking cache for user %s | Signals: Prev=%s, Curr=%s | Intent Changed=%s",
+            user_id,
+            previous_signals_total,
+            current_signals_total,
+            intent_changed,
+        )
+        needs_recalculation = self._maybe_refresh_weights(
+            user_id=user_id,
+            favorites_count=favorites_count,
+            history_count=history_count,
+            user_intent=current_intent,
+        )
+
+        if not needs_recalculation:
+            cached_payload = self.signal_service.get_cached_activity_snapshot(
+                user_id=user_id,
+                max_age_seconds=12 * 60 * 60,
+            )
+            if cached_payload and isinstance(cached_payload.get("response"), dict):
+                logger.info("[CACHE_HIT] user_id=%s", user_id)
+                return cached_payload["response"]
 
         excluded_from_history = self._build_recent_title_set(history_entries=history, limit=30)
         favorite_titles = {
@@ -365,11 +563,7 @@ class RecommendationUseCase:
 
         if has_history:
             history_rows = get_user_context_history(user_id, limit=20)
-            mood_es, companion_es, energy_es = build_activity_query_from_history(history_rows)
-            has_children = any(
-                str(row.get("companionType") or "").strip() == "familia con niños"
-                for row in history_rows
-            )
+            mood_es, companion_es, energy_es, has_children = self._derive_activity_signals(history_rows)
 
             if mood_es or companion_es or energy_es:
                 sparql = build_cross_ontology_sparql_from_signals(
@@ -387,102 +581,80 @@ class RecommendationUseCase:
                     rows = []
 
                 if rows:
-                    def _parse_float(value: object) -> float | None:
-                        try:
-                            if value is None:
-                                return None
-                            return float(str(value))
-                        except Exception:
-                            return None
-
-                    def _parse_int(value: object) -> int | None:
-                        try:
-                            if value is None:
-                                return None
-                            return int(float(str(value)))
-                        except Exception:
-                            return None
-
-                    movies_with_scores: list[dict] = []
-                    for row in rows:
-                        title = row.get("title")
-                        if not title:
-                            continue
-
-                        compatibility_score = _parse_float(row.get("compatibilityScore"))
-                        if compatibility_score is None:
-                            rating_value = _parse_float(row.get("rating"))
-                            compatibility_score = min(0.99, max(0.4, (rating_value or 6.0) / 10.0))
-
-                        release_date = row.get("releaseDate")
-                        release_year = str(release_date)[:4] if release_date else None
-
-                        movies_with_scores.append(
-                            {
-                                "title": title,
-                                "posterUrl": row.get("posterUrl"),
-                                "runtime": _parse_int(row.get("runtime")),
-                                "genreName": row.get("genreName"),
-                                "releaseDate": release_year,
-                                "averageRating": _parse_float(row.get("rating")),
-                                "compatibilityScore": round(float(compatibility_score), 2),
-                            }
-                        )
-
-                    movies_with_scores.sort(
-                        key=lambda item: (
-                            item.get("compatibilityScore") or 0,
-                            item.get("averageRating") or 0,
-                        ),
-                        reverse=True,
-                    )
-                    movies_with_scores = movies_with_scores[:5]
+                    movies_with_scores = self._process_and_score_movies(rows)
 
                     now = datetime.utcnow()
                     activity_query = (
                         f"Recomendación basada en perfil semántico: mood={mood_es}, "
                         f"compañía={companion_es}"
                     )
-                    explanation = generate_recommendation_explanation(
+                    semantic_hint = (
+                        f"mood={mood_es or 'none'}, social={companion_es or 'none'}, "
+                        f"energy={energy_es or 'none'}, children={str(has_children).lower()}"
+                    )
+                    explanation = await asyncio.to_thread(
+                        generate_recommendation_explanation,
                         query=activity_query,
                         context_summary=(
                             f"mood={mood_es or 'none'}, social={companion_es or 'none'}, "
                             f"energy={energy_es or 'none'}"
                         ),
                         movies_with_scores=movies_with_scores,
+                        semantic_hint=semantic_hint,
                     )
 
-                    response = {
-                        "query": activity_query,
-                        "contextExtracted": {
-                            "snapshotID": str(uuid4()),
-                            "requestTimestamp": now,
-                            "userIntent": activity_query,
-                            "hourOfDay": now.hour,
-                            "dayOfWeek": now.strftime("%A"),
-                            "socialContext": {"companionType": companion_es} if companion_es else None,
-                            "emotionalContext": (
-                                {
-                                    "moodDescription": mood_es,
-                                    "desiredEnergyLevel": energy_es,
-                                }
-                                if mood_es or energy_es
-                                else None
-                            ),
-                            "requirementContext": None,
-                        },
-                        "rdfGenerated": "",
-                        "sparqlQuery": sparql,
-                        "moviesFound": len(movies_with_scores),
-                        "moviesWithScores": movies_with_scores,
-                        "explanation": explanation,
-                        "executionTimeMs": 1,
-                    }
+                    snapshot = SemanticSnapshot(
+                        snapshotID=str(uuid4()),
+                        requestTimestamp=now,
+                        userIntent=activity_query,
+                        hourOfDay=now.hour,
+                        dayOfWeek=now.strftime("%A"),
+                        socialContext=(
+                            {
+                                "companionType": companion_es,
+                                "hasChildren": has_children,
+                            }
+                            if companion_es
+                            else None
+                        ),
+                        emotionalContext=(
+                            {
+                                "moodDescription": mood_es,
+                                "desiredEnergyLevel": energy_es,
+                            }
+                            if mood_es or energy_es
+                            else None
+                        ),
+                        requirementContext=None,
+                    )
+
+                    response = self._format_recommendation_response(
+                        query=activity_query,
+                        snapshot=snapshot,
+                        sparql_query=sparql,
+                        movies_with_scores=movies_with_scores,
+                        explanation=explanation,
+                        execution_time_ms=1,
+                    )
                     response["debugPayload"] = {
                         "profileSource": profile_source,
                         "dominantMood": mood_es,
                         "dominantCompanion": companion_es,
                     }
+                    self.signal_service.cache_activity_snapshot(
+                        user_id,
+                        {
+                            "snapshot": snapshot.model_dump(mode="python"),
+                            "response": response,
+                        },
+                    )
+                    self._mark_activity_recalculated(
+                        user_id=user_id,
+                        favorites_count=favorites_count,
+                        history_count=history_count,
+                        user_intent=current_intent,
+                    )
+                    logger.info("[RECALCULATED] user_id=%s", user_id)
                     return response
 
         cold_start_response = self._build_network_cold_start_recommendation(user_id)
@@ -492,10 +664,28 @@ class RecommendationUseCase:
                 "dominantMood": mood_es,
                 "dominantCompanion": companion_es,
             }
+            try:
+                cold_snapshot = SemanticSnapshot.model_validate(cold_start_response["contextExtracted"])
+                self.signal_service.cache_activity_snapshot(
+                    user_id,
+                    {
+                        "snapshot": cold_snapshot.model_dump(mode="python"),
+                        "response": cold_start_response,
+                    },
+                )
+                self._mark_activity_recalculated(
+                    user_id=user_id,
+                    favorites_count=favorites_count,
+                    history_count=history_count,
+                    user_intent=current_intent,
+                )
+            except Exception:
+                pass
+            logger.info("[RECALCULATED] user_id=%s", user_id)
             return cold_start_response
 
         fallback_query = "Recomendación cold start basada en centralidad de red"
-        return {
+        fallback_response = {
             "query": fallback_query,
             "contextExtracted": {
                 "snapshotID": str(uuid4()),
@@ -519,6 +709,25 @@ class RecommendationUseCase:
                 "dominantCompanion": companion_es,
             },
         }
+        try:
+            fallback_snapshot = SemanticSnapshot.model_validate(fallback_response["contextExtracted"])
+            self.signal_service.cache_activity_snapshot(
+                user_id,
+                {
+                    "snapshot": fallback_snapshot.model_dump(mode="python"),
+                    "response": fallback_response,
+                },
+            )
+            self._mark_activity_recalculated(
+                user_id=user_id,
+                favorites_count=favorites_count,
+                history_count=history_count,
+                user_intent=current_intent,
+            )
+        except Exception:
+            pass
+        logger.info("[RECALCULATED] user_id=%s", user_id)
+        return fallback_response
 
     def _build_recommendation(
         self,
@@ -620,6 +829,10 @@ class RecommendationUseCase:
         top_candidates = favorites[:5]
 
         fuseki_start = perf_counter()
+        ontology_attempts = build_cross_ontology_sparql(
+            ctx=nlu,
+            excluded_normalized=excluded_normalized,
+        )
         query_attempts = self._build_query_attempts(
             preferred_genres=preferred_genres,
             runtime_max=_runtime_max,
@@ -627,6 +840,7 @@ class RecommendationUseCase:
             year_min=_year_min,
             year_max=_year_max,
             excluded_titles=excluded_normalized,
+            ontology_attempts=ontology_attempts,
         )
 
         try:
@@ -744,7 +958,9 @@ class RecommendationUseCase:
                     userId=user_id,
                     query=query,
                     source=recommendation_source,
-                    fallbackUsed=not recommendation_source.startswith("fuseki"),
+                    fallbackUsed=not any(
+                        recommendation_source.startswith(p) for p in ("fuseki", "ontology")
+                    ),
                     fusekiRows=fuseki_rows_count,
                     errors=debug_errors,
                     timingsMs=timings,
@@ -756,13 +972,15 @@ class RecommendationUseCase:
         except Exception as exc:
             debug_errors.append(f"metrics_write_error: {exc}")
 
+        ontology_navigation_used = recommendation_source.startswith("ontology")
         debug_payload = build_debug_payload(
             recommendation_source=recommendation_source,
             fuseki_rows_count=fuseki_rows_count,
             debug_errors=debug_errors,
             timings=timings,
+            ontology_navigation_used=ontology_navigation_used,
+            context_graph_injected=bool(graph_uri),
         )
-        debug_payload["contextGraphInjected"] = bool(graph_uri)
 
         try:
             copy_graph_to_user_history(context_snapshot_id, user_id)

@@ -469,7 +469,7 @@ PASO 5: Generación Narrativa Contextualizada
 
 El grafo de conocimiento de CineSemantico es, por naturaleza, una **red compleja** con nodos heterogéneos (películas, personas, géneros, tones, themes) y aristas semánticas tipadas. A continuación se presenta cómo cada concepto de redes complejas podría enriquecer el sistema.
 
-### 8.1 Centralidad (Centrality Measures)
+### 8.1 Centralidad (Centrality Measures) .
 
 **Teoría**: Las métricas de centralidad identifican los nodos más "importantes" en una red según diferentes criterios.
 
@@ -483,7 +483,7 @@ El grafo de conocimiento de CineSemantico es, por naturaleza, una **red compleja
 
 **Implementación potencial**: Calcular centralidades offline y almacenarlas como `movie:degreeCentrality`, `movie:betweennessCentrality` en el grafo. Usar en SPARQL como criterio de desempate o como nuevo factor en el compatibility score.
 
-### 8.2 Detección de Comunidades (Community Detection)
+### 8.2 Detección de Comunidades (Community Detection) .
 
 **Teoría**: Algoritmos como Louvain, Leiden o Label Propagation agrupan nodos densamente conectados en comunidades.
 
@@ -496,7 +496,7 @@ El grafo de conocimiento de CineSemantico es, por naturaleza, una **red compleja
 
 **Algoritmo sugerido**: Leiden (mejora de Louvain) sobre un grafo proyectado bipartito (películas-películas ponderado por features compartidas).
 
-### 8.3 Distribución de Grados (Degree Distribution)
+### 8.3 Distribución de Grados (Degree Distribution) .
 
 **Teoría**: La mayoría de redes complejas reales siguen una distribución de ley de potencias (power law) — pocos nodos tienen muchas conexiones (hubs) y muchos nodos tienen pocas.
 
@@ -505,7 +505,7 @@ El grafo de conocimiento de CineSemantico es, por naturaleza, una **red compleja
 - **Anti-popularity bias**: Los sistemas de recomendación tradicionales sufren de sesgo de popularidad. Si identificamos que el grafo es scale-free, podemos intencionalmente **penalizar hubs** para promover descubrimiento de long-tail movies
 - **Visualización**: Mostrar al usuario la distribución de grados del grafo para entender la diversidad del catálogo
 
-### 8.4 Coeficiente de Clustering (Clustering Coefficient)
+### 8.4 Coeficiente de Clustering (Clustering Coefficient) .
 
 **Teoría**: Mide qué tan conectados entre sí están los vecinos de un nodo. Un coeficiente alto indica una "camarilla" densa.
 
@@ -514,7 +514,7 @@ El grafo de conocimiento de CineSemantico es, por naturaleza, una **red compleja
 - **Películas con bajo clustering**: Sus vecinos no se conectan entre sí → película "bridge" que cruza fronteras de nicho → ideal para recomendaciones de exploración
 - **Serendipity Score**: `serendipity = (1 - clusteringCoeff) × relevance` — recomendar películas relevantes pero sorprendentes
 
-### 8.5 Shortest Path y Distancia Semántica
+### 8.5 Shortest Path y Distancia Semántica .
 
 **Teoría**: El camino más corto entre dos nodos define su "distancia" en la red.
 
@@ -544,7 +544,7 @@ El grafo de conocimiento de CineSemantico es, por naturaleza, una **red compleja
 - **Proyección Género-Género**: Dos géneros se conectan si aparecen juntos en películas → "afinidad entre géneros"
 - Estas proyecciones son la base para aplicar corectamente los algoritmos de comunidades y centralidad
 
-### 8.8 Propagación de Influencia y Difusión
+### 8.8 Propagación de Influencia y Difusión .
 
 **Teoría**: Modelos como SIR/SIS simulan cómo se propaga información/influencia a través de la red.
 
@@ -553,7 +553,7 @@ El grafo de conocimiento de CineSemantico es, por naturaleza, una **red compleja
 - **Influence maximization**: ¿Cuáles son las 5 películas que, si el usuario las ve, maximizan su exposición a la mayor diversidad del catálogo?
 - **"Si te gustó X, inevitablemente llegarás a Y"**: Simular cascadas de recomendación
 
-### 8.9 Modularidad (Modularity)
+### 8.9 Modularidad (Modularity) .
 
 **Teoría**: Métrica que mide la calidad de una partición de la red en comunidades. Alta modularidad → comunidades bien separadas.
 
@@ -561,7 +561,7 @@ El grafo de conocimiento de CineSemantico es, por naturaleza, una **red compleja
 - Calcular la modularidad del grafo de películas para validar que la estructura ontológica captura bien las agrupaciones naturales
 - **Auto-tuning de recomendaciones**: Si el grafo tiene alta modularidad, las recomendaciones intra-cluster serán precisas; si tiene baja modularidad, el sistema debería ser más arriesgado en sus recomendaciones
 
-### 8.10 Resiliencia y Robustez de la Red
+### 8.10 Resiliencia y Robustez de la Red 
 
 **Teoría**: Qué pasa cuando se eliminan nodos de la red. Las redes scale-free son robustas a ataques aleatorios pero vulnerables a ataques dirigidos a hubs.
 
@@ -576,7 +576,7 @@ El grafo de conocimiento de CineSemantico es, por naturaleza, una **red compleja
 
 Basándose en la teoría de redes complejas y las ventajas del GraphRAG, las siguientes funcionalidades demostrarían el poder único de este enfoque:
 
-### 9.1 🔬 Análisis Topológico del Grafo (Dashboard)
+### 9.1 🔬 Análisis Topológico del Grafo (Dashboard) .
 
 **Funcionalidad**: Panel interactivo que muestra métricas de redes complejas del grafo de conocimiento en tiempo real.
 
@@ -592,7 +592,7 @@ Basándose en la teoría de redes complejas y las ventajas del GraphRAG, las sig
 
 **Implementación**: Endpoint `GET /graph/topology` que ejecute SPARQL analíticos + cálculos de NetworkX en Python, con cache en Redis.
 
-### 9.2 🎯 Recomendación por Comunidad (Cluster-Based)
+### 9.2 🎯 Recomendación por Comunidad (Cluster-Based) .
 
 **Funcionalidad**: El usuario selecciona una película → el sistema identifica su comunidad en el grafo → recomienda las mejores películas del mismo cluster y de clusters adyacentes.
 
@@ -604,7 +604,7 @@ Basándose en la teoría de redes complejas y las ventajas del GraphRAG, las sig
 
 **Ventaja demostrativa**: Demuestra que el grafo tiene estructura real diferenciada — no es una bolsa de features planas como en content-based filtering.
 
-### 9.3 🌐 Explorador de Influencia Cinematográfica
+### 9.3 🌐 Explorador de Influencia Cinematográfica 
 
 **Funcionalidad**: Seleccionar una película y ver su "zona de influencia" — hasta dónde llega su conectividad en el grafo a 1, 2 y 3 hops.
 
@@ -616,7 +616,7 @@ Basándose en la teoría de redes complejas y las ventajas del GraphRAG, las sig
 
 **Ventaja demostrativa**: Visualiza la riqueza semántica del grafo que es imposible de representar en un sistema vectorial.
 
-### 9.4 🎲 Serendipity Engine (Motor de Descubrimiento)
+### 9.4 🎲 Serendipity Engine (Motor de Descubrimiento) .
 
 **Funcionalidad**: Recomendar películas que son relevantes pero sorprendentes — combinando compatibility score con métricas de redes.
 
@@ -633,7 +633,7 @@ serendipityScore = compatibilityScore × (1 - clusteringCoefficient)
 
 **Ventaja demostrativa**: Los sistemas tradicionales tienden a recomendar lo popular y lo obvio. Este sistema puede cuantificar y optimizar la sorpresa usando métricas topológicas.
 
-### 9.5 📊 Diversidad de Recomendación (Diversity Score)
+### 9.5 📊 Diversidad de Recomendación (Diversity Score) .
 
 **Funcionalidad**: Para cada set de recomendaciones, calcular y mostrar un score de diversidad basado en la distancia en el grafo entre las películas recomendadas.
 
@@ -660,7 +660,7 @@ diversityScore = avg(distance(movie_i, movie_j)) para todo par i,j en recomendac
 - Identificar los "bridge nodes" (personas o géneros) que más reducen la distancia promedio
 - Modo competitivo: "¿Puedes encontrar dos películas con distancia > 4?"
 
-### 9.7 🧬 Perfil Topológico del Usuario
+### 9.7 🧬 Perfil Topológico del Usuario .
 
 **Funcionalidad**: Basado en el historial del usuario, construir un "perfil topológico" que describe su posición en el grafo.
 

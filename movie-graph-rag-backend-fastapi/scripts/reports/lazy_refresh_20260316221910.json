@@ -1,0 +1,19 @@
+{
+  "status": "PASS",
+  "generatedAt": "2026-03-16T22:19:19.013656+00:00",
+  "baseUrl": "http://127.0.0.1:8000/api/v1",
+  "user": "lazy_script_20260316221910@example.com",
+  "favoritesCount": 3,
+  "snapshotIds": {
+    "call1": "fd7fe57d-52e4-4483-a6a6-d55c873c36cd",
+    "call2": "fd7fe57d-52e4-4483-a6a6-d55c873c36cd",
+    "call3": "c9cc1bce-2d55-42f1-a4d9-e7d7f21c9eae",
+    "call4": "c9cc1bce-2d55-42f1-a4d9-e7d7f21c9eae"
+  },
+  "checks": {
+    "baselineCacheHit": true,
+    "recalculatedAfterChange": true,
+    "postChangeCacheHit": true,
+    "enoughSignals": true
+  }
+}
