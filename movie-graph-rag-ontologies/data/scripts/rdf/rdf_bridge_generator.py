@@ -5,6 +5,7 @@ import sys
 import re
 from urllib.parse import quote
 from pathlib import Path
+import argparse
 
 # Agregar el directorio de config al path para importar namespaces
 sys.path.insert(0, str(Path(__file__).parent.parent / "config"))
@@ -364,6 +365,36 @@ class RDFBridgeGenerator:
         logger.info(f"Guardando grafo bridge en {output_file}...")
         self.graph.serialize(destination=output_file, format=format)
         logger.info(f"✓ Grafo guardado exitosamente")
+
+    def save_graph_incremental(self, output_file, processed_movie_ids=None, format='turtle'):
+        """Hace merge incremental removiendo subgrafos previos por movieId y agregando los nuevos."""
+        output_path = Path(output_file)
+        if not output_path.exists() or not processed_movie_ids:
+            self.save_graph(output_file, format=format)
+            return
+
+        logger.info("Modo incremental RDF bridge: fusionando con TTL existente")
+        existing_graph = Graph()
+        existing_graph.parse(str(output_path), format=format)
+
+        for movie_id in processed_movie_ids:
+            movie_prefix = f"{MOVIE_DATA_NS}movie_{movie_id}_"
+
+            resources_to_remove = set()
+            for subject in set(existing_graph.subjects()):
+                if not isinstance(subject, URIRef):
+                    continue
+                if str(subject).startswith(movie_prefix):
+                    resources_to_remove.add(subject)
+
+            for resource in resources_to_remove:
+                existing_graph.remove((resource, None, None))
+                existing_graph.remove((None, None, resource))
+
+        existing_graph += self.graph
+        self.graph = existing_graph
+        self.graph.serialize(destination=str(output_path), format=format)
+        logger.info(f"✓ Grafo bridge incremental guardado ({len(self.graph):,} tripletas)")
     
     def get_statistics(self):
         """Obtiene estadísticas del grafo generado"""
@@ -379,6 +410,16 @@ class RDFBridgeGenerator:
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description='Genera conexiones RDF bridge película-contexto')
+    parser.add_argument('--max-movies', type=int, default=None, help='Numero maximo de peliculas a procesar')
+    parser.add_argument(
+        '--no-incremental',
+        action='store_true',
+        help='Desactiva merge incremental y sobrescribe TTL con el lote actual'
+    )
+    parser.add_argument('legacy_max_movies', nargs='?', type=int, help=argparse.SUPPRESS)
+    args = parser.parse_args()
+
     # Cargar datos de películas
     logger.info("Cargando datos de movies_nlp_enriched.csv...")
     df = pd.read_csv(PROCESSED_DIR / 'movies_nlp_enriched.csv')
@@ -389,22 +430,27 @@ if __name__ == "__main__":
     generator = RDFBridgeGenerator()
     
     # Determinar cuántas películas procesar
-    max_movies = None
-    if len(sys.argv) > 1:
-        try:
-            max_movies = int(sys.argv[1])
-            logger.info(f"Limitando a {max_movies} películas (argumento CLI)")
-        except:
-            logger.warning(f"Argumento inválido '{sys.argv[1]}', procesando todas")
+    max_movies = args.max_movies if args.max_movies is not None else args.legacy_max_movies
+    if max_movies:
+        logger.info(f"Limitando a {max_movies} películas (argumento CLI)")
     else:
         logger.info("Procesando todas las películas")
     
     # Generar conexiones bridge
     generator.generate_from_dataframe(df, max_movies=max_movies)
+    processed_df = df.head(max_movies) if max_movies else df
+    processed_movie_ids = [str(movie_id) for movie_id in processed_df['movieId'].tolist()]
     
     # Guardar grafo
     output_file = ONTOLOGIES_DIR / 'bridge_data.ttl'
-    generator.save_graph(str(output_file), format='turtle')
+    if args.no_incremental:
+        generator.save_graph(str(output_file), format='turtle')
+    else:
+        generator.save_graph_incremental(
+            str(output_file),
+            processed_movie_ids=processed_movie_ids,
+            format='turtle'
+        )
     
     # Mostrar estadísticas
     stats = generator.get_statistics()

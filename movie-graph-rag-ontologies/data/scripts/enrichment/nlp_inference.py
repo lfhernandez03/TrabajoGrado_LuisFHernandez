@@ -515,22 +515,43 @@ class NLPInferencer:
         logger.info(f"Confianza mínima: {df_nlp['inference_confidence'].min():.2%}")
         logger.info(f"Confianza máxima: {df_nlp['inference_confidence'].max():.2%}")
     
-    def save_results(self, df_final, df_nlp):
+    def save_results(self, df_final, df_nlp, max_movies: int | None = None, incremental: bool = True):
         """Guarda los resultados en archivos CSV"""
         # Archivo completo con todas las columnas
         output_file = PROCESSED_DIR / 'movies_nlp_enriched.csv'
         logger.info(f"\nGuardando resultados completos en {output_file}...")
+
+        if incremental and output_file.exists():
+            existing_final = pd.read_csv(output_file)
+            df_final = pd.concat([existing_final, df_final], ignore_index=True)
+            df_final = df_final.drop_duplicates(subset=['movieId'], keep='last')
+
+        if 'avg_rating' in df_final.columns and 'rating_count' in df_final.columns:
+            df_final = df_final.sort_values(by=['avg_rating', 'rating_count'], ascending=[False, False])
+
+        if max_movies:
+            df_final = df_final.head(max_movies)
+
         df_final.to_csv(output_file, index=False)
         
         # Archivo resumen solo con inferencias
         summary_file = PROCESSED_DIR / 'nlp_inference_summary.csv'
         logger.info(f"Guardando resumen en {summary_file}...")
+
+        if incremental and summary_file.exists():
+            existing_summary = pd.read_csv(summary_file)
+            df_nlp = pd.concat([existing_summary, df_nlp], ignore_index=True)
+            df_nlp = df_nlp.drop_duplicates(subset=['movieId'], keep='last')
+
+        if max_movies:
+            df_nlp = df_nlp.head(max_movies)
+
         df_nlp.to_csv(summary_file, index=False)
         
         return str(output_file), str(summary_file)
 
 
-def run_nlp_pipeline(input_file=None):
+def run_nlp_pipeline(input_file=None, max_movies: int | None = None, incremental: bool = True):
     """Pipeline principal de procesamiento NLP"""
     logger.info("=== Iniciando Procesamiento NLP ===")
     
@@ -539,6 +560,10 @@ def run_nlp_pipeline(input_file=None):
         input_file = PROCESSED_DIR / 'movies_enriched.csv'
     logger.info(f"Cargando datos desde {input_file}...")
     df = pd.read_csv(input_file)
+
+    if max_movies:
+        df = df.head(max_movies)
+
     logger.info(f"Total películas cargadas: {len(df)}")
     
     # 2. Inicializar inferencer
@@ -560,7 +585,12 @@ def run_nlp_pipeline(input_file=None):
     )
     
     # 6. Guardar resultados
-    output_file, summary_file = inferencer.save_results(df_final, df_nlp)
+    output_file, summary_file = inferencer.save_results(
+        df_final,
+        df_nlp,
+        max_movies=max_movies,
+        incremental=incremental
+    )
     
     # 7. Generar estadísticas
     inferencer.generate_statistics(df_nlp)
@@ -579,36 +609,14 @@ if __name__ == "__main__":
     # Parse command line arguments
     parser = argparse.ArgumentParser(description='Infiere atributos semanticos de peliculas')
     parser.add_argument('--max-movies', type=int, default=None, help='Numero maximo de peliculas a procesar')
+    parser.add_argument(
+        '--no-incremental',
+        action='store_true',
+        help='Desactiva merge incremental y sobrescribe salida con el lote actual'
+    )
     args = parser.parse_args()
-    
-    # Si se proporciona max_movies, usar solo ese numero de peliculas del archivo de entrada
-    if args.max_movies:
-        logger.info(f"Limitando procesamiento a {args.max_movies} peliculas")
-        input_file = PROCESSED_DIR / "movies_enriched.csv"
-        if input_file.exists():
-            df = pd.read_csv(input_file).head(args.max_movies)
-            logger.info(f"Total peliculas cargadas: {len(df)}")
-            
-            # Procesamiento
-            inferencer = NLPInferencer()
-            df = inferencer.add_main_genre_column(df)
-            df_nlp = inferencer.process_dataframe(df)
-            
-            # Merge
-            df_final = df.merge(
-                df_nlp[['movieId', 'tone', 'theme', 'plot_structure', 
-                        'historical_period', 'movie_type', 'inference_confidence']], 
-                on='movieId', 
-                how='left'
-            )
-            
-            # Guardar
-            output_file, summary_file = inferencer.save_results(df_final, df_nlp)
-            inferencer.generate_statistics(df_nlp)
-            
-            logger.info("\n=== Procesamiento NLP Completado ===")
-            logger.info(f"Archivo completo: {output_file}")
-            logger.info(f"Archivo resumen: {summary_file}")
-    else:
-        # Ejecutar pipeline completo
-        df_final, df_nlp = run_nlp_pipeline()
+
+    df_final, df_nlp = run_nlp_pipeline(
+        max_movies=args.max_movies,
+        incremental=not args.no_incremental
+    )

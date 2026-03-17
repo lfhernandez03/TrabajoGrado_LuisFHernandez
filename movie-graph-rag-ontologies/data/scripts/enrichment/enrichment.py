@@ -3,6 +3,7 @@ import time
 import logging
 import sys
 from pathlib import Path
+import pandas as pd
 
 # Ensure scripts directory is on sys.path so imports work when running the script directly
 SCRIPTS_DIR = Path(__file__).resolve().parent.parent
@@ -260,6 +261,26 @@ class MovieEnricher:
         logger.info(f"Columnas agregadas: {new_columns}")
         
         return enriched_df
+
+    def upsert_movies_enriched(self, df_new, output_file: Path, max_movies: int | None = None):
+        """Guarda resultados enriquecidos sin perder películas existentes (upsert por movieId)."""
+        if output_file.exists():
+            logger.info("Modo incremental enrichment: combinando con movies_enriched.csv existente")
+            existing_df = pd.read_csv(output_file)
+            merged_df = pd.concat([existing_df, df_new], ignore_index=True)
+            merged_df = merged_df.drop_duplicates(subset=['movieId'], keep='last')
+        else:
+            merged_df = df_new
+
+        if 'avg_rating' in merged_df.columns and 'rating_count' in merged_df.columns:
+            merged_df = merged_df.sort_values(by=['avg_rating', 'rating_count'], ascending=[False, False])
+
+        if max_movies:
+            merged_df = merged_df.head(max_movies)
+
+        merged_df.to_csv(output_file, index=False)
+        logger.info(f"Archivo enriquecido guardado: {output_file} ({len(merged_df)} películas)")
+        return merged_df
     
     def _expand_genres(self, df):
         """Convierte géneros en columnas one-hot encoding"""
@@ -361,7 +382,6 @@ class MovieEnricher:
 
 # Uso
 if __name__ == "__main__":
-    import pandas as pd
     import argparse
     
     # Add scripts directory to path
@@ -374,6 +394,11 @@ if __name__ == "__main__":
     # Parse command line arguments
     parser = argparse.ArgumentParser(description='Enriquece datos de peliculas con APIs externas')
     parser.add_argument('--max-movies', type=int, default=None, help='Numero maximo de peliculas a procesar')
+    parser.add_argument(
+        '--no-incremental',
+        action='store_true',
+        help='Desactiva merge incremental y sobrescribe salida con el lote actual'
+    )
     args = parser.parse_args()
     
     max_movies = args.max_movies
@@ -390,5 +415,15 @@ if __name__ == "__main__":
     
     # Guardar con todas las columnas en ruta absoluta
     PROCESSED_DIR.mkdir(parents=True, exist_ok=True)
-    enriched_df.to_csv(PROCESSED_DIR / "movies_enriched.csv", index=False)
+    output_file = PROCESSED_DIR / "movies_enriched.csv"
+
+    if args.no_incremental:
+        if 'avg_rating' in enriched_df.columns and 'rating_count' in enriched_df.columns:
+            enriched_df = enriched_df.sort_values(by=['avg_rating', 'rating_count'], ascending=[False, False])
+        if max_movies:
+            enriched_df = enriched_df.head(max_movies)
+        enriched_df.to_csv(output_file, index=False)
+        logger.info(f"Archivo enriquecido sobrescrito: {output_file} ({len(enriched_df)} películas)")
+    else:
+        enricher.upsert_movies_enriched(enriched_df, output_file, max_movies=max_movies)
     

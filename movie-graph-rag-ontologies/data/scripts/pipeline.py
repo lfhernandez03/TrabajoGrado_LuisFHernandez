@@ -17,6 +17,9 @@ import sys
 import logging
 from pathlib import Path
 import argparse
+import urllib.request
+import urllib.error
+import base64
 
 logging.basicConfig(
     level=logging.INFO,
@@ -29,6 +32,7 @@ SCRIPTS_DIR = Path(__file__).parent
 ETL_DIR = SCRIPTS_DIR / "etl"
 ENRICHMENT_DIR = SCRIPTS_DIR / "enrichment"
 RDF_DIR = SCRIPTS_DIR / "rdf"
+ONTOLOGIES_INSTANCES_DIR = SCRIPTS_DIR.parent / "ontologies" / "instances"
 
 # Python executable (usar el mismo que ejecuta este script)
 PYTHON = sys.executable
@@ -119,42 +123,92 @@ def cleanup_intermediate_files() -> None:
     logger.info("="*70 + "\n")
 
 
-def import_to_graphdb() -> bool:
-    """Importa los datos RDF generados a GraphDB mediante Docker."""
+def import_to_fuseki(
+    fuseki_url: str = "http://localhost:3030",
+    fuseki_dataset: str = "movies",
+    fuseki_user: str = "",
+    fuseki_password: str = ""
+) -> bool:
+    """Importa los datos RDF generados a Fuseki mediante HTTP POST al endpoint /data."""
     logger.info("="*70)
-    logger.info("IMPORTANDO DATOS A GRAPHDB")
+    logger.info("IMPORTANDO DATOS A FUSEKI")
     logger.info("="*70)
-    
-    try:
-        result = subprocess.run(
-            ["docker", "exec", "graphdb-tesis", "/bin/bash", 
-             "/docker-entrypoint-initdb.d/02-import-ontologies.sh"],
-            check=True,
-            capture_output=False,
-            text=True
-        )
-        logger.info("✓ Datos importados a GraphDB exitosamente\n")
-        return True
-    except subprocess.CalledProcessError as e:
-        logger.error(f"✗ Error importando a GraphDB")
-        logger.error(f"Código de salida: {e.returncode}\n")
+
+    data_endpoint = f"{fuseki_url.rstrip('/')}/{fuseki_dataset.strip('/')}/data"
+    ttl_files = [
+        ONTOLOGIES_INSTANCES_DIR / "movies_data.ttl",
+        ONTOLOGIES_INSTANCES_DIR / "contexts_data.ttl",
+        ONTOLOGIES_INSTANCES_DIR / "bridge_data.ttl",
+    ]
+
+    missing_files = [str(path) for path in ttl_files if not path.exists()]
+    if missing_files:
+        logger.error("✗ Faltan archivos TTL para importar a Fuseki:")
+        for missing in missing_files:
+            logger.error(f"  - {missing}")
+        logger.error("")
         return False
-    except FileNotFoundError:
-        logger.error("✗ Docker no encontrado. Asegúrate de que Docker esté instalado y corriendo\n")
+
+    auth_header = None
+    if fuseki_user:
+        credentials = f"{fuseki_user}:{fuseki_password}".encode("utf-8")
+        auth_header = "Basic " + base64.b64encode(credentials).decode("ascii")
+
+    try:
+        for ttl_path in ttl_files:
+            logger.info(f"Subiendo {ttl_path.name} a {data_endpoint}")
+            payload = ttl_path.read_bytes()
+            request = urllib.request.Request(
+                url=data_endpoint,
+                data=payload,
+                method="POST",
+                headers={
+                    "Content-Type": "text/turtle",
+                    "Accept": "application/json",
+                },
+            )
+            if auth_header:
+                request.add_header("Authorization", auth_header)
+
+            with urllib.request.urlopen(request, timeout=60):
+                pass
+
+        logger.info("✓ Datos importados a Fuseki exitosamente\n")
+        return True
+    except urllib.error.HTTPError as e:
+        error_body = ""
+        try:
+            error_body = e.read().decode("utf-8", errors="ignore")
+        except Exception:
+            error_body = ""
+        logger.error(f"✗ Error HTTP importando a Fuseki: {e.code} {e.reason}")
+        if error_body:
+            logger.error(error_body)
+        logger.error("")
         return False
     except Exception as e:
-        logger.error(f"✗ Error importando a GraphDB: {e}\n")
+        logger.error(f"✗ Error importando a Fuseki: {e}\n")
         return False
 
 
-def run_pipeline(max_movies: int = None, skip_enrichment: bool = False, skip_import: bool = False) -> bool:
+def run_pipeline(
+    max_movies: int = None,
+    skip_enrichment: bool = False,
+    skip_import: bool = False,
+    incremental: bool = True,
+    fuseki_url: str = "http://localhost:3030",
+    fuseki_dataset: str = "movies",
+    fuseki_user: str = "",
+    fuseki_password: str = ""
+) -> bool:
     """
     Ejecuta el pipeline completo de procesamiento.
     
     Args:
         max_movies: Número máximo de películas a procesar (None = todas)
         skip_enrichment: Si True, omite el enriquecimiento (usa datos existentes)
-        skip_import: Si True, omite la importación a GraphDB
+        skip_import: Si True, omite la importación a Fuseki
+        incremental: Si True, hace merge incremental (upsert) en vez de sobrescritura total
         
     Returns:
         True si todo el pipeline fue exitoso
@@ -164,13 +218,20 @@ def run_pipeline(max_movies: int = None, skip_enrichment: bool = False, skip_imp
     logger.info("="*70)
     logger.info(f"Películas a procesar: {max_movies if max_movies else 'TODAS'}")
     logger.info(f"Omitir enriquecimiento: {skip_enrichment}")
-    logger.info(f"Omitir importación GraphDB: {skip_import}")
+    logger.info(f"Omitir importación Fuseki: {skip_import}")
+    logger.info(f"Modo incremental: {incremental}")
+    logger.info(f"Fuseki URL: {fuseki_url}")
+    logger.info(f"Fuseki Dataset: {fuseki_dataset}")
     logger.info("="*70 + "\n")
     
     steps = []
     
     # PASO 1: ETL - Carga y procesamiento base
-    etl_args = ['--max-movies', str(max_movies)] if max_movies else None
+    etl_args = []
+    if max_movies:
+        etl_args.extend(['--max-movies', str(max_movies)])
+    if not incremental:
+        etl_args.append('--no-incremental')
     steps.append({
         'script': ETL_DIR / 'data_loader.py',
         'description': 'ETL - Carga y procesamiento de datos base',
@@ -179,7 +240,11 @@ def run_pipeline(max_movies: int = None, skip_enrichment: bool = False, skip_imp
     
     if not skip_enrichment:
         # PASO 2: Enrichment - APIs externas
-        enrichment_args = ['--max-movies', str(max_movies)] if max_movies else None
+        enrichment_args = []
+        if max_movies:
+            enrichment_args.extend(['--max-movies', str(max_movies)])
+        if not incremental:
+            enrichment_args.append('--no-incremental')
         steps.append({
             'script': ENRICHMENT_DIR / 'enrichment.py',
             'description': 'Enrichment - Enriquecimiento con TMDb/OMDb',
@@ -187,7 +252,11 @@ def run_pipeline(max_movies: int = None, skip_enrichment: bool = False, skip_imp
         })
         
         # PASO 3: NLP Inference
-        nlp_args = ['--max-movies', str(max_movies)] if max_movies else None
+        nlp_args = []
+        if max_movies:
+            nlp_args.extend(['--max-movies', str(max_movies)])
+        if not incremental:
+            nlp_args.append('--no-incremental')
         steps.append({
             'script': ENRICHMENT_DIR / 'nlp_inference.py',
             'description': 'NLP Inference - Inferencias contextuales',
@@ -197,7 +266,11 @@ def run_pipeline(max_movies: int = None, skip_enrichment: bool = False, skip_imp
         logger.info("⊘ Omitiendo enriquecimiento (usando datos existentes)\n")
     
     # PASO 4: RDF Generation - Películas
-    rdf_args = [str(max_movies)] if max_movies else None
+    rdf_args = []
+    if max_movies:
+        rdf_args.extend(['--max-movies', str(max_movies)])
+    if not incremental:
+        rdf_args.append('--no-incremental')
     steps.append({
         'script': RDF_DIR / 'rdf_generator.py',
         'description': 'RDF Generation - Tripletas de películas',
@@ -226,14 +299,19 @@ def run_pipeline(max_movies: int = None, skip_enrichment: bool = False, skip_imp
             logger.error(f"✗ Pipeline FALLÓ en el paso {i}")
             return False
     
-    # PASO 7: Importar a GraphDB (opcional)
+    # PASO 7: Importar a Fuseki (opcional)
     if not skip_import:
-        logger.info(f"\n>>> PASO FINAL: Importación a GraphDB")
-        if not import_to_graphdb():
-            logger.error("✗ Pipeline FALLÓ en la importación a GraphDB")
+        logger.info(f"\n>>> PASO FINAL: Importación a Fuseki")
+        if not import_to_fuseki(
+            fuseki_url=fuseki_url,
+            fuseki_dataset=fuseki_dataset,
+            fuseki_user=fuseki_user,
+            fuseki_password=fuseki_password,
+        ):
+            logger.error("✗ Pipeline FALLÓ en la importación a Fuseki")
             return False
     else:
-        logger.info("\n⊘ Omitiendo importación a GraphDB")
+        logger.info("\n⊘ Omitiendo importación a Fuseki")
     
     # Limpiar archivos intermedios
     cleanup_intermediate_files()
@@ -244,10 +322,10 @@ def run_pipeline(max_movies: int = None, skip_enrichment: bool = False, skip_imp
     logger.info("="*70)
     logger.info("\nPróximos pasos:")
     if skip_import:
-        logger.info("  - Ejecuta el pipeline con importación para actualizar GraphDB")
-        logger.info("  - O ejecuta manualmente: docker exec graphdb-tesis /bin/bash /docker-entrypoint-initdb.d/02-import-ontologies.sh")
+        logger.info("  - Ejecuta el pipeline con importación para actualizar Fuseki")
+        logger.info("  - Revisa que Fuseki esté disponible en: http://localhost:3030")
     else:
-        logger.info("  - Verifica los datos en GraphDB: http://localhost:7200")
+        logger.info("  - Verifica los datos en Fuseki: http://localhost:3030")
         logger.info("  - Ejecuta queries SPARQL para validar la importación")
     logger.info("="*70 + "\n")
     
@@ -271,6 +349,9 @@ Ejemplos de uso:
   
   # Generar archivos sin importar a GraphDB
   python pipeline.py --skip-import
+
+    # Importar a Fuseki especificando dataset
+    python pipeline.py --fuseki-dataset Cine
   
   # Combinación: 500 películas sin importar
   python pipeline.py --max-movies 500 --skip-import
@@ -292,7 +373,41 @@ Ejemplos de uso:
     parser.add_argument(
         '--skip-import',
         action='store_true',
-        help='Omitir importación a GraphDB'
+        help='Omitir importación a Fuseki'
+    )
+
+    parser.add_argument(
+        '--no-incremental',
+        action='store_true',
+        help='Desactiva merge incremental y sobrescribe salidas con el lote actual'
+    )
+
+    parser.add_argument(
+        '--fuseki-url',
+        type=str,
+        default='http://localhost:3030',
+        help='URL base de Fuseki (default: http://localhost:3030)'
+    )
+
+    parser.add_argument(
+        '--fuseki-dataset',
+        type=str,
+        default='movies',
+        help='Nombre del dataset de Fuseki (default: movies)'
+    )
+
+    parser.add_argument(
+        '--fuseki-user',
+        type=str,
+        default='',
+        help='Usuario para autenticación básica de Fuseki (opcional)'
+    )
+
+    parser.add_argument(
+        '--fuseki-password',
+        type=str,
+        default='',
+        help='Contraseña para autenticación básica de Fuseki (opcional)'
     )
     
     args = parser.parse_args()
@@ -301,7 +416,12 @@ Ejemplos de uso:
     success = run_pipeline(
         max_movies=args.max_movies,
         skip_enrichment=args.skip_enrichment,
-        skip_import=args.skip_import
+        skip_import=args.skip_import,
+        incremental=not args.no_incremental,
+        fuseki_url=args.fuseki_url,
+        fuseki_dataset=args.fuseki_dataset,
+        fuseki_user=args.fuseki_user,
+        fuseki_password=args.fuseki_password,
     )
     
     # Exit code según resultado

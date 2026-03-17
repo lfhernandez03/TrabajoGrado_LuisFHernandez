@@ -79,7 +79,13 @@ class MovieLensLoader:
         
         return df
 
-    def save_processed_data(self, df, output_path: Path | str | None = None):
+    def save_processed_data(
+        self,
+        df,
+        output_path: Path | str | None = None,
+        max_movies: int | None = None,
+        incremental: bool = True
+    ):
         """Guarda el DataFrame procesado en CSV"""
         import os
         output_dir = Path(output_path) if output_path else PROCESSED_DIR
@@ -90,6 +96,19 @@ class MovieLensLoader:
         df_copy = df.copy()
         df_copy['genres_list'] = df_copy['genres_list'].apply(lambda x: '|'.join(x) if isinstance(x, list) else x)
         filepath = output_dir / "movies_processed.csv"
+
+        if incremental and filepath.exists():
+            logger.info("Modo incremental ETL: combinando con movies_processed.csv existente")
+            existing_df = pd.read_csv(filepath)
+            df_copy = pd.concat([existing_df, df_copy], ignore_index=True)
+            df_copy = df_copy.drop_duplicates(subset=['movieId'], keep='last')
+
+        if 'avg_rating' in df_copy.columns and 'rating_count' in df_copy.columns:
+            df_copy = df_copy.sort_values(by=['avg_rating', 'rating_count'], ascending=[False, False])
+
+        if max_movies:
+            df_copy = df_copy.head(max_movies)
+
         df_copy.to_csv(filepath, index=False)
         logger.info(f"Datos guardados en: {filepath}")
         return filepath
@@ -101,6 +120,11 @@ if __name__ == "__main__":
     # Parse command line arguments
     parser = argparse.ArgumentParser(description='Carga y procesa datos de MovieLens')
     parser.add_argument('--max-movies', type=int, default=None, help='Numero maximo de peliculas a procesar')
+    parser.add_argument(
+        '--no-incremental',
+        action='store_true',
+        help='Desactiva merge incremental y sobrescribe salida con el lote actual'
+    )
     args = parser.parse_args()
     
     max_movies = args.max_movies
@@ -115,4 +139,8 @@ if __name__ == "__main__":
     # Ordenar por promedio de rating (descendente) y cantidad de ratings
     df = df.sort_values(by=['avg_rating', 'rating_count'], ascending=[False, False])
     # Guardar datos procesados
-    loader.save_processed_data(df)
+    loader.save_processed_data(
+        df,
+        max_movies=max_movies,
+        incremental=not args.no_incremental
+    )
