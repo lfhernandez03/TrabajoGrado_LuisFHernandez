@@ -18,7 +18,7 @@ class Settings(BaseSettings):
     jwt_secret: str = "change_me"
     jwt_algorithm: str = "HS256"
     jwt_expire_minutes: int = 1440
-    gemini_model: str = "gemini-2.0-flash"
+    gemini_model: str = "gemini-2.5-flash"
     admin_emails: str = ""
     cors_allowed_origins: str = "http://localhost:3000"
 

@@ -279,21 +279,21 @@ def build_cross_ontology_sparql_from_signals(
 
     mood_filter = ""
     if mood_es:
-        mood_filter = f'  ?movie bridge:compatibleMood "{_escape_sparql_literal(mood_es)}" .\n'
+        mood_filter = f'  OPTIONAL {{ ?movie bridge:compatibleMood ?compatibleMood }}\n  FILTER(!BOUND(?compatibleMood) || ?compatibleMood = "{_escape_sparql_literal(mood_es)}")\n'
 
     companion_filter = ""
     if companion_es:
         companion_filter = (
-            f'  ?movie bridge:compatibleCompanion "{_escape_sparql_literal(companion_es)}" .\n'
+            f'  OPTIONAL {{ ?movie bridge:compatibleCompanion ?compatibleCompanion }}\n  FILTER(!BOUND(?compatibleCompanion) || ?compatibleCompanion = "{_escape_sparql_literal(companion_es)}")\n'
         )
 
     energy_filter = ""
     if energy_es:
         energy_filter = (
-            f'  ?movie bridge:compatibleEnergyLevel "{_escape_sparql_literal(energy_es)}" .\n'
+            f'  OPTIONAL {{ ?movie bridge:compatibleEnergyLevel ?compatibleEnergyLevel }}\n  FILTER(!BOUND(?compatibleEnergyLevel) || ?compatibleEnergyLevel = "{_escape_sparql_literal(energy_es)}")\n'
         )
 
-    children_filter = "  ?movie bridge:isKidFriendly true .\n" if has_children else ""
+    children_filter = "  OPTIONAL { ?movie bridge:isKidFriendly ?kidFriendlyOptional }\n  FILTER(!BOUND(?kidFriendlyOptional) || ?kidFriendlyOptional = true)\n" if has_children else ""
     runtime_filter = (
         f"  FILTER(!BOUND(?runtime) || ?runtime <= {int(runtime_max)})\n"
         if runtime_max is not None

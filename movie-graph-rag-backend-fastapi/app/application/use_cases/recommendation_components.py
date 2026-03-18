@@ -1,6 +1,11 @@
 from __future__ import annotations
 
+import logging
+
 from app.core.fuseki_client import FusekiQueryError, execute_select_query
+
+
+_sparql_logger = logging.getLogger("sparql_debug")
 
 
 def parse_optional_float(value: object) -> float | None:
@@ -307,10 +312,13 @@ def fetch_fuseki_candidates(
     seen_titles: set[str] = set()
 
     for attempt_name, attempt_query in query_attempts:
+        _sparql_logger.debug("[SPARQL ATTEMPT] %s", attempt_name)
         selected_query = attempt_query
         try:
             raw_rows = execute_select_query(attempt_query)
-        except FusekiQueryError:
+            _sparql_logger.debug("[SPARQL RESULT] %s rows", len(raw_rows))
+        except FusekiQueryError as exc:
+            _sparql_logger.debug("[SPARQL ERROR] %s", str(exc)[:200])
             continue
         fuseki_rows_count += len(raw_rows)
 

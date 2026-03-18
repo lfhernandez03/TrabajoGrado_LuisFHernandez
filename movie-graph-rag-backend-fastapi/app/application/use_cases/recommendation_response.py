@@ -49,7 +49,6 @@ def build_recommendation_response(
     movies_with_scores: list[dict],
     explanation: str,
     execution_time_ms: int,
-    semantic_explanation: str = "",
 ) -> dict:
     return {
         "query": query,
@@ -59,7 +58,6 @@ def build_recommendation_response(
         "moviesFound": len(movies_with_scores),
         "moviesWithScores": movies_with_scores,
         "explanation": explanation,
-        "semanticExplanation": semantic_explanation,
         "executionTimeMs": execution_time_ms,
     }
 

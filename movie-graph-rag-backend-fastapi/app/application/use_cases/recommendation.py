@@ -1,4 +1,4 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime
 from collections import Counter
 import asyncio
@@ -78,16 +78,6 @@ _IMPLICIT_SIGNAL_BASE = 1.0  # search history
 # Rich SPARQL parameter object (improvement #5)
 # ---------------------------------------------------------------------------
 
-@dataclass
-class SparqlParams:
-    genres: list[str] = field(default_factory=list)
-    runtime_max: int | None = None
-    director: str | None = None
-    year_min: int | None = None
-    year_max: int | None = None
-    exclude_titles: list[str] = field(default_factory=list)
-    limit: int = 30
-
 
 class SemanticSnapshot(BaseModel):
     snapshotID: str
@@ -128,67 +118,6 @@ class RecommendationUseCase:
             explicit_signal_base=_EXPLICIT_SIGNAL_BASE,
             implicit_signal_base=_IMPLICIT_SIGNAL_BASE,
             profile_cache_ttl_seconds=180,
-        )
-
-    def _build_sparql_query(self, params: SparqlParams) -> str:
-        return rc_build_sparql_query(
-            genres=params.genres,
-            runtime_max=params.runtime_max,
-            director=params.director,
-            year_min=params.year_min,
-            year_max=params.year_max,
-            exclude_titles=params.exclude_titles,
-            limit=params.limit,
-        )
-
-    def _build_query_attempts(
-        self,
-        preferred_genres: list[str],
-        runtime_max: int | None,
-        director_hint: str | None,
-        year_min: int | None,
-        year_max: int | None,
-        excluded_titles: set[str],
-        ontology_attempts: list[tuple[str, str]] | None = None,
-    ) -> list[tuple[str, str]]:
-        return rc_build_query_attempts(
-            ontology_attempts=ontology_attempts,
-            preferred_genres=preferred_genres,
-            runtime_max=runtime_max,
-            director_hint=director_hint,
-            year_min=year_min,
-            year_max=year_max,
-            excluded_titles=excluded_titles,
-        )
-
-    def _build_rdf_context(
-        self,
-        snapshot_id: str,
-        query: str,
-        social_context: dict | None,
-        emotional_context: dict | None,
-        requirement_context: dict | None,
-        preferred_genres: list[str],
-    ) -> str:
-        return rc_build_rdf_context(
-            snapshot_id=snapshot_id,
-            query=query,
-            social_context=social_context,
-            emotional_context=emotional_context,
-            requirement_context=requirement_context,
-            preferred_genres=preferred_genres,
-        )
-
-    def _fetch_fuseki_candidates(
-        self,
-        query_attempts: list[tuple[str, str]],
-        excluded_titles: set[str],
-        minimum_candidates: int = 5,
-    ) -> tuple[list[dict], int, str, str]:
-        return rc_fetch_fuseki_candidates(
-            query_attempts=query_attempts,
-            excluded_titles=excluded_titles,
-            minimum_candidates=minimum_candidates,
         )
 
     def _derive_activity_signals(
@@ -359,6 +288,35 @@ class RecommendationUseCase:
     ) -> None:
         self._activity_last_signal_counts[user_id] = (favorites_count, history_count)
         self._activity_last_intent[user_id] = user_intent
+
+    def _finish_activity_response(
+        self,
+        *,
+        response: dict,
+        snapshot: SemanticSnapshot,
+        user_id: str,
+        favorites_count: int,
+        history_count: int,
+        current_intent: str,
+    ) -> dict:
+        try:
+            self.signal_service.cache_activity_snapshot(
+                user_id,
+                {
+                    "snapshot": snapshot.model_dump(mode="python"),
+                    "response": response,
+                },
+            )
+            self._mark_activity_recalculated(
+                user_id=user_id,
+                favorites_count=favorites_count,
+                history_count=history_count,
+                user_intent=current_intent,
+            )
+        except Exception:
+            pass
+        logger.info("[RECALCULATED] user_id=%s", user_id)
+        return response
 
     def _build_network_cold_start_recommendation(self, user_id: str) -> dict | None:
         self._maybe_refresh_weights(user_id=user_id)
@@ -641,21 +599,14 @@ class RecommendationUseCase:
                         "dominantMood": mood_es,
                         "dominantCompanion": companion_es,
                     }
-                    self.signal_service.cache_activity_snapshot(
-                        user_id,
-                        {
-                            "snapshot": snapshot.model_dump(mode="python"),
-                            "response": response,
-                        },
-                    )
-                    self._mark_activity_recalculated(
+                    return self._finish_activity_response(
+                        response=response,
+                        snapshot=snapshot,
                         user_id=user_id,
                         favorites_count=favorites_count,
                         history_count=history_count,
-                        user_intent=current_intent,
+                        current_intent=current_intent,
                     )
-                    logger.info("[RECALCULATED] user_id=%s", user_id)
-                    return response
 
         cold_start_response = self._build_network_cold_start_recommendation(user_id)
         if cold_start_response is not None:
@@ -664,25 +615,15 @@ class RecommendationUseCase:
                 "dominantMood": mood_es,
                 "dominantCompanion": companion_es,
             }
-            try:
-                cold_snapshot = SemanticSnapshot.model_validate(cold_start_response["contextExtracted"])
-                self.signal_service.cache_activity_snapshot(
-                    user_id,
-                    {
-                        "snapshot": cold_snapshot.model_dump(mode="python"),
-                        "response": cold_start_response,
-                    },
-                )
-                self._mark_activity_recalculated(
-                    user_id=user_id,
-                    favorites_count=favorites_count,
-                    history_count=history_count,
-                    user_intent=current_intent,
-                )
-            except Exception:
-                pass
-            logger.info("[RECALCULATED] user_id=%s", user_id)
-            return cold_start_response
+            cold_snapshot = SemanticSnapshot.model_validate(cold_start_response["contextExtracted"])
+            return self._finish_activity_response(
+                response=cold_start_response,
+                snapshot=cold_snapshot,
+                user_id=user_id,
+                favorites_count=favorites_count,
+                history_count=history_count,
+                current_intent=current_intent,
+            )
 
         fallback_query = "Recomendación cold start basada en centralidad de red"
         fallback_response = {
@@ -709,25 +650,15 @@ class RecommendationUseCase:
                 "dominantCompanion": companion_es,
             },
         }
-        try:
-            fallback_snapshot = SemanticSnapshot.model_validate(fallback_response["contextExtracted"])
-            self.signal_service.cache_activity_snapshot(
-                user_id,
-                {
-                    "snapshot": fallback_snapshot.model_dump(mode="python"),
-                    "response": fallback_response,
-                },
-            )
-            self._mark_activity_recalculated(
-                user_id=user_id,
-                favorites_count=favorites_count,
-                history_count=history_count,
-                user_intent=current_intent,
-            )
-        except Exception:
-            pass
-        logger.info("[RECALCULATED] user_id=%s", user_id)
-        return fallback_response
+        fallback_snapshot = SemanticSnapshot.model_validate(fallback_response["contextExtracted"])
+        return self._finish_activity_response(
+            response=fallback_response,
+            snapshot=fallback_snapshot,
+            user_id=user_id,
+            favorites_count=favorites_count,
+            history_count=history_count,
+            current_intent=current_intent,
+        )
 
     def _build_recommendation(
         self,
@@ -737,7 +668,6 @@ class RecommendationUseCase:
     ) -> tuple[dict, dict]:
         self._maybe_refresh_weights(user_id=user_id)
         total_start = perf_counter()
-        query_lower = query.lower()
         excluded_normalized = {
             title.strip().lower()
             for title in (excluded_titles or set())
@@ -753,17 +683,6 @@ class RecommendationUseCase:
 
         # --- Semantic NLU (LLM with keyword fallback) ---
         nlu = self.llm_client.extract_query_context(query)
-        import logging
-        _nlu_logger = logging.getLogger("nlu_debug")
-        _nlu_logger.setLevel(logging.DEBUG)
-        _nlu_logger.debug(
-            "[NLU] query=%r | mood=%r | intent=%r | social=%r | genres=%r",
-            query,
-            nlu.mood,
-            nlu.intent,
-            nlu.social_context,
-            nlu.genres,
-        )
         mood_to_energy = {
             "relaxed": "low",
             "excited": "high",
@@ -806,7 +725,7 @@ class RecommendationUseCase:
         except Exception:
             graph_uri = ""
 
-        rdf_generated = self._build_rdf_context(
+        rdf_generated = rc_build_rdf_context(
             snapshot_id=context_snapshot_id,
             query=query,
             social_context=social_context,
@@ -823,16 +742,14 @@ class RecommendationUseCase:
         _year_min = int(year_range[0]) if year_range and len(year_range) >= 1 else None
         _year_max = int(year_range[1]) if year_range and len(year_range) >= 2 else None
 
-        sparql_query = self._build_sparql_query(
-            SparqlParams(
-                genres=preferred_genres,
-                runtime_max=_runtime_max,
-                director=director_hint,
-                year_min=_year_min,
-                year_max=_year_max,
-                exclude_titles=sorted(excluded_normalized)[:10],
-                limit=30,
-            )
+        sparql_query = rc_build_sparql_query(
+            genres=preferred_genres,
+            runtime_max=_runtime_max,
+            director=director_hint,
+            year_min=_year_min,
+            year_max=_year_max,
+            exclude_titles=sorted(excluded_normalized)[:10],
+            limit=30,
         )
         timings["rdfAndSparqlBuild"] = elapsed_ms(build_query_start)
 
@@ -844,14 +761,14 @@ class RecommendationUseCase:
             ctx=nlu,
             excluded_normalized=excluded_normalized,
         )
-        query_attempts = self._build_query_attempts(
+        query_attempts = rc_build_query_attempts(
+            ontology_attempts=ontology_attempts,
             preferred_genres=preferred_genres,
             runtime_max=_runtime_max,
             director_hint=director_hint,
             year_min=_year_min,
             year_max=_year_max,
             excluded_titles=excluded_normalized,
-            ontology_attempts=ontology_attempts,
         )
 
         try:
@@ -860,7 +777,7 @@ class RecommendationUseCase:
                 fuseki_rows_count,
                 fuseki_strategy,
                 selected_query,
-            ) = self._fetch_fuseki_candidates(
+            ) = rc_fetch_fuseki_candidates(
                 query_attempts=query_attempts,
                 excluded_titles=excluded_normalized,
                 minimum_candidates=5,

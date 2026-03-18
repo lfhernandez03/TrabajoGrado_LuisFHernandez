@@ -1,5 +1,6 @@
 from fastapi import APIRouter
 
+from app.adapters.llm.gemini_recommendation_llm_adapter import GeminiRecommendationLlmAdapter
 from app.core.database import ping_mongo
 
 router = APIRouter(prefix="/health")
@@ -15,3 +16,9 @@ def health_check_db() -> dict[str, str]:
     if ping_mongo():
         return {"status": "ok", "scope": "v1", "database": "mongo"}
     return {"status": "error", "scope": "v1", "database": "mongo"}
+
+
+@router.get("/gemini")
+def health_check_gemini() -> dict[str, str]:
+    health = GeminiRecommendationLlmAdapter().get_connection_health()
+    return {"scope": "v1", **health}

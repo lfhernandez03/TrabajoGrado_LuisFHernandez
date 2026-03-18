@@ -1,16 +1,13 @@
 from __future__ import annotations
 
 import json
-import logging
 import re
 
-try:
-    from google import genai
-except ImportError:
-    genai = None
+from google import genai
 
 from app.core.config import settings
 from app.domain.entities.query_context import QueryContext
+from app.domain.ports.recommendation_llm_client import RecommendationLlmClientPort
 
 
 _NLU_SYSTEM_PROMPT = (
@@ -84,56 +81,7 @@ QUERY_TYPE_INSTRUCTIONS: dict[str, str] = {
 }
 
 
-class GeminiRecommendationLlmAdapter:
-    def __init__(self) -> None:
-        self._gemini_connection_logged_ok = False
-
-    def _log_gemini_connection_ok(self, operation: str) -> None:
-        if self._gemini_connection_logged_ok:
-            return
-        logging.getLogger("gemini_health").info(
-            "[GEMINI CONNECTION] status=ok | operation=%s | model=%s",
-            operation,
-            settings.gemini_model,
-        )
-        self._gemini_connection_logged_ok = True
-
-    def _log_gemini_connection_error(self, operation: str, exc: Exception) -> None:
-        self._gemini_connection_logged_ok = False
-        logging.getLogger("gemini_health").warning(
-            "[GEMINI CONNECTION] status=error | operation=%s | model=%s | reason=%s",
-            operation,
-            settings.gemini_model,
-            str(exc)[:200],
-        )
-
-    def _get_client(self):
-        if genai is None:
-            return None
-        api_key = settings.gemini_api_key
-        if not api_key:
-            return None
-        return genai.Client(api_key=api_key)
-
-    def _extract_response_text(self, response: object) -> str | None:
-        text = getattr(response, "text", None)
-        if isinstance(text, str) and text.strip():
-            return text.strip()
-
-        candidates = getattr(response, "candidates", None)
-        if not candidates:
-            return None
-        first_candidate = candidates[0]
-        content = getattr(first_candidate, "content", None)
-        parts = getattr(content, "parts", None) if content is not None else None
-        if not parts:
-            return None
-        first_part = parts[0]
-        part_text = getattr(first_part, "text", None)
-        if isinstance(part_text, str) and part_text.strip():
-            return part_text.strip()
-        return None
-
+class GeminiRecommendationLlmAdapter(RecommendationLlmClientPort):
     def _keyword_extract_context(self, query_lower: str) -> QueryContext:
         social_context = None
         if any(token in query_lower for token in ["solo", "sola", "yo solo", "yo sola"]):
@@ -238,15 +186,8 @@ class GeminiRecommendationLlmAdapter:
         )
 
     def extract_query_context(self, query: str) -> QueryContext:
-        client = self._get_client()
-        query_lower = query.lower()
-
-        if client is None:
-            if genai is None:
-                logging.getLogger("nlu_debug").debug("[NLU SOURCE] keyword_fallback | reason='google-genai missing'")
-            return self._keyword_extract_context(query_lower)
-
         try:
+            client = genai.Client(api_key=settings.gemini_api_key)
             response = client.models.generate_content(
                 model=settings.gemini_model,
                 contents=query,
@@ -257,24 +198,10 @@ class GeminiRecommendationLlmAdapter:
                     response_mime_type="application/json",
                 ),
             )
-            self._log_gemini_connection_ok("extract_query_context")
-            content = self._extract_response_text(response)
-            if not content:
-                return self._keyword_extract_context(query_lower)
-            if content.startswith("```"):
-                content = content.strip("`")
-                if content.lower().startswith("json"):
-                    content = content[4:].strip()
-            data = json.loads(content)
-            result = QueryContext.model_validate(data)
-            nlu_logger = logging.getLogger("nlu_debug")
-            nlu_logger.debug("[NLU SOURCE] gemini_flash_sdk | mood=%r | raw=%r", result.mood, content[:120])
-            return result
-        except Exception as exc:
-            self._log_gemini_connection_error("extract_query_context", exc)
-            nlu_logger = logging.getLogger("nlu_debug")
-            nlu_logger.debug("[NLU SOURCE] keyword_fallback | reason=%r", str(exc)[:80])
-            return self._keyword_extract_context(query_lower)
+            data = json.loads(response.text)
+            return QueryContext.model_validate(data)
+        except Exception:
+            return self._keyword_extract_context(query.lower())
 
     def _build_prompt(
         self,
@@ -362,20 +289,15 @@ class GeminiRecommendationLlmAdapter:
         semantic_hint: str = "",
         query_type: str = "general",
     ) -> str:
-        client = self._get_client()
-        if client is None:
-            if genai is None:
-                logging.getLogger("nlu_debug").debug("[LLM SOURCE] fallback_explanation | reason='google-genai missing'")
-            return self._fallback_explanation(query, context_summary, movies_with_scores)
-
-        prompt = self._build_prompt(
-            query,
-            context_summary,
-            movies_with_scores,
-            semantic_hint,
-            query_type,
-        )
         try:
+            prompt = self._build_prompt(
+                query,
+                context_summary,
+                movies_with_scores,
+                semantic_hint,
+                query_type,
+            )
+            client = genai.Client(api_key=settings.gemini_api_key)
             response = client.models.generate_content(
                 model=settings.gemini_model,
                 contents=prompt,
@@ -383,17 +305,12 @@ class GeminiRecommendationLlmAdapter:
                     system_instruction=(
                         "Eres un asistente de recomendación de películas. "
                         "Responde siempre en español. "
-                        "Sigue exactamente las instrucciones de formato y longitud que recibirás en el mensaje del usuario."
+                        "Sigue exactamente las instrucciones de formato y longitud."
                     ),
                     temperature=0.4,
-                    max_output_tokens=220,
+                    max_output_tokens=300,
                 ),
             )
-            self._log_gemini_connection_ok("generate_recommendation_explanation")
-            content = self._extract_response_text(response)
-            if not content:
-                return self._fallback_explanation(query, context_summary, movies_with_scores)
-            return content or self._fallback_explanation(query, context_summary, movies_with_scores)
-        except Exception as exc:
-            self._log_gemini_connection_error("generate_recommendation_explanation", exc)
+            return response.text
+        except Exception:
             return self._fallback_explanation(query, context_summary, movies_with_scores)

@@ -170,6 +170,7 @@ La API abre conexión a MongoDB al iniciar y la cierra al apagar.
 - `GET /health`
 - `GET /api/v1/health`
 - `GET /api/v1/health/db`
+- `GET /api/v1/health/gemini`
 - `POST /api/v1/auth/register`
 - `POST /api/v1/auth/login`
 - `POST /api/v1/auth/token` (OAuth2 form login para Swagger Authorize)

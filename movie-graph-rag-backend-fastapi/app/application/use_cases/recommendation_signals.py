@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import math
-from collections import Counter
 from datetime import datetime
 
 from app.application.use_cases.query_history import QueryHistoryUseCase
@@ -161,25 +160,6 @@ class RecommendationSignalService:
         favorites = self.favorites_use_case.get_my_favorites(user_id)
         history = self.history_use_case.find_by_user(user_id=user_id, limit=20)
 
-        genre_counter: Counter[str] = Counter()
-        director_counter: Counter[str] = Counter()
-        recent_titles: list[str] = []
-        now_ts = datetime.utcnow()
-
-        for movie in favorites:
-            weight = self.decayed_signal_weight(
-                base_weight=self.explicit_signal_base,
-                interaction_at=movie.addedAt,
-                now_ts=now_ts,
-            )
-            for genre in movie.genres or []:
-                if genre:
-                    genre_counter[str(genre).strip()] += weight
-            if movie.director:
-                director_counter[str(movie.director).strip()] += weight
-            if movie.title and len(recent_titles) < 4:
-                recent_titles.append(movie.title.strip())
-
         ignored_queries = {
             "busqueda de peliculas",
             "búsqueda de películas",
@@ -205,34 +185,8 @@ class RecommendationSignalService:
             if raw_query not in recent_queries and len(recent_queries) < 3:
                 recent_queries.append(raw_query)
 
-            weight = self.decayed_signal_weight(
-                base_weight=self.implicit_signal_base,
-                interaction_at=entry.createdAt,
-                now_ts=now_ts,
-            )
-
-            for result in entry.resultsFound or []:
-                if not isinstance(result, dict):
-                    continue
-                if result.get("genreName"):
-                    genre_counter[str(result["genreName"]).strip()] += weight
-                if result.get("director"):
-                    director_counter[str(result["director"]).strip()] += weight
-                result_genres = result.get("genres")
-                if isinstance(result_genres, list):
-                    for genre in result_genres:
-                        if genre:
-                            genre_counter[str(genre).strip()] += weight
-                if result.get("title") and len(recent_titles) < 6:
-                    title = str(result["title"]).strip()
-                    if title and title not in recent_titles:
-                        recent_titles.append(title)
-
         return {
             "favorites": favorites,
             "history": history,
-            "genre_counter": genre_counter,
-            "director_counter": director_counter,
-            "recent_titles": recent_titles,
             "recent_queries": recent_queries,
         }
