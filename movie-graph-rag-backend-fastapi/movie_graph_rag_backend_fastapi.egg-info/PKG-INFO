@@ -6,12 +6,13 @@ Requires-Python: >=3.11
 Description-Content-Type: text/markdown
 Requires-Dist: fastapi>=0.115.0
 Requires-Dist: uvicorn[standard]>=0.30.0
+Requires-Dist: python-multipart>=0.0.9
 Requires-Dist: pydantic>=2.8.0
 Requires-Dist: pydantic-settings>=2.4.0
 Requires-Dist: python-dotenv>=1.0.1
 Requires-Dist: python-jose[cryptography]>=3.3.0
 Requires-Dist: passlib[bcrypt]>=1.7.4
-Requires-Dist: bcrypt<5.0.0,>=4.0.1
+Requires-Dist: bcrypt<4.1.0,>=4.0.1
 Requires-Dist: email-validator>=2.2.0
 Requires-Dist: pymongo>=4.8.0
 Provides-Extra: dev
@@ -23,6 +24,13 @@ Requires-Dist: mypy>=1.11.0; extra == "dev"
 # movie-graph-rag-backend-fastapi
 
 Starter project para migrar `movie-graph-rag-backend` (NestJS) a FastAPI.
+
+## Arranque rápido (Windows PowerShell)
+
+```powershell
+cd movie-graph-rag-backend-fastapi.venv\Scripts\Activate.ps1
+uvicorn app.main:app --reload --port 8000
+```
 
 ## Objetivo inicial
 
@@ -72,6 +80,96 @@ tests/
 - Si Fuseki no responde o no retorna resultados, hace fallback a señales de favoritos para mantener disponibilidad.
 - Las escrituras de historial/métricas son resilientes: si fallan, la recomendación igual se retorna y el error queda en `debug.errors`.
 - `POST /api/v1/recommendation/debug` devuelve la misma recomendación + diagnóstico (`source`, `fallbackUsed`, `errors`) y tiempos por etapa (`contextExtraction`, `rdfAndSparqlBuild`, `fusekiQuery`, `scoring`, `llmExplanation`, `historyWrite`, `total`).
+
+## Pruebas de contexto semántico (Rol 1 + Rol 2)
+
+Esta sección valida el ciclo completo de contexto en Fuseki:
+
+- **Rol 1 (snapshot efímero por sesión):** inyectar snapshot temporal por request y luego limpiarlo.
+- **Rol 2 (perfil histórico persistente):** archivar el snapshot en un grafo histórico por usuario y usarlo en actividad.
+
+### Prerrequisitos
+
+- API levantada en `http://127.0.0.1:8000`
+- Fuseki levantado con dataset `Cine`
+- Variables `.env` de Fuseki configuradas (`FUSEKI_URL`, `FUSEKI_DATASET`, `FUSEKI_USER`, `FUSEKI_PASSWORD`)
+
+### 1) Generar snapshot (Rol 1) y archivarlo (Rol 2)
+
+1. Registrar usuario (`POST /api/v1/auth/register`) y guardar `access_token`.
+2. Ejecutar:
+   - `POST /api/v1/recommendation/debug` con query contextual (por ejemplo: "Quiero algo relajado para ver en familia").
+3. Verificar en respuesta debug:
+   - `contextGraphInjected = true`
+
+### 2) Verificar historial persistente del usuario (Rol 2)
+
+Consultar en Fuseki (pestaña Query del dataset `Cine`):
+
+```sparql
+PREFIX context: <http://www.semanticweb.org/movierecommendation/ontologies/2025/context-ontology#>
+
+SELECT ?snapshotID ?requestTimestamp ?moodDescription ?companionType ?desiredEnergyLevel
+WHERE {
+  GRAPH <http://users/USER_ID/history> {
+    ?snapshot a context:ContextSnapshot ;
+              context:snapshotID ?snapshotID .
+    OPTIONAL { ?snapshot context:requestTimestamp ?requestTimestamp }
+    OPTIONAL {
+      ?snapshot context:feelsMood ?mood .
+      ?mood context:moodDescription ?moodDescription .
+      OPTIONAL { ?mood context:desiredEnergyLevel ?desiredEnergyLevel }
+    }
+    OPTIONAL {
+      ?snapshot context:withCompanion ?social .
+      ?social context:companionType ?companionType .
+    }
+  }
+}
+ORDER BY DESC(?requestTimestamp)
+LIMIT 20
+```
+
+Reemplazar `USER_ID` por el id real de Mongo del usuario autenticado.
+
+### 3) Verificar recomendación por actividad usando perfil semántico
+
+Llamar `GET /api/v1/recommendation/activity` con el mismo token y revisar:
+
+- `debugPayload.profileSource` (`fuseki_history` o `cold_start`)
+- `debugPayload.dominantMood`
+- `debugPayload.dominantCompanion`
+
+### 4) Validar limpieza del grafo efímero de sesión (Rol 1)
+
+```sparql
+SELECT ?g
+WHERE {
+  GRAPH ?g { ?s ?p ?o }
+  FILTER(STRSTARTS(STR(?g), "http://session/"))
+}
+LIMIT 20
+```
+
+No debería permanecer el snapshot de la request ya finalizada (se elimina tras intento de archivado).
+
+### Script automatizado de trazabilidad (Rol 1 + Rol 2)
+
+Se puede ejecutar un test end-to-end que:
+
+- registra un usuario temporal,
+- ejecuta recomendación debug,
+- valida inyección y limpieza de sesión,
+- valida archivado en historial por usuario,
+- ejecuta recommendation activity y revisa `debugPayload`.
+
+Comando:
+
+```bash
+python scripts/test_context_roles_traceability.py
+```
+
+El script imprime reporte `PASS/FAIL` por chequeo y retorna código `0` si todo pasa.
 
 ## Instalación
 

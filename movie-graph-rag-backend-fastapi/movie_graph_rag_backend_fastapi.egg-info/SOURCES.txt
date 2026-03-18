@@ -34,12 +34,18 @@ app/application/use_cases/auth_user.py
 app/application/use_cases/movies.py
 app/application/use_cases/query_history.py
 app/application/use_cases/recommendation.py
+app/application/use_cases/recommendation_adaptive_weights.py
+app/application/use_cases/recommendation_components.py
 app/application/use_cases/recommendation_metrics.py
+app/application/use_cases/recommendation_ranking.py
+app/application/use_cases/recommendation_response.py
+app/application/use_cases/recommendation_signals.py
 app/application/use_cases/user_favorites.py
 app/core/__init__.py
 app/core/config.py
 app/core/database.py
 app/core/fuseki_client.py
+app/core/ontology_query_builder.py
 app/core/recommendation_llm.py
 app/core/security.py
 app/domain/__init__.py
@@ -60,3 +66,4 @@ movie_graph_rag_backend_fastapi.egg-info/SOURCES.txt
 movie_graph_rag_backend_fastapi.egg-info/dependency_links.txt
 movie_graph_rag_backend_fastapi.egg-info/requires.txt
 movie_graph_rag_backend_fastapi.egg-info/top_level.txt
+tests/test_recommendation_adaptive_weights.py
