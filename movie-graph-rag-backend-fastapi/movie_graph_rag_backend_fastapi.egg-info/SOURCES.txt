@@ -3,6 +3,8 @@ pyproject.toml
 app/__init__.py
 app/main.py
 app/adapters/__init__.py
+app/adapters/llm/__init__.py
+app/adapters/llm/gemini_recommendation_llm_adapter.py
 app/adapters/repositories/__init__.py
 app/adapters/repositories/mongo_auth_user_repository.py
 app/adapters/repositories/mongo_movie_catalog_repository.py
@@ -52,6 +54,7 @@ app/domain/__init__.py
 app/domain/entities/__init__.py
 app/domain/entities/auth_user.py
 app/domain/entities/favorite_movie.py
+app/domain/entities/query_context.py
 app/domain/entities/query_history.py
 app/domain/entities/recommendation_metric.py
 app/domain/errors/__init__.py
@@ -59,6 +62,7 @@ app/domain/errors/auth.py
 app/domain/ports/__init__.py
 app/domain/ports/auth_user_repository.py
 app/domain/ports/query_history_repository.py
+app/domain/ports/recommendation_llm_client.py
 app/domain/ports/recommendation_metrics_repository.py
 app/domain/ports/user_favorites_repository.py
 movie_graph_rag_backend_fastapi.egg-info/PKG-INFO

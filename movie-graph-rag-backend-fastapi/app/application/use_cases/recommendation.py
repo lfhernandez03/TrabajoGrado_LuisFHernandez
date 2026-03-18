@@ -44,11 +44,8 @@ from app.core.ontology_query_builder import (
     delete_context_snapshot,
     inject_context_snapshot,
 )
-from app.core.recommendation_llm import (
-    QueryContext,
-    extract_query_context,
-    generate_recommendation_explanation,
-)
+from app.domain.entities.query_context import QueryContext
+from app.domain.ports.recommendation_llm_client import RecommendationLlmClientPort
 from app.domain.entities.query_history import QueryHistory
 from app.domain.entities.recommendation_metric import RecommendationMetric
 
@@ -109,10 +106,12 @@ class RecommendationUseCase:
         favorites_use_case: UserFavoritesUseCase,
         history_use_case: QueryHistoryUseCase,
         metrics_use_case: RecommendationMetricsUseCase,
+        llm_client: RecommendationLlmClientPort,
     ) -> None:
         self.favorites_use_case = favorites_use_case
         self.history_use_case = history_use_case
         self.metrics_use_case = metrics_use_case
+        self.llm_client = llm_client
         # NOTE: scoring_weights is global to this instance. If registered as a singleton
         # in the DI container (FastAPI default), weights are shared across all users.
         # To make weights per-user, move this dict to an external store keyed by user_id.
@@ -593,7 +592,7 @@ class RecommendationUseCase:
                         f"energy={energy_es or 'none'}, children={str(has_children).lower()}"
                     )
                     explanation = await asyncio.to_thread(
-                        generate_recommendation_explanation,
+                        self.llm_client.generate_recommendation_explanation,
                         query=activity_query,
                         context_summary=(
                             f"mood={mood_es or 'none'}, social={companion_es or 'none'}, "
@@ -601,6 +600,7 @@ class RecommendationUseCase:
                         ),
                         movies_with_scores=movies_with_scores,
                         semantic_hint=semantic_hint,
+                        query_type="activity",
                     )
 
                     snapshot = SemanticSnapshot(
@@ -752,7 +752,18 @@ class RecommendationUseCase:
         context_start = perf_counter()
 
         # --- Semantic NLU (LLM with keyword fallback) ---
-        nlu = extract_query_context(query)
+        nlu = self.llm_client.extract_query_context(query)
+        import logging
+        _nlu_logger = logging.getLogger("nlu_debug")
+        _nlu_logger.setLevel(logging.DEBUG)
+        _nlu_logger.debug(
+            "[NLU] query=%r | mood=%r | intent=%r | social=%r | genres=%r",
+            query,
+            nlu.mood,
+            nlu.intent,
+            nlu.social_context,
+            nlu.genres,
+        )
         mood_to_energy = {
             "relaxed": "low",
             "excited": "high",
@@ -912,11 +923,22 @@ class RecommendationUseCase:
             requirement_context=requirement_context,
         )
 
+        mood_driven_signal = bool(nlu.mood and preferred_genres)
+        if recommendation_source == "favorites_fallback" or not movies_with_scores:
+            query_type = "cold_start"
+        elif mood_driven_signal:
+            query_type = "mood_driven"
+        elif nlu.social_context:
+            query_type = "social"
+        else:
+            query_type = "general"
+
         llm_start = perf_counter()
-        explanation = generate_recommendation_explanation(
+        explanation = self.llm_client.generate_recommendation_explanation(
             query=query,
             context_summary=context_summary,
             movies_with_scores=movies_with_scores,
+            query_type=query_type,
         )
         timings["llmExplanation"] = elapsed_ms(llm_start)
 

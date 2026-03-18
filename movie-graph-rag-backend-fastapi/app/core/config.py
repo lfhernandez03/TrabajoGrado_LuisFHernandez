@@ -8,7 +8,7 @@ class Settings(BaseSettings):
     app_port: int = 8000
 
     mongo_uri: str = "mongodb://localhost:27017/movie-graph-rag"
-    groq_api_key: str = ""
+    gemini_api_key: str = ""
     fuseki_url: str = "http://localhost:3030"
     fuseki_dataset: str = "movies"
     fuseki_user: str = ""
@@ -18,7 +18,7 @@ class Settings(BaseSettings):
     jwt_secret: str = "change_me"
     jwt_algorithm: str = "HS256"
     jwt_expire_minutes: int = 1440
-    groq_model: str = "llama-3.1-8b-instant"
+    gemini_model: str = "gemini-2.0-flash"
     admin_emails: str = ""
     cors_allowed_origins: str = "http://localhost:3000"
 

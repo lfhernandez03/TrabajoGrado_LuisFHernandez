@@ -5,7 +5,7 @@ import logging
 from datetime import datetime
 
 from app.core.fuseki_client import execute_update_query
-from app.core.recommendation_llm import QueryContext
+from app.domain.entities.query_context import QueryContext
 
 logger = logging.getLogger(__name__)
 

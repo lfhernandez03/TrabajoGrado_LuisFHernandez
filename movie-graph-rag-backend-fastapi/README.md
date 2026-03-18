@@ -4,10 +4,9 @@ Starter project para migrar `movie-graph-rag-backend` (NestJS) a FastAPI.
 
 ## Arranque rápido (Windows PowerShell)
 
-```powershell
-cd movie-graph-rag-backend-fastapi.venv\Scripts\Activate.ps1
-uvicorn app.main:app --reload --port 8000
-```
+Con reload: & "c:/Users/luish/Documents/GitHub/TrabajoGrado_LuisFHernandez/movie-graph-rag-backend-fastapi/scripts/start-backend.ps1"
+Sin reload: & "c:/Users/luish/Documents/GitHub/TrabajoGrado_LuisFHernandez/movie-graph-rag-backend-fastapi/scripts/start-backend.ps1" -NoReload
+Puerto distinto: & "c:/Users/luish/Documents/GitHub/TrabajoGrado_LuisFHernandez/movie-graph-rag-backend-fastapi/scripts/start-backend.ps1" -Port 8010
 
 ## Objetivo inicial
 
@@ -46,7 +45,7 @@ tests/
 
 - Python 3.11+
 - MongoDB accesible por `MONGO_URI`
-- Opcional: `GROQ_API_KEY` (y `GROQ_MODEL`) para generar explicaciones narrativas con LLM
+- Opcional: `GEMINI_API_KEY` (y `GEMINI_MODEL`) para generar explicaciones narrativas con LLM (Gemini Flash)
 - Opcional: `ADMIN_EMAILS` (lista separada por comas) para asignar rol `admin` al registrar
 - Opcional: `FUSEKI_TIMEOUT_SECONDS` y `FUSEKI_MAX_RETRIES` para ajustar estabilidad/latencia de consultas SPARQL
 

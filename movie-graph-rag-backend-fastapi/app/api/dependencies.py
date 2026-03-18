@@ -2,6 +2,7 @@ from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordBearer
 from pymongo.database import Database
 
+from app.adapters.llm.gemini_recommendation_llm_adapter import GeminiRecommendationLlmAdapter
 from app.adapters.repositories.mongo_auth_user_repository import MongoAuthUserRepositoryAdapter
 from app.adapters.repositories.mongo_movie_catalog_repository import (
     MongoMovieCatalogRepositoryAdapter,
@@ -24,8 +25,13 @@ from app.application.use_cases.user_favorites import UserFavoritesUseCase
 from app.core.database import get_database
 from app.core.security import decode_access_token
 from app.domain.entities.auth_user import AuthUser
+from app.domain.ports.recommendation_llm_client import RecommendationLlmClientPort
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/token")
+
+
+def get_recommendation_llm_client() -> RecommendationLlmClientPort:
+    return GeminiRecommendationLlmAdapter()
 
 
 def get_auth_user_repository(
@@ -89,6 +95,7 @@ def get_recommendation_use_case(
     metrics_use_case: RecommendationMetricsUseCase = Depends(
         get_recommendation_metrics_use_case
     ),
+    llm_client: RecommendationLlmClientPort = Depends(get_recommendation_llm_client),
 ) -> RecommendationUseCase:
     recommendation_use_case = getattr(request.app.state, "recommendation_use_case", None)
     if recommendation_use_case is None:
@@ -96,6 +103,7 @@ def get_recommendation_use_case(
             favorites_use_case=favorites_use_case,
             history_use_case=history_use_case,
             metrics_use_case=metrics_use_case,
+            llm_client=llm_client,
         )
         request.app.state.recommendation_use_case = recommendation_use_case
     return recommendation_use_case
