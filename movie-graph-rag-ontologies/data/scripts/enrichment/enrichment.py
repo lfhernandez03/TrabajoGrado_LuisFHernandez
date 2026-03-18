@@ -19,11 +19,25 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 class MovieEnricher:
-    """Enriquece datos de peliculas con APIs externas (TMDB)"""
+    """Enriquece datos de peliculas con APIs externas (TMDB y OMDb)"""
 
     def __init__(self):
+        """Inicializa enriquecedor con validación de credenciales de API"""
         self.tmdb_key = TMDB_API_KEY
         self.omdb_key = OMDB_API_KEY
+        
+        # Validar que las API keys estén configuradas
+        if not self.tmdb_key or not self.omdb_key:
+            missing = []
+            if not self.tmdb_key:
+                missing.append("TMDB_API_KEY")
+            if not self.omdb_key:
+                missing.append("OMDB_API_KEY")
+            
+            error_msg = f"Missing required API credentials: {', '.join(missing)}. " \
+                       "Please set environment variables in .env file."
+            logger.error(error_msg)
+            raise ValueError(error_msg)
         
     def fetch_omdb_data(self, imdb_id):
         """Obtiene datos de OMDb API"""

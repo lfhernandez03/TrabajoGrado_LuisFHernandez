@@ -5,11 +5,21 @@ import uuid
 import sys
 from pathlib import Path
 
-# Agregar el directorio de config al path para importar namespaces
+# Agregar el directorio de config al path para importar namespaces y vocabulario centralizado
 sys.path.insert(0, str(Path(__file__).parent.parent / "config"))
 from namespaces import (
     CONTEXT_NS, CONTEXT_DATA_NS,
     RDF, RDFS, XSD, OWL, bind_all_namespaces
+)
+from vocabulary_standard import (
+    MOOD_VOCABULARY,
+    COMPANION_VOCABULARY,
+    ENERGY_VOCABULARY,
+    normalize_mood,
+    normalize_companion,
+    normalize_energy,
+    validate_all_moods_in_vocabulary,
+    validate_all_companions_in_vocabulary
 )
 
 logging.basicConfig(level=logging.INFO)
@@ -34,57 +44,22 @@ class RDFContextGenerator:
     """
     
     # ========================================================================
-    # VALORES NORMALIZADOS - VOCABULARIO CONTROLADO
+    # VOCABULARIO CENTRALIZADO - IMPORTADO DE vocabulary_standard.py
     # Estos valores DEBEN usarse para facilitar matching exacto en SPARQL
     # El LLM debe mapear lenguaje natural a estos valores estándar
     # ========================================================================
+    # 
+    # En lugar de definir vocabularios aquí, importamos desde vocabulary_standard.py
+    # para garantizar consistencia con rdf_bridge_generator.py y ontology_query_builder.py
+    #
+    # Valores disponibles:
+    # - MOOD_VOCABULARY: Moods normalizados (feliz, relajado, estresado, etc.)
+    # - COMPANION_VOCABULARY: Tipos de compañía (solo, pareja, familia, etc.)
+    # - ENERGY_VOCABULARY: Niveles de energía (bajo, medio, alto)
+    # - normalize_mood(): Mapea entrada de usuario → valor normalizado
+    # - normalize_companion(): Mapea entrada de usuario → valor normalizado
+    # - normalize_energy(): Mapea entrada de usuario → valor normalizado
     
-    # Nivel de energía deseado (EmotionalContext)
-    ENERGY_LEVELS = {
-        'bajo': 'bajo',           # Contenido tranquilo, relajante, contemplativo
-        'medio': 'medio',         # Contenido moderado, equilibrado
-        'alto': 'alto'            # Contenido intenso, dinámico, emocionante
-    }
-    
-    # Tipo de compañía (SocialContext)
-    COMPANION_TYPES = {
-        'solo': 'solo',
-        'pareja': 'pareja',
-        'familia': 'familia',
-        'familia_con_niños': 'familia con niños',
-        'amigos': 'amigos',
-        'compañeros': 'compañeros de trabajo',
-        'grupo_grande': 'grupo grande'
-    }
-    
-    # Estados de ánimo comunes (EmotionalContext - valores sugeridos)
-    # Nota: moodDescription puede ser más flexible, pero estos son los valores preferidos
-    MOOD_TYPES = {
-        'feliz': 'feliz',
-        'alegre': 'alegre',
-        'relajado': 'relajado',
-        'estresado': 'estresado',
-        'triste': 'triste',
-        'nostálgico': 'nostálgico',
-        'curioso': 'curioso',
-        'aburrido': 'aburrido',
-        'romántico': 'romántico',
-        'reflexivo': 'reflexivo',
-        'aventurero': 'aventurero',
-        'social': 'social',
-        'contemplativo': 'contemplativo'
-    }
-    
-    # Días de la semana (ContextSnapshot)
-    DAYS_OF_WEEK = {
-        'lunes': 'Lunes',
-        'martes': 'Martes',
-        'miércoles': 'Miércoles',
-        'jueves': 'Jueves',
-        'viernes': 'Viernes',
-        'sábado': 'Sábado',
-        'domingo': 'Domingo'
-    }
     
     def __init__(self):
         self.graph = Graph()
@@ -161,7 +136,7 @@ class RDFContextGenerator:
         self.graph.add((ctx_uri, CONTEXT_NS.requestTimestamp, 
                        Literal("2026-01-09T20:30:00", datatype=XSD.dateTime)))
         self.graph.add((ctx_uri, CONTEXT_NS.dayOfWeek, 
-                       Literal(self.DAYS_OF_WEEK['jueves'], datatype=XSD.string)))
+                       Literal("Jueves", datatype=XSD.string)))
         self.graph.add((ctx_uri, CONTEXT_NS.hourOfDay, Literal(20, datatype=XSD.integer)))
         self.graph.add((ctx_uri, CONTEXT_NS.userIntent, 
                        Literal("Buscar algo ligero para relajarme después del trabajo", datatype=XSD.string)))
@@ -173,7 +148,7 @@ class RDFContextGenerator:
         social_uri = CONTEXT_DATA_NS.Social_Alone_1
         self.graph.add((social_uri, RDF.type, CONTEXT_NS.SocialContext))
         self.graph.add((social_uri, CONTEXT_NS.companionType, 
-                       Literal(self.COMPANION_TYPES['solo'], datatype=XSD.string)))
+                       Literal("solo", datatype=XSD.string)))
         self.graph.add((social_uri, CONTEXT_NS.hasChildren, Literal(False, datatype=XSD.boolean)))
         self.graph.add((social_uri, RDFS.comment, Literal("Usuario viendo solo", lang="es")))
         
@@ -181,12 +156,12 @@ class RDFContextGenerator:
         mood_uri = CONTEXT_DATA_NS.Mood_Relaxed_1
         self.graph.add((mood_uri, RDF.type, CONTEXT_NS.EmotionalContext))
         self.graph.add((mood_uri, CONTEXT_NS.moodDescription, 
-                       Literal(self.MOOD_TYPES['relajado'], datatype=XSD.string)))
+                       Literal("relajado", datatype=XSD.string)))
         self.graph.add((mood_uri, CONTEXT_NS.emotionalNeed, 
                        Literal("desconectar del estrés laboral", datatype=XSD.string)))
         self.graph.add((mood_uri, CONTEXT_NS.moodIntensity, Literal(0.7, datatype=XSD.decimal)))
         self.graph.add((mood_uri, CONTEXT_NS.desiredEnergyLevel, 
-                       Literal(self.ENERGY_LEVELS['bajo'], datatype=XSD.string)))
+                       Literal("bajo", datatype=XSD.string)))
         self.graph.add((mood_uri, RDFS.comment, 
                        Literal("Estado inferido de 'quiero relajarme'. Energía baja: "
                               "busca película tranquila que no demande mucha atención.", lang="es")))
@@ -227,7 +202,7 @@ class RDFContextGenerator:
         self.graph.add((ctx_uri, CONTEXT_NS.requestTimestamp, 
                        Literal("2026-01-10T18:00:00", datatype=XSD.dateTime)))
         self.graph.add((ctx_uri, CONTEXT_NS.dayOfWeek, 
-                       Literal(self.DAYS_OF_WEEK['sábado'], datatype=XSD.string)))
+                       Literal("Sábado", datatype=XSD.string)))
         self.graph.add((ctx_uri, CONTEXT_NS.hourOfDay, Literal(18, datatype=XSD.integer)))
         self.graph.add((ctx_uri, CONTEXT_NS.userIntent, 
                        Literal("Película familiar para el fin de semana con los niños", datatype=XSD.string)))
@@ -239,7 +214,7 @@ class RDFContextGenerator:
         social_uri = CONTEXT_DATA_NS.Social_Family_1
         self.graph.add((social_uri, RDF.type, CONTEXT_NS.SocialContext))
         self.graph.add((social_uri, CONTEXT_NS.companionType, 
-                       Literal(self.COMPANION_TYPES['familia_con_niños'], datatype=XSD.string)))
+                       Literal("familia con niños", datatype=XSD.string)))
         self.graph.add((social_uri, CONTEXT_NS.hasChildren, Literal(True, datatype=XSD.boolean)))
         self.graph.add((social_uri, CONTEXT_NS.groupSize, Literal(4, datatype=XSD.integer)))
         self.graph.add((social_uri, RDFS.comment, Literal("Familia con niños", lang="es")))
@@ -248,11 +223,11 @@ class RDFContextGenerator:
         mood_uri = CONTEXT_DATA_NS.Mood_Joyful_1
         self.graph.add((mood_uri, RDF.type, CONTEXT_NS.EmotionalContext))
         self.graph.add((mood_uri, CONTEXT_NS.moodDescription, 
-                       Literal(self.MOOD_TYPES['alegre'], datatype=XSD.string)))
+                       Literal("alegre", datatype=XSD.string)))
         self.graph.add((mood_uri, CONTEXT_NS.emotionalNeed, 
                        Literal("entretenimiento para todos", datatype=XSD.string)))
         self.graph.add((mood_uri, CONTEXT_NS.desiredEnergyLevel, 
-                       Literal(self.ENERGY_LEVELS['medio'], datatype=XSD.string)))
+                       Literal("medio", datatype=XSD.string)))
         self.graph.add((mood_uri, RDFS.comment, 
                        Literal("Tono alegre para ambiente familiar. Energía media: "
                               "entretenimiento dinámico pero no abrumador.", lang="es")))
@@ -294,7 +269,7 @@ class RDFContextGenerator:
         self.graph.add((ctx_uri, CONTEXT_NS.requestTimestamp, 
                        Literal("2026-01-10T21:00:00", datatype=XSD.dateTime)))
         self.graph.add((ctx_uri, CONTEXT_NS.dayOfWeek, 
-                       Literal(self.DAYS_OF_WEEK['viernes'], datatype=XSD.string)))
+                       Literal("Viernes", datatype=XSD.string)))
         self.graph.add((ctx_uri, CONTEXT_NS.hourOfDay, Literal(21, datatype=XSD.integer)))
         self.graph.add((ctx_uri, CONTEXT_NS.userIntent, 
                        Literal("Encontrar película que satisfaga a grupo grande de amigos", datatype=XSD.string)))
@@ -306,7 +281,7 @@ class RDFContextGenerator:
         social_uri = CONTEXT_DATA_NS.Social_Friends_1
         self.graph.add((social_uri, RDF.type, CONTEXT_NS.SocialContext))
         self.graph.add((social_uri, CONTEXT_NS.companionType, 
-                       Literal(self.COMPANION_TYPES['amigos'], datatype=XSD.string)))
+                       Literal("amigos", datatype=XSD.string)))
         self.graph.add((social_uri, CONTEXT_NS.hasChildren, Literal(False, datatype=XSD.boolean)))
         self.graph.add((social_uri, CONTEXT_NS.groupSize, Literal(6, datatype=XSD.integer)))
         self.graph.add((social_uri, RDFS.comment, 
@@ -316,11 +291,11 @@ class RDFContextGenerator:
         mood_uri = CONTEXT_DATA_NS.Mood_Social_1
         self.graph.add((mood_uri, RDF.type, CONTEXT_NS.EmotionalContext))
         self.graph.add((mood_uri, CONTEXT_NS.moodDescription, 
-                       Literal(self.MOOD_TYPES['social'], datatype=XSD.string)))
+                       Literal("social", datatype=XSD.string)))
         self.graph.add((mood_uri, CONTEXT_NS.emotionalNeed, 
                        Literal("consenso grupal, entretenimiento compartido", datatype=XSD.string)))
         self.graph.add((mood_uri, CONTEXT_NS.desiredEnergyLevel, 
-                       Literal(self.ENERGY_LEVELS['alto'], datatype=XSD.string)))
+                       Literal("alto", datatype=XSD.string)))
         self.graph.add((mood_uri, RDFS.comment, 
                        Literal("Necesita película con amplio appeal. Energía alta para mantener grupo enganchado.", lang="es")))
         
@@ -360,7 +335,7 @@ class RDFContextGenerator:
         self.graph.add((ctx_uri, CONTEXT_NS.requestTimestamp, 
                        Literal("2026-01-07T03:00:00", datatype=XSD.dateTime)))
         self.graph.add((ctx_uri, CONTEXT_NS.dayOfWeek, 
-                       Literal(self.DAYS_OF_WEEK['martes'], datatype=XSD.string)))
+                       Literal("Martes", datatype=XSD.string)))
         self.graph.add((ctx_uri, CONTEXT_NS.hourOfDay, Literal(3, datatype=XSD.integer)))
         self.graph.add((ctx_uri, CONTEXT_NS.userIntent, 
                        Literal("Escapar del estrés con película intensa pero no de terror", datatype=XSD.string)))
@@ -372,7 +347,7 @@ class RDFContextGenerator:
         social_uri = CONTEXT_DATA_NS.Social_Alone_2
         self.graph.add((social_uri, RDF.type, CONTEXT_NS.SocialContext))
         self.graph.add((social_uri, CONTEXT_NS.companionType, 
-                       Literal(self.COMPANION_TYPES['solo'], datatype=XSD.string)))
+                       Literal("solo", datatype=XSD.string)))
         self.graph.add((social_uri, CONTEXT_NS.hasChildren, Literal(False, datatype=XSD.boolean)))
         self.graph.add((social_uri, RDFS.comment, 
                        Literal("Usuario solo de madrugada", lang="es")))
@@ -381,12 +356,12 @@ class RDFContextGenerator:
         mood_uri = CONTEXT_DATA_NS.Mood_Stressed_1
         self.graph.add((mood_uri, RDF.type, CONTEXT_NS.EmotionalContext))
         self.graph.add((mood_uri, CONTEXT_NS.moodDescription, 
-                       Literal(self.MOOD_TYPES['estresado'], datatype=XSD.string)))
+                       Literal("estresado", datatype=XSD.string))))
         self.graph.add((mood_uri, CONTEXT_NS.emotionalNeed, 
                        Literal("escapar del estrés, desconectar", datatype=XSD.string)))
         self.graph.add((mood_uri, CONTEXT_NS.moodIntensity, Literal(0.8, datatype=XSD.decimal)))
         self.graph.add((mood_uri, CONTEXT_NS.desiredEnergyLevel, 
-                       Literal(self.ENERGY_LEVELS['alto'], datatype=XSD.string)))
+                       Literal("alto", datatype=XSD.string)))
         self.graph.add((mood_uri, RDFS.comment, 
                        Literal("Paradoja emocional: estresado pero busca energía alta. "
                               "Quiere algo épico/intenso que lo saque del estrés, no terror que lo empeore.", lang="es")))

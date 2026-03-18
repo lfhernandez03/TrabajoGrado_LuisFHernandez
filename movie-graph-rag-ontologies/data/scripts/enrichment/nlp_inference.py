@@ -35,12 +35,29 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 class NLPInferencer:
-    """Infiere atributos semánticos usando NLP"""
+    """Infiere atributos semánticos usando NLP con lazy loading de modelos pesados"""
 
     def __init__(self):
-        logger.info("Inicializando modelos NLP...")
-        self.keyword_model = KeyBERT()
-        self.sentiment_analyzer = pipeline("sentiment-analysis")
+        """Inicializa sin cargar modelos. Los modelos se cargan bajo demanda."""
+        self._keyword_model = None
+        self._sentiment_analyzer = None
+        logger.info("NLPInferencer inicializado (lazy loading de modelos)")
+
+    @property
+    def keyword_model(self):
+        """Lazy loaded KeyBERT model"""
+        if self._keyword_model is None:
+            logger.info("Cargando modelo KeyBERT...")
+            self._keyword_model = KeyBERT()
+        return self._keyword_model
+    
+    @property
+    def sentiment_analyzer(self):
+        """Lazy loaded sentiment analysis pipeline"""
+        if self._sentiment_analyzer is None:
+            logger.info("Cargando pipeline de análisis de sentimiento...")
+            self._sentiment_analyzer = pipeline("sentiment-analysis")
+        return self._sentiment_analyzer
 
     def _clean_text(self, text):
         """Limpia texto removiendo stopwords"""
@@ -111,6 +128,7 @@ class NLPInferencer:
     def _normalize_genre_name(self, genre):
         """
         Normaliza nombres de géneros para mantener consistencia.
+        Retorna None si el género no puede ser validado.
         """
         if not genre:
             return None
@@ -142,7 +160,14 @@ class NLPInferencer:
         }
         
         # Retornar nombre normalizado o el original si no necesita normalización
-        return genre_normalization.get(genre, genre)
+        normalized = genre_normalization.get(genre, genre)
+        
+        # Validar que el resultado sea un género conocido de GENRE_TONE_MAPPING
+        if normalized not in GENRE_TONE_MAPPING:
+            logger.warning(f"Género '{normalized}' (de '{genre}') no validado. Usando Drama como fallback.")
+            return 'Drama'  # Fallback seguro a Drama
+        
+        return normalized
     
     def add_main_genre_column(self, df):
         """

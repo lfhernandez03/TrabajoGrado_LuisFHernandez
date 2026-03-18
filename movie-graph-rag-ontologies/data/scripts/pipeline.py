@@ -196,10 +196,10 @@ def run_pipeline(
     skip_enrichment: bool = False,
     skip_import: bool = False,
     incremental: bool = True,
-    fuseki_url: str = "http://localhost:3030",
-    fuseki_dataset: str = "movies",
-    fuseki_user: str = "",
-    fuseki_password: str = ""
+    fuseki_url: str = None,
+    fuseki_dataset: str = None,
+    fuseki_user: str = None,
+    fuseki_password: str = None
 ) -> bool:
     """
     Ejecuta el pipeline completo de procesamiento.
@@ -209,10 +209,22 @@ def run_pipeline(
         skip_enrichment: Si True, omite el enriquecimiento (usa datos existentes)
         skip_import: Si True, omite la importación a Fuseki
         incremental: Si True, hace merge incremental (upsert) en vez de sobrescritura total
+        fuseki_url: URL de Fuseki (usará variable entorno FUSEKI_URL o localhost por defecto)
+        fuseki_dataset: Dataset en Fuseki
+        fuseki_user: Usuario Fuseki
+        fuseki_password: Password Fuseki
         
     Returns:
         True si todo el pipeline fue exitoso
     """
+    import os
+    
+    # Obtener valores de variables de entorno con defaults seguros
+    fuseki_url = fuseki_url or os.getenv("FUSEKI_URL", "http://localhost:3030")
+    fuseki_dataset = fuseki_dataset or os.getenv("FUSEKI_DATASET", "movies")
+    fuseki_user = fuseki_user or os.getenv("FUSEKI_USER", "")
+    fuseki_password = fuseki_password or os.getenv("FUSEKI_PASSWORD", "")
+    
     logger.info("\n" + "="*70)
     logger.info("INICIANDO PIPELINE DE PROCESAMIENTO DE PELÍCULAS")
     logger.info("="*70)
@@ -350,11 +362,22 @@ Ejemplos de uso:
   # Generar archivos sin importar a GraphDB
   python pipeline.py --skip-import
 
-    # Importar a Fuseki especificando dataset
-    python pipeline.py --fuseki-dataset Cine
+  # Importar a Fuseki especificando dataset
+  python pipeline.py --fuseki-dataset Cine
   
   # Combinación: 500 películas sin importar
   python pipeline.py --max-movies 500 --skip-import
+
+NOTA IMPORTANTE - CONFIGURACIÓN DE CREDENCIALES:
+  Las credenciales de Fuseki (usuario/contraseña) SIEMPRE deben configurarse
+  mediante variables de entorno por razones de seguridad:
+  
+  export FUSEKI_URL=http://fuseki-server:3030
+  export FUSEKI_USER=admin
+  export FUSEKI_PASSWORD=your_secure_password
+  
+  Las credenciales NO se aceptan como argumentos CLI para evitar que aparezcan
+  en logs o en listados de procesos (ps, top, etc).
         """
     )
     
@@ -386,33 +409,22 @@ Ejemplos de uso:
         '--fuseki-url',
         type=str,
         default='http://localhost:3030',
-        help='URL base de Fuseki (default: http://localhost:3030)'
+        help='URL base de Fuseki (default: http://localhost:3030). También puede usar FUSEKI_URL env var'
     )
 
     parser.add_argument(
         '--fuseki-dataset',
         type=str,
         default='movies',
-        help='Nombre del dataset de Fuseki (default: movies)'
+        help='Nombre del dataset de Fuseki (default: movies). También puede usar FUSEKI_DATASET env var'
     )
-
-    parser.add_argument(
-        '--fuseki-user',
-        type=str,
-        default='',
-        help='Usuario para autenticación básica de Fuseki (opcional)'
-    )
-
-    parser.add_argument(
-        '--fuseki-password',
-        type=str,
-        default='',
-        help='Contraseña para autenticación básica de Fuseki (opcional)'
-    )
+    
+    # NOTA IMPORTANTE: No aceptamos --fuseki-user ni --fuseki-password en argumentos CLI por razones de seguridad
+    # Las credenciales SIEMPRE deben venir de variables de entorno para evitar que aparezcan en logs o process listings
     
     args = parser.parse_args()
     
-    # Ejecutar pipeline
+    # Ejecutar pipeline - credenciales SIN argumentos CLI (siempre desde variables de entorno)
     success = run_pipeline(
         max_movies=args.max_movies,
         skip_enrichment=args.skip_enrichment,
@@ -420,8 +432,8 @@ Ejemplos de uso:
         incremental=not args.no_incremental,
         fuseki_url=args.fuseki_url,
         fuseki_dataset=args.fuseki_dataset,
-        fuseki_user=args.fuseki_user,
-        fuseki_password=args.fuseki_password,
+        fuseki_user=None,  # Siempre desde env vars
+        fuseki_password=None,  # Siempre desde env vars
     )
     
     # Exit code según resultado

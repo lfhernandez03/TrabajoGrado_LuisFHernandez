@@ -519,47 +519,61 @@ class RDFMovieGenerator:
                 self.graph.add((movie_uri, MOVIE_NS.hasPlotStructure, plot_structure_uri))
     
     def _add_ratings(self, movie_uri, row):
-        """Agrega calificaciones y votos como propiedades de datos específicas"""
-        # TMDb Rating
-        if tmdb_rating := self._safe_float(row.get('tmdb_rating')):
-            self.graph.add((movie_uri, MOVIE_NS.hasTMDbRating, 
-                          Literal(tmdb_rating, datatype=XSD.float)))
+        """
+        Agrega calificaciones y votos usando propiedades ESTANDARIZADAS para consistencia con Gemini queries.
         
-        # TMDb Votes
-        if tmdb_votes := self._safe_int(row.get('tmdb_votes')):
-            self.graph.add((movie_uri, MOVIE_NS.hasTMDbVoteCount, 
-                          Literal(tmdb_votes, datatype=XSD.integer)))
+        IMPORTANTE: Usa propiedades genéricas (hasRating, hasVoteCount) en lugar de múltiples variantes
+        (hasTMDbRating, hasIMDbRating, hasAverageRating, etc) que confunden a Gemini al generar SPARQL.
         
-        # IMDb Rating
-        if imdb_rating := self._safe_float(row.get('imdb_rating')):
-            self.graph.add((movie_uri, MOVIE_NS.hasIMDbRating, 
-                          Literal(imdb_rating, datatype=XSD.float)))
+        Strategy:
+        1. Prioridad: usar hasAverageRating (MovieLens aggregate)
+        2. Fallback: usar IMDb rating si no existe promedio
+        3. Fallback: usar TMDb rating si no existe IMDb
         
-        # IMDb Votes
-        if imdb_votes := row.get('imdb_votes'):
-            # Remover comas del string (ej: "1,142,882" -> "1142882")
+        Resultado: Una sola propiedad 'movie:hasRating' para que Gemini sepa dónde buscar
+        """
+        # Determinar rating a usar (con fallback chain)
+        final_rating = None
+        rating_source = None
+        
+        if avg_rating := self._safe_float(row.get('avg_rating')):
+            final_rating = avg_rating
+            rating_source = 'MovieLens'
+        elif imdb_rating := self._safe_float(row.get('imdb_rating')):
+            final_rating = imdb_rating
+            rating_source = 'IMDb'
+        elif tmdb_rating := self._safe_float(row.get('tmdb_rating')):
+            final_rating = tmdb_rating
+            rating_source = 'TMDb'
+        
+        # Agregar rating único estandarizado para Gemini
+        if final_rating:
+            self.graph.add((movie_uri, MOVIE_NS.hasRating, 
+                          Literal(final_rating, datatype=XSD.float)))
+            # Comentario en log para debugging
+            logger.debug(f"Movie rating: {final_rating} (source: {rating_source})")
+        
+        # Determinar vote count con fallback chain
+        final_vote_count = None
+        
+        if rating_count := self._safe_int(row.get('rating_count')):
+            final_vote_count = rating_count
+        elif imdb_votes := row.get('imdb_votes'):
             if pd.notna(imdb_votes) and imdb_votes != '':
                 imdb_votes_clean = str(imdb_votes).replace(',', '')
                 if votes := self._safe_int(imdb_votes_clean):
-                    self.graph.add((movie_uri, MOVIE_NS.hasIMDbVoteCount, 
-                                  Literal(votes, datatype=XSD.integer)))
+                    final_vote_count = votes
+        elif tmdb_votes := self._safe_int(row.get('tmdb_votes')):
+            final_vote_count = tmdb_votes
         
-        # Average Rating (del dataset MovieLens)
-        if avg_rating := self._safe_float(row.get('avg_rating')):
-            self.graph.add((movie_uri, MOVIE_NS.hasAverageRating, 
-                          Literal(avg_rating, datatype=XSD.float)))
+        # Agregar vote count único estandarizado
+        if final_vote_count:
+            self.graph.add((movie_uri, MOVIE_NS.hasVoteCount, 
+                          Literal(final_vote_count, datatype=XSD.integer)))
         
-        # Rating Count (del dataset MovieLens)
-        if rating_count := self._safe_int(row.get('rating_count')):
-            self.graph.add((movie_uri, MOVIE_NS.hasRatingCount, 
-                          Literal(rating_count, datatype=XSD.integer)))
-        
-        # Metascore
-        if metascore := row.get('metascore'):
-            if pd.notna(metascore) and metascore != '' and metascore != 'N/A':
-                if score := self._safe_int(metascore):
-                    self.graph.add((movie_uri, MOVIE_NS.hasMetascore, 
-                                  Literal(score, datatype=XSD.integer)))
+        # NOTA: No agregamos hasTMDbRating, hasIMDbRating, hasAverageRating, hasMetascore por separado
+        # para evitar confundir a Gemini. Si se necesita información source, usar logging en lugar de RDF.
+    
     
     def _add_cultural_context(self, movie_uri, row):
         """Agrega contexto cultural (países, idiomas, período histórico) usando Object Properties"""

@@ -7,9 +7,14 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const logger = new Logger('Bootstrap');
 
+  // Configuración de CORS desde variables de entorno
+  const corsOrigin = (process.env.CORS_ALLOWED_ORIGINS || 'http://localhost:3000,http://localhost:3001')
+    .split(',')
+    .map(origin => origin.trim());
+
   // Habilitar CORS
   app.enableCors({
-    origin: ['http://localhost:3001', 'http://localhost:3000'],
+    origin: corsOrigin,
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],

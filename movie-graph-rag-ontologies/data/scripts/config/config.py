@@ -3,9 +3,23 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# API KEYS
+# API KEYS - Validar variables de entorno críticas
 OMDB_API_KEY = os.getenv('OMDB_API_KEY')
 TMDB_API_KEY = os.getenv('TMDB_API_KEY')
+
+if not OMDB_API_KEY:
+    raise ValueError(
+        "OMDB_API_KEY not configured. "
+        "Please set OMDB_API_KEY environment variable in .env file. "
+        "Get it from https://www.omdbapi.com/apikey.aspx"
+    )
+
+if not TMDB_API_KEY:
+    raise ValueError(
+        "TMDB_API_KEY not configured. "
+        "Please set TMDB_API_KEY environment variable in .env file. "
+        "Get it from https://www.themoviedb.org/settings/api"
+    )
 
 # URLs de APIs
 OMDB_BASE_URL = "http://www.omdbapi.com/"
@@ -14,7 +28,7 @@ TMDB_BASE_URL = "https://api.themoviedb.org/3"
 # Configuracion de procesamiento
 BATCH_SIZE = 50 # Procesar en lotes para evitar rate limiting
 MAX_MOVIES = 500 # Limitar para el prototipo
-RATE_LIMIT_DELAY = 0.5 # Segundos entre requests 
+RATE_LIMIT_DELAY = 0.5 # Segundos entre requests (OMDB: 45 req/min = min 1.33s, TMDB: 40 req/10s = min 0.25s) 
 
 # Namespace de la ontologia
 MOVIE_NS = "http://www.semanticweb.org/movierecommendation/ontologies/2025/movie-ontology"

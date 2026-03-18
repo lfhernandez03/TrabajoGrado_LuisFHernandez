@@ -105,13 +105,29 @@ def execute_update_query(sparql_update: str) -> bool:
         method="POST",
     )
 
-    try:
-        timeout_seconds = max(1, settings.fuseki_timeout_seconds)
-        with request.urlopen(req, timeout=timeout_seconds) as response:
-            return int(getattr(response, "status", 0)) in (200, 204)
-    except Exception as exc:
-        logger.error("Fuseki update failed at %s: %s", endpoint, exc)
-        return False
+    retries = max(0, settings.fuseki_max_retries)
+    timeout_seconds = max(1, settings.fuseki_timeout_seconds)
+    last_error: Exception | None = None
+
+    for attempt in range(retries + 1):
+        try:
+            with request.urlopen(req, timeout=timeout_seconds) as response:
+                return int(getattr(response, "status", 0)) in (200, 204)
+        except (error.URLError, TimeoutError) as exc:
+            last_error = exc
+            if attempt < retries:
+                time.sleep(0.2 * (attempt + 1))
+                continue
+            logger.error(
+                "Fuseki update failed at %s after %d retries: %s",
+                endpoint,
+                retries + 1,
+                exc,
+            )
+            return False
+        except Exception as exc:
+            logger.error("Fuseki update failed at %s: %s", endpoint, exc)
+            return False
 
 
 def copy_graph_to_user_history(snapshot_id: str, user_id: str) -> bool:

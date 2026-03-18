@@ -313,8 +313,13 @@ class RecommendationUseCase:
                 history_count=history_count,
                 user_intent=current_intent,
             )
-        except Exception:
-            pass
+        except Exception as exc:
+            logger.error(
+                "Error recalculating adaptive weights for user %s: %s",
+                user_id,
+                exc,
+                exc_info=True,
+            )
         logger.info("[RECALCULATED] user_id=%s", user_id)
         return response
 
@@ -368,7 +373,12 @@ class RecommendationUseCase:
         try:
             try:
                 rows = execute_select_query(sparql_query)
-            except FusekiQueryError:
+            except FusekiQueryError as exc:
+                logger.error(
+                    "Failed to execute network cold start SPARQL query: %s",
+                    exc,
+                    exc_info=True,
+                )
                 return None
 
             if not rows:
@@ -460,8 +470,12 @@ class RecommendationUseCase:
         finally:
             try:
                 delete_context_snapshot(context_snapshot_id)
-            except Exception:
-                pass
+            except Exception as exc:
+                logger.warning(
+                    "Failed to delete context snapshot %s: %s",
+                    context_snapshot_id,
+                    exc,
+                )
 
     async def get_activity_recommendation(self, user_id: str) -> dict:
         signal_snapshot = self.signal_service.collect_activity_snapshot(user_id=user_id)

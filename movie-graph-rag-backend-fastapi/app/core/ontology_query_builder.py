@@ -195,6 +195,13 @@ def _escape_sparql_literal(value: str) -> str:
 
 
 def _safe_cross_ontology_fallback(limit: int = 30) -> str:
+    """Fallback SPARQL query using standardized RDF properties for Gemini queries.
+    
+    Uses standardized property names:
+    - movie:hasRating (standardized across all rating sources: MovieLens, IMDb, TMDb)
+    - movie:hasVoteCount (vote count across sources)
+    This prevents Gemini from generating queries with non-existent properties.
+    """
     safe_limit = max(1, min(100, int(limit)))
     return (
         "PREFIX movie: <http://www.semanticweb.org/movierecommendation/ontologies/2025/movie-ontology#>\n"
@@ -207,7 +214,7 @@ def _safe_cross_ontology_fallback(limit: int = 30) -> str:
         "  ?movie rdf:type movie:FeatureFilm ; movie:hasTitle ?title .\n"
         "  OPTIONAL { ?movie movie:hasMainGenre/movie:genreName ?genreName }\n"
         "  OPTIONAL { ?movie movie:runtime ?runtime }\n"
-        "  OPTIONAL { ?movie movie:hasAverageRating ?rating }\n"
+        "  OPTIONAL { ?movie movie:hasRating ?rating }\n"
         "  OPTIONAL { ?movie schema1:image ?posterUrl }\n"
         "  OPTIONAL { ?movie movie:releaseDate ?releaseDate }\n"
         "  OPTIONAL { ?movie bridge:compatibilityScore ?compatibilityScore }\n"
@@ -275,22 +282,35 @@ def build_cross_ontology_sparql_from_signals(
     excluded_normalized: set[str],
     limit: int = 30,
 ) -> str:
+    """Build SPARQL query using Option C properties (best + all values).
+    
+    OPCIÓN C STRATEGY:
+    - Uses bridge:bestCompatibleMood for fast, exact matching (score 0.9)
+    - Alternative: bridge:allCompatibleMoods contains pipe-separated values for flexible matching
+    - Same for companion and energy level properties
+    
+    Current implementation uses 'best' properties for optimal performance.
+    For flexible semantic matching, parse allCompatibleMoods in post-processing.
+    """
     safe_limit = max(1, min(100, int(limit)))
 
+    # OPTION C: Use bestCompatibleMood for primary matching
     mood_filter = ""
     if mood_es:
-        mood_filter = f'  OPTIONAL {{ ?movie bridge:compatibleMood ?compatibleMood }}\n  FILTER(!BOUND(?compatibleMood) || ?compatibleMood = "{_escape_sparql_literal(mood_es)}")\n'
+        mood_filter = f'  OPTIONAL {{ ?movie bridge:bestCompatibleMood ?bestMood }}\n  FILTER(!BOUND(?bestMood) || ?bestMood = "{_escape_sparql_literal(mood_es)}")\n'
 
+    # OPTION C: Use bestCompatibleCompanion for primary matching
     companion_filter = ""
     if companion_es:
         companion_filter = (
-            f'  OPTIONAL {{ ?movie bridge:compatibleCompanion ?compatibleCompanion }}\n  FILTER(!BOUND(?compatibleCompanion) || ?compatibleCompanion = "{_escape_sparql_literal(companion_es)}")\n'
+            f'  OPTIONAL {{ ?movie bridge:bestCompatibleCompanion ?bestCompanion }}\n  FILTER(!BOUND(?bestCompanion) || ?bestCompanion = "{_escape_sparql_literal(companion_es)}")\n'
         )
 
+    # OPTION C: Use bestCompatibleEnergyLevel for primary matching
     energy_filter = ""
     if energy_es:
         energy_filter = (
-            f'  OPTIONAL {{ ?movie bridge:compatibleEnergyLevel ?compatibleEnergyLevel }}\n  FILTER(!BOUND(?compatibleEnergyLevel) || ?compatibleEnergyLevel = "{_escape_sparql_literal(energy_es)}")\n'
+            f'  OPTIONAL {{ ?movie bridge:bestCompatibleEnergyLevel ?bestEnergy }}\n  FILTER(!BOUND(?bestEnergy) || ?bestEnergy = "{_escape_sparql_literal(energy_es)}")\n'
         )
 
     children_filter = "  OPTIONAL { ?movie bridge:isKidFriendly ?kidFriendlyOptional }\n  FILTER(!BOUND(?kidFriendlyOptional) || ?kidFriendlyOptional = true)\n" if has_children else ""
@@ -325,7 +345,7 @@ def build_cross_ontology_sparql_from_signals(
         "         movie:hasTitle ?title .\n"
         "  OPTIONAL { ?movie movie:hasMainGenre/movie:genreName ?genreName }\n"
         "  OPTIONAL { ?movie movie:runtime ?runtime }\n"
-        "  OPTIONAL { ?movie movie:hasAverageRating ?rating }\n"
+        "  OPTIONAL { ?movie movie:hasRating ?rating }\n"
         "  OPTIONAL { ?movie schema1:image ?posterUrl }\n"
         "  OPTIONAL { ?movie movie:releaseDate ?releaseDate }\n"
         "  OPTIONAL { ?movie bridge:compatibilityScore ?compatibilityScore }\n"

@@ -7,12 +7,22 @@ from urllib.parse import quote
 from pathlib import Path
 import argparse
 
-# Agregar el directorio de config al path para importar namespaces
+# Agregar el directorio de config al path para importar namespaces y vocabulario centralizado
 sys.path.insert(0, str(Path(__file__).parent.parent / "config"))
 from namespaces import (
     BRIDGE_NS, MOVIE_NS, CONTEXT_NS,
     MOVIE_DATA_NS, CONTEXT_DATA_NS, GENRE_DATA_NS,
     RDF, RDFS, XSD, OWL, bind_all_namespaces
+)
+from vocabulary_standard import (
+    MOOD_VOCABULARY,
+    COMPANION_VOCABULARY,
+    ENERGY_VOCABULARY,
+    normalize_mood,
+    normalize_companion,
+    normalize_energy,
+    validate_all_moods_in_vocabulary,
+    validate_all_companions_in_vocabulary
 )
 
 logging.basicConfig(level=logging.INFO)
@@ -35,6 +45,10 @@ class RDFBridgeGenerator:
         
         # Mapeos de géneros a contextos
         self._initialize_mappings()
+        
+        # Validar que todos los valores en mapeos sean válidos según vocabulario centralizado
+        self._validate_all_mappings()
+    
     
     def _bind_namespaces(self):
         """Vincular namespaces al grafo usando la función centralizada"""
@@ -118,6 +132,51 @@ class RDFBridgeGenerator:
             'Animation', 'Family', 'Adventure', 'Fantasy', 'Music'
         ]
     
+    def _validate_all_mappings(self):
+        """
+        Valida que todos los valores en genre_to_moods, genre_to_companions, y 
+        genre_to_energy_level sean válidos según la vocabularía centralizada.
+        
+        Esto previene falsos negativos en queries SPARQL cuando valores normalizados
+        difieren entre eljbridge generator y context generator.
+        """
+        errors = []
+        
+        # Validar moods
+        all_moods = set()
+        for moods in self.genre_to_moods.values():
+            all_moods.update(moods)
+        
+        invalid_moods = all_moods - set(MOOD_VOCABULARY.keys())
+        if invalid_moods:
+            errors.append(f"Invalid moods in genre_to_moods: {invalid_moods}")
+            logger.error(f"Invalid moods: {invalid_moods}. Valid moods: {MOOD_VOCABULARY.keys()}")
+        
+        # Validar companions
+        all_companions = set()
+        for companions in self.genre_to_companions.values():
+            all_companions.update(companions)
+        
+        invalid_companions = all_companions - set(COMPANION_VOCABULARY.keys())
+        if invalid_companions:
+            errors.append(f"Invalid companions in genre_to_companions: {invalid_companions}")
+            logger.error(f"Invalid companions: {invalid_companions}. Valid companions: {COMPANION_VOCABULARY.keys()}")
+        
+        # Validar energy levels
+        all_energies = set()
+        for energies in self.genre_to_energy_level.values():
+            all_energies.update(energies)
+        
+        invalid_energies = all_energies - set(ENERGY_VOCABULARY.keys())
+        if invalid_energies:
+            errors.append(f"Invalid energy levels in genre_to_energy_level: {invalid_energies}")
+            logger.error(f"Invalid energy levels: {invalid_energies}. Valid levels: {ENERGY_VOCABULARY.keys()}")
+        
+        if errors:
+            raise ValueError(f"Vocabulary validation failed: {'; '.join(errors)}")
+        else:
+            logger.info("✓ All mood, companion, and energy level mappings validated successfully")
+    
     def _sanitize_uri(self, text):
         """Sanitiza texto para crear URIs válidas (consistente con rdf_generator.py)"""
         if pd.isna(text) or text == '':
@@ -182,61 +241,93 @@ class RDFBridgeGenerator:
     
     def add_mood_mappings(self, movie_uri, main_genre):
         """
-        Agrega características emocionales compatibles como data properties.
+        OPCIÓN C: Almacena el mejor mood Y todos los moods compatibles.
         
-        IMPORTANTE: NO creamos conexiones alignsWithMood aquí.
-        Esas se crean dinámicamente durante GraphRAG queries.
+        ESTRATEGIA (Opción C - Recomendada):
+        - bridge:bestCompatibleMood "nervioso" (para queries rápidas/simples)
+        - bridge:allCompatibleMoods "nervioso|emocionado|aventurero" (para matching flexible)
         
-        En su lugar, agregamos valores literales de moods compatibles que
-        el LLM puede usar para matching.
+        VENTAJAS:
+        - Queries simples puede filtrar por bestCompatibleMood (compatibilidad 0.9)
+        - Queries sofisticadas pueden parsear allCompatibleMoods para matching secundario
+        - SIN cartesian product: un solo literal en cada propiedad
+        - COMPATIBLE con SPARQL exactas y con parseo en LLM post-processing
+        
+        DESVENTAJAS:
+        - Requiere parseo en backend si usamos allCompatibleMoods (split por |)
         """
         if main_genre not in self.genre_to_moods:
             logger.debug(f"No mood mappings for genre: {main_genre}")
             return
         
-        for idx, mood_name in enumerate(self.genre_to_moods[main_genre]):
-            score = self._calculate_mood_match_score(main_genre, mood_name)
-            
-            # Agregar mood compatible como data property
-            self.graph.add((movie_uri, BRIDGE_NS.compatibleMood, Literal(mood_name)))
-            self.graph.add((movie_uri, BRIDGE_NS.moodMatchScore, 
-                          Literal(score, datatype=XSD.float)))
+        moods_list = self.genre_to_moods[main_genre]
+        
+        # Mejor mood (score 0.9)
+        best_mood_name = moods_list[0]
+        best_score = self._calculate_mood_match_score(main_genre, best_mood_name)
+        
+        # Todos los moods compatibles (separados por |)
+        all_moods_string = "|".join(moods_list)
+        
+        # Almacenar ambos
+        self.graph.add((movie_uri, BRIDGE_NS.bestCompatibleMood, Literal(best_mood_name)))
+        self.graph.add((movie_uri, BRIDGE_NS.allCompatibleMoods, Literal(all_moods_string)))
+        self.graph.add((movie_uri, BRIDGE_NS.moodMatchScore, 
+                      Literal(best_score, datatype=XSD.float)))
     
     def add_companion_mappings(self, movie_uri, main_genre):
         """
-        Agrega tipos de compañía compatibles como data properties.
+        OPCIÓN C: Almacena el mejor companion Y todos los companions compatibles.
         
-        Estas se usarn para matching dinámico con SocialContext.companionType.
+        Mismo patrón que add_mood_mappings:
+        - bridge:bestCompatibleCompanion "pareja"
+        - bridge:allCompatibleCompanions "pareja|solo|familia"
         """
         if main_genre not in self.genre_to_companions:
             logger.debug(f"No companion mappings for genre: {main_genre}")
             return
         
-        for companion_name in self.genre_to_companions[main_genre]:
-            score = self._calculate_social_match_score(main_genre, companion_name)
-            
-            # Agregar companion compatible como data property
-            self.graph.add((movie_uri, BRIDGE_NS.compatibleCompanion, Literal(companion_name)))
-            self.graph.add((movie_uri, BRIDGE_NS.socialMatchScore, 
-                          Literal(score, datatype=XSD.float)))
+        companions_list = self.genre_to_companions[main_genre]
+        
+        # Mejor companion (score 0.9)
+        best_companion = companions_list[0]
+        best_score = self._calculate_social_match_score(main_genre, best_companion)
+        
+        # Todos los companions compatibles (separados por |)
+        all_companions_string = "|".join(companions_list)
+        
+        # Almacenar ambos
+        self.graph.add((movie_uri, BRIDGE_NS.bestCompatibleCompanion, Literal(best_companion)))
+        self.graph.add((movie_uri, BRIDGE_NS.allCompatibleCompanions, Literal(all_companions_string)))
+        self.graph.add((movie_uri, BRIDGE_NS.socialMatchScore, 
+                      Literal(best_score, datatype=XSD.float)))
     
     def add_energy_mappings(self, movie_uri, main_genre):
         """
-        Agrega niveles de energía compatibles como data properties.
+        OPCIÓN C: Almacena el mejor energy level Y todos los levels compatibles.
         
-        Se usa para matching con EmotionalContext.desiredEnergyLevel.
+        Mismo patrón que add_mood_mappings:
+        - bridge:bestCompatibleEnergyLevel "alto"
+        - bridge:allCompatibleEnergyLevels "alto|medio"
         """
         if main_genre not in self.genre_to_energy_level:
             logger.debug(f"No energy mappings for genre: {main_genre}")
             return
         
-        for energy_level in self.genre_to_energy_level[main_genre]:
-            score = self._calculate_energy_match_score(main_genre, energy_level)
-            
-            # Agregar energy level compatible como data property
-            self.graph.add((movie_uri, BRIDGE_NS.compatibleEnergyLevel, Literal(energy_level)))
-            self.graph.add((movie_uri, BRIDGE_NS.energyMatchScore, 
-                          Literal(score, datatype=XSD.float)))
+        energy_list = self.genre_to_energy_level[main_genre]
+        
+        # Mejor energy level (score 0.9)
+        best_energy = energy_list[0]
+        best_score = self._calculate_energy_match_score(main_genre, best_energy)
+        
+        # Todos los energy levels compatibles (separados por |)
+        all_energy_string = "|".join(energy_list)
+        
+        # Almacenar ambos
+        self.graph.add((movie_uri, BRIDGE_NS.bestCompatibleEnergyLevel, Literal(best_energy)))
+        self.graph.add((movie_uri, BRIDGE_NS.allCompatibleEnergyLevels, Literal(all_energy_string)))
+        self.graph.add((movie_uri, BRIDGE_NS.energyMatchScore, 
+                      Literal(best_score, datatype=XSD.float)))
     
     def add_time_constraint_mappings(self, movie_uri, runtime):
         """
@@ -319,19 +410,14 @@ class RDFBridgeGenerator:
         self.add_content_constraint_mappings(movie_uri, main_genre, certification)
         # device_mappings e intensity_mappings eliminados (no están en v3)
         
-        # Calcular y agregar compatibility score global
-        mood_scores = list(self.graph.objects(movie_uri, BRIDGE_NS.moodMatchScore))
-        social_scores = list(self.graph.objects(movie_uri, BRIDGE_NS.socialMatchScore))
-        energy_scores = list(self.graph.objects(movie_uri, BRIDGE_NS.energyMatchScore))
+        # Calcular compatibility score usando los valores únicos agregados
+        mood_score = next((float(s) for s in self.graph.objects(movie_uri, BRIDGE_NS.moodMatchScore)), 0.5)
+        social_score = next((float(s) for s in self.graph.objects(movie_uri, BRIDGE_NS.socialMatchScore)), 0.5)
+        energy_score = next((float(s) for s in self.graph.objects(movie_uri, BRIDGE_NS.energyMatchScore)), 0.5)
         
-        if mood_scores and social_scores and energy_scores:
-            avg_mood = sum(float(s) for s in mood_scores) / len(mood_scores)
-            avg_social = sum(float(s) for s in social_scores) / len(social_scores)
-            avg_energy = sum(float(s) for s in energy_scores) / len(energy_scores)
-            
-            compatibility = self._calculate_compatibility_score(avg_mood, avg_social, avg_energy)
-            self.graph.add((movie_uri, BRIDGE_NS.compatibilityScore, 
-                          Literal(compatibility, datatype=XSD.float)))
+        compatibility = self._calculate_compatibility_score(mood_score, social_score, energy_score)
+        self.graph.add((movie_uri, BRIDGE_NS.compatibilityScore, 
+                      Literal(compatibility, datatype=XSD.float)))
     
     def generate_from_dataframe(self, df, max_movies=None):
         """Genera conexiones bridge para todas las películas en el DataFrame"""

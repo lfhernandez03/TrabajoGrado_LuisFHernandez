@@ -50,8 +50,18 @@ api.interceptors.response.use(
   (error: AxiosError) => {
     if (error.response) {
       const status = error.response.status;
-      const responseData = error.response.data as { message?: string; detail?: string } | undefined;
-      const message = responseData?.detail || responseData?.message || error.message;
+      const responseData = error.response.data;
+      
+      // Validar y extraer mensaje de error de forma segura
+      let message = 'Error desconocido';
+      if (typeof responseData === 'object' && responseData !== null) {
+        const data = responseData as Record<string, any>;
+        message = data.detail || data.message || data.msg || error.message || message;
+      } else if (typeof responseData === 'string') {
+        message = responseData;
+      } else {
+        message = error.message || message;
+      }
 
       switch (status) {
         case 401:
@@ -81,9 +91,7 @@ api.interceptors.response.use(
         
         default:
           // Otros errores
-          if (message) {
-            toast.error(message);
-          }
+          toast.error(message);
       }
     } else if (error.request) {
       // La petición se hizo pero no hubo respuesta

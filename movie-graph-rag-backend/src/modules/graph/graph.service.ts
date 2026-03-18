@@ -53,10 +53,17 @@ export class GraphService {
     this.fusekiUrl = fusekiUrl;
     this.datasetId = datasetId;
 
-    // Configuración de autenticación (opcional pero recomendado)
+    // Configuración de autenticación (requerida)
+    const fusekiUser = this.configService.get<string>('FUSEKI_USER');
+    const fusekiPassword = this.configService.get<string>('FUSEKI_PASSWORD');
+    if (!fusekiUser || !fusekiPassword) {
+      this.logger.warn(
+        'FUSEKI_USER and FUSEKI_PASSWORD not configured - Fuseki operations may fail if authentication is enabled',
+      );
+    }
     this.authConfig = {
-      username: this.configService.get<string>('FUSEKI_USER') || 'admin',
-      password: this.configService.get<string>('FUSEKI_PASSWORD') || 'admin',
+      username: fusekiUser || '',
+      password: fusekiPassword || '',
     };
   }
 

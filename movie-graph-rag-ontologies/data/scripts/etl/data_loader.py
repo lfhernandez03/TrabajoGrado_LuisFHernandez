@@ -13,23 +13,63 @@ from config.config import *
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-DATA_ROOT = Path(__file__).resolve().parents[2]
+def _get_data_root() -> Path:
+    """Obtiene ruta raíz del proyecto de datos con validación"""
+    # Comenzar desde el script y navegar hacia la raíz del proyecto
+    script_file = Path(__file__).resolve()
+    
+    # Buscar directorio 'data' subiendo desde el script
+    current = script_file.parent
+    while current.parent != current:  # Evitar loop infinito en raíz
+        if (current / "dataset").exists() or (current / "ontologies").exists():
+            return current
+        current = current.parent
+    
+    # Fallback al método anterior si no se encuentra
+    fallback = script_file.parents[2]
+    if not (fallback / "dataset").exists():
+        logger.warning(f"Could not find data directory. Using fallback: {fallback}")
+    
+    return fallback
+
+DATA_ROOT = _get_data_root()
 RAW_DATA_DIR = DATA_ROOT / "dataset" / "raw"
 PROCESSED_DIR = DATA_ROOT / "dataset" / "processed"
+
+# Validar que los directorios existan
+if not RAW_DATA_DIR.exists():
+    raise FileNotFoundError(f"Raw data directory not found: {RAW_DATA_DIR}")
+if not PROCESSED_DIR.exists():
+    PROCESSED_DIR.mkdir(parents=True, exist_ok=True)
+    logger.info(f"Created processed data directory: {PROCESSED_DIR}")
+
+logger.info(f"Data root: {DATA_ROOT}")
+logger.info(f"Raw data: {RAW_DATA_DIR}")
+logger.info(f"Processed data: {PROCESSED_DIR}")
 
 class MovieLensLoader: 
     '''Carga y preprocesa datos de MovieLens'''
     def __init__(self, data_path: Path | str | None = None):
         self.data_path = Path(data_path) if data_path else RAW_DATA_DIR
+        if not self.data_path.exists():
+            raise FileNotFoundError(f"Data path does not exist: {self.data_path}")
 
     def load_movies(self, max_movies=None):
         '''Carga movies.csv'''
         logger.info("Cargando movies.csv")
-        movies = pd.read_csv(self.data_path / "movies.csv")
+        movies_file = self.data_path / "movies.csv"
+        if not movies_file.exists():
+            raise FileNotFoundError(f"movies.csv not found at {movies_file}")
+        
+        movies = pd.read_csv(movies_file)
 
         if max_movies:
             #Seleccionar peliculas mas populares
-            ratings = pd.read_csv(self.data_path / "ratings.csv")
+            ratings_file = self.data_path / "ratings.csv"
+            if not ratings_file.exists():
+                raise FileNotFoundError(f"ratings.csv not found at {ratings_file}")
+            
+            ratings = pd.read_csv(ratings_file)
             popular_movies = ratings.groupby('movieId').size().nlargest(max_movies).index
             movies = movies[movies['movieId'].isin(popular_movies)]
         
@@ -39,14 +79,18 @@ class MovieLensLoader:
     def load_links(self):
         """Carga links.csv (IMDb y TMDB IDs)"""
         logger.info("Cargando links.csv")
+        links_file = self.data_path / "links.csv"
+        if not links_file.exists():
+            raise FileNotFoundError(f"links.csv not found at {links_file}")
+        
         # Especificar dtype para mantener imdbId como string y preservar ceros iniciales
         links = pd.read_csv(
-            self.data_path / "links.csv",
+            links_file,
             dtype={'imdbId': str, 'tmdbId': str}
         )
-        # Asegurar formato de 7 dígitos con ceros a la izquierda y prefijo 'tt'
+        # Asegurar formato de 8 dígitos (estándar IMDb) con ceros a la izquierda y prefijo 'tt'
         links['imdbId'] = links['imdbId'].apply(
-            lambda x: f"{x.zfill(7)}" if pd.notna(x) and x != '' else x
+            lambda x: f"tt{x.zfill(8)}" if pd.notna(x) and x != '' else x
         )
         return links
     
