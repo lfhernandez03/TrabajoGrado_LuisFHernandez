@@ -36,8 +36,10 @@ def validate_option_c_properties(g: Graph) -> dict:
     MOVIE = Namespace("http://www.semanticweb.org/movierecommendation/ontologies/2025/movie-ontology#")
     RDF = Namespace("http://www.w3.org/1999/02/22-rdf-syntax-ns#")
     
-    # Get all movies
-    movies = list(g.subjects(RDF.type, MOVIE.FeatureFilm))
+    # Get all movies (try both Movie and FeatureFilm types)
+    movies = list(g.subjects(RDF.type, MOVIE.Movie))
+    if not movies:
+        movies = list(g.subjects(RDF.type, MOVIE.FeatureFilm))
     results["total_movies"] = len(movies)
     
     print(f"\nValidating {len(movies)} movies...")
@@ -110,7 +112,7 @@ def validate_no_cartesian_product(g: Graph) -> dict:
     
     SELECT ?movie ?title ?bestMood ?bestCompanion ?bestEnergy
     WHERE {
-        ?movie rdf:type movie:FeatureFilm ;
+        ?movie a movie:Movie ;
                movie:hasTitle ?title ;
                bridge:bestCompatibleMood ?bestMood ;
                bridge:bestCompatibleCompanion ?bestCompanion ;
@@ -157,8 +159,19 @@ def main():
     
     # Support relative or absolute paths
     if not ttl_path.is_absolute():
-        # Relative to the scripts directory
-        ttl_path = Path(__file__).parent / ttl_path
+        # Try relative to data/ directory first (where files are generated)
+        # The script is in data/scripts/, so parent gets to data/
+        data_root = Path(__file__).parent.parent
+        ttl_path_attempt1 = data_root / ttl_path
+        
+        if ttl_path_attempt1.exists():
+            ttl_path = ttl_path_attempt1
+        else:
+            # Try relative to project root
+            project_root = Path(__file__).parent.parent.parent
+            ttl_path_attempt2 = project_root / ttl_path
+            if ttl_path_attempt2.exists():
+                ttl_path = ttl_path_attempt2
     
     if not ttl_path.exists():
         print(f"✗ File not found: {ttl_path}")

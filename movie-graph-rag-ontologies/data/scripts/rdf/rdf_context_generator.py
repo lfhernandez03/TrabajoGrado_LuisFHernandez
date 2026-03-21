@@ -356,7 +356,7 @@ class RDFContextGenerator:
         mood_uri = CONTEXT_DATA_NS.Mood_Stressed_1
         self.graph.add((mood_uri, RDF.type, CONTEXT_NS.EmotionalContext))
         self.graph.add((mood_uri, CONTEXT_NS.moodDescription, 
-                       Literal("estresado", datatype=XSD.string))))
+                       Literal("estresado", datatype=XSD.string)))
         self.graph.add((mood_uri, CONTEXT_NS.emotionalNeed, 
                        Literal("escapar del estrés, desconectar", datatype=XSD.string)))
         self.graph.add((mood_uri, CONTEXT_NS.moodIntensity, Literal(0.8, datatype=XSD.decimal)))

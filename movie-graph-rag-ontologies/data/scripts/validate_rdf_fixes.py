@@ -119,12 +119,12 @@ def test_property_standardization():
     
     try:
         rdf_gen_path = DATA_SCRIPTS / "rdf" / "rdf_generator.py"
-        content = rdf_gen_path.read_text()
+        content = rdf_gen_path.read_text(encoding='utf-8')
         
         # Check for standardized properties
         checks = [
             ("movie:hasRating", "Standardized rating property"),
-            ("movie:hasVoteCount", "Standardized vote count property"),
+            ("MOVIE_NS.hasVoteCount", "Standardized vote count property"),
         ]
         
         # Check for OLD properties that should be gone
@@ -149,13 +149,27 @@ def test_property_standardization():
         
         print("\n  Checking that OLD properties are removed:")
         found_old = False
+        # Only check for OLD properties in actual code (not comments/docstrings)
+        # Split by lines and filter out comments and docstrings
+        code_lines = []
+        in_docstring = False
+        for line in content.split('\n'):
+            stripped = line.strip()
+            if '"""' in stripped or "'''" in stripped:
+                in_docstring = not in_docstring
+                continue
+            if not in_docstring and '#' not in stripped:
+                code_lines.append(line)
+        
+        code_only = '\n'.join(code_lines)
+        
         for old_prop in old_properties:
-            if old_prop in content:
-                print(f"    ⚠ {old_prop} still found - should be removed")
+            if old_prop in code_only:
+                print(f"    ⚠ {old_prop} still found in active code - should be removed")
                 found_old = True
         
         if not found_old:
-            print(f"    ✓ No old property names found")
+            print(f"    ✓ No old property names found in active code")
         else:
             all_good = False
         

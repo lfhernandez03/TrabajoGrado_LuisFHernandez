@@ -70,7 +70,7 @@ class RDFBridgeGenerator:
         # Mapeo: Género -> Moods (valores normalizados lowercase, sin tildes)
         self.genre_to_moods = {
             'Comedy': ['feliz', 'relajado', 'aburrido'],
-            'Romance': ['romantico', 'feliz', 'solo'],
+            'Romance': ['romantico', 'feliz', 'emocionado'],
             'Drama': ['concentrado', 'triste', 'curioso'],
             'Action': ['emocionado', 'estresado', 'aventurero'],
             'Thriller': ['estresado', 'emocionado', 'curioso'],
@@ -95,8 +95,8 @@ class RDFBridgeGenerator:
             'Horror': ['amigos', 'pareja', 'solo'],
             'Action': ['amigos', 'solo'],
             'Drama': ['solo', 'pareja'],
-            'Animation': ['familia', 'familia con niños'],
-            'Family': ['familia', 'familia con niños', 'familia extendida'],
+            'Animation': ['familia', 'familia_con_niños'],
+            'Family': ['familia', 'familia_con_niños'],
             'Documentary': ['solo', 'pareja'],
             'Science Fiction': ['amigos', 'solo'],
             'Fantasy': ['amigos', 'familia'],
