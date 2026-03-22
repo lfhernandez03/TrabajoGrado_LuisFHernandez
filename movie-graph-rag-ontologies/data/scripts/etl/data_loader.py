@@ -14,18 +14,18 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 def _get_data_root() -> Path:
-    """Obtiene ruta raíz del proyecto de datos con validación"""
-    # Comenzar desde el script y navegar hacia la raíz del proyecto
+    """Obtiene ruta raiz del proyecto de datos con validacion"""
+    # Comenzar desde el script y navegar hacia la raiz del proyecto
     script_file = Path(__file__).resolve()
     
     # Buscar directorio 'data' subiendo desde el script
     current = script_file.parent
-    while current.parent != current:  # Evitar loop infinito en raíz
+    while current.parent != current:  # Evitar loop infinito en raiz
         if (current / "dataset").exists() or (current / "ontologies").exists():
             return current
         current = current.parent
     
-    # Fallback al método anterior si no se encuentra
+    # Fallback al metodo anterior si no se encuentra
     fallback = script_file.parents[2]
     if not (fallback / "dataset").exists():
         logger.warning(f"Could not find data directory. Using fallback: {fallback}")
@@ -88,7 +88,7 @@ class MovieLensLoader:
             links_file,
             dtype={'imdbId': str, 'tmdbId': str}
         )
-        # Asegurar formato de 8 dígitos (estándar IMDb) con ceros a la izquierda y prefijo 'tt'
+        # Asegurar formato de 8 digitos (estandar IMDb) con ceros a la izquierda y prefijo 'tt'
         links['imdbId'] = links['imdbId'].apply(
             lambda x: f"tt{x.zfill(8)}" if pd.notna(x) and x != '' else x
         )
@@ -118,7 +118,7 @@ class MovieLensLoader:
         df['year'] = df['title'].str.extract(r'\((\d{4})\)')
         df['clean_title'] = df['title'].str.replace(r'\s*\(\d{4}\)', '', regex=True)
 
-        # Separar géneros
+        # Separar generos
         df['genres_list'] = df['genres'].str.split('|')
         
         return df

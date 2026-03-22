@@ -28,18 +28,18 @@ PROCESSED_DIR = DATA_ROOT / "data" / "processed"
 ONTOLOGIES_DIR = DATA_ROOT / "ontologies" / "instances"
 
 class RDFMovieGenerator:
-    """Genera tripletas RDF para pelÃ­culas siguiendo movie-ontology.ttl"""
+    """Genera tripletas RDF para películas siguiendo movie-ontology.ttl"""
     
     def __init__(self):
         self.graph = Graph()
         self._bind_namespaces()
         
     def _bind_namespaces(self):
-        """Vincular namespaces al grafo usando la funciÃ³n centralizada"""
+        """Vincular namespaces al grafo usando la función centralizada"""
         bind_all_namespaces(self.graph)
     
     def _sanitize_uri(self, text):
-        """Sanitiza texto para crear URIs vÃ¡lidas"""
+        """Sanitiza texto para crear URIs válidas"""
         if pd.isna(text) or text == '':
             return None
         # Eliminar caracteres especiales y espacios
@@ -49,40 +49,40 @@ class RDFMovieGenerator:
         return quote(text)
     
     def _create_movie_uri(self, movie_id, title):
-        """Crea URI Ãºnica para una pelÃ­cula"""
+        """Crea URI única para una película"""
         safe_title = self._sanitize_uri(title)
         return MOVIE_DATA_NS[f"movie_{movie_id}_{safe_title}"]
     
     def _create_person_uri(self, name):
-        """Crea URI Ãºnica para una persona"""
+        """Crea URI única para una persona"""
         safe_name = self._sanitize_uri(name)
         if safe_name:
             return PERSON_DATA_NS[safe_name]
         return None
     
     def _create_genre_uri(self, genre):
-        """Crea URI Ãºnica para un gÃ©nero"""
+        """Crea URI única para un género"""
         safe_genre = self._sanitize_uri(genre)
         if safe_genre:
             return GENRE_DATA_NS[safe_genre]
         return None
     
     def _create_keyword_uri(self, keyword):
-        """Crea URI Ãºnica para una keyword"""
+        """Crea URI única para una keyword"""
         safe_keyword = self._sanitize_uri(keyword)
         if safe_keyword:
             return KEYWORD_DATA_NS[safe_keyword]
         return None
     
     def _create_company_uri(self, company):
-        """Crea URI Ãºnica para una compaÃ±Ã­a"""
+        """Crea URI única para una compañía"""
         safe_company = self._sanitize_uri(company)
         if safe_company:
             return COMPANY_DATA_NS[safe_company]
         return None
     
     def _create_role_uri(self, movie_id, actor_name, character_name):
-        """Crea URI Ãºnica para un rol"""
+        """Crea URI única para un rol"""
         safe_actor = self._sanitize_uri(actor_name)
         safe_char = self._sanitize_uri(character_name)
         if safe_actor and safe_char:
@@ -90,42 +90,42 @@ class RDFMovieGenerator:
         return None
     
     def _create_tone_uri(self, tone_name):
-        """Crea URI Ãºnica para un tono"""
+        """Crea URI única para un tono"""
         safe_tone = self._sanitize_uri(tone_name)
         if safe_tone:
             return TONE_DATA_NS[safe_tone]
         return None
     
     def _create_theme_uri(self, theme_name):
-        """Crea URI Ãºnica para un tema"""
+        """Crea URI única para un tema"""
         safe_theme = self._sanitize_uri(theme_name)
         if safe_theme:
             return THEME_DATA_NS[safe_theme]
         return None
     
     def _create_plot_structure_uri(self, structure_name):
-        """Crea URI Ãºnica para una estructura de trama"""
+        """Crea URI única para una estructura de trama"""
         safe_structure = self._sanitize_uri(structure_name)
         if safe_structure:
             return PLOT_STRUCTURE_DATA_NS[safe_structure]
         return None
     
     def _create_historical_period_uri(self, period_name):
-        """Crea URI Ãºnica para un perÃ­odo histÃ³rico"""
+        """Crea URI única para un período histórico"""
         safe_period = self._sanitize_uri(period_name)
         if safe_period:
             return HISTORICAL_PERIOD_DATA_NS[safe_period]
         return None
     
     def _create_country_uri(self, country_name):
-        """Crea URI Ãºnica para un paÃ­s"""
+        """Crea URI única para un país"""
         safe_country = self._sanitize_uri(country_name)
         if safe_country:
             return COUNTRY_DATA_NS[safe_country]
         return None
     
     def _create_language_uri(self, language_code):
-        """Crea URI Ãºnica para un idioma"""
+        """Crea URI única para un idioma"""
         safe_language = self._sanitize_uri(language_code)
         if safe_language:
             return LANGUAGE_DATA_NS[safe_language]
@@ -138,7 +138,7 @@ class RDFMovieGenerator:
         return Literal(value, datatype=datatype)
     
     def _get_tone_class(self, tone_name):
-        """Determina la clase especÃ­fica de tono basÃ¡ndose en el nombre"""
+        """Determina la clase específica de tono basándose en el nombre"""
         tone_mapping = {
             'ComedyTone': MOVIE_NS.ComedyTone,
             'DarkTone': MOVIE_NS.DarkTone,
@@ -149,7 +149,7 @@ class RDFMovieGenerator:
         return tone_mapping.get(tone_name, MOVIE_NS.Tone)
     
     def _get_plot_structure_class(self, structure_name):
-        """Determina la clase especÃ­fica de estructura de trama basÃ¡ndose en el nombre"""
+        """Determina la clase específica de estructura de trama basándose en el nombre"""
         structure_mapping = {
             'LinearNarrative': MOVIE_NS.LinearNarrative,
             'NonLinearNarrative': MOVIE_NS.NonLinearNarrative,
@@ -158,7 +158,7 @@ class RDFMovieGenerator:
         return structure_mapping.get(structure_name, MOVIE_NS.PlotStructure)
     
     def _get_historical_period_class(self, period_name):
-        """Determina la clase especÃ­fica de perÃ­odo histÃ³rico basÃ¡ndose en el nombre"""
+        """Determina la clase específica de período histórico basándose en el nombre"""
         period_mapping = {
             'Contemporary': MOVIE_NS.Contemporary,
             'Historical': MOVIE_NS.Historical,
@@ -197,29 +197,29 @@ class RDFMovieGenerator:
         return f'{TMDB_IMAGE_BASE_URL}{value}'
     
     def add_movie(self, row):
-        """Agrega una pelÃ­cula completa al grafo con todas sus relaciones"""
+        """Agrega una película completa al grafo con todas sus relaciones"""
         movie_id = row['movieId']
         title = row['clean_title']
         
-        # Crear URI de la pelÃ­cula
+        # Crear URI de la película
         movie_uri = self._create_movie_uri(movie_id, title)
         
-        # Determinar tipo de pelÃ­cula segÃºn movie_type
+        # Determinar tipo de película según movie_type
         movie_type = row.get('movie_type', 'FeatureFilm')
         if pd.notna(movie_type) and movie_type != '':
             movie_class = MOVIE_NS[movie_type]
         else:
             movie_class = MOVIE_NS.FeatureFilm
         
-        # Declarar que es una pelÃ­cula del tipo especÃ­fico
+        # Declarar que es una película del tipo específico
         self.graph.add((movie_uri, RDF.type, movie_class))
         
         logger.info(f"Procesando: {title} (ID: {movie_id})")
         
-        # ============= PROPIEDADES BÃSICAS =============
+        # ============= PROPIEDADES BASICAS =============
         self._add_basic_properties(movie_uri, row)
         
-        # ============= GÃNEROS =============
+        # ============= GANEROS =============
         self._add_genres(movie_uri, row)
         
         # ============= CREW =============
@@ -231,7 +231,7 @@ class RDFMovieGenerator:
         # ============= KEYWORDS =============
         self._add_keywords(movie_uri, row)
         
-        # ============= COMPAÃÃAS DE PRODUCCIÃN =============
+        # ============= COMPAAAAS DE PRODUCCIAN =============
         self._add_production_companies(movie_uri, row)
         
         # ============= ELEMENTOS NARRATIVOS =============
@@ -243,18 +243,18 @@ class RDFMovieGenerator:
         # ============= CONTEXTO CULTURAL =============
         self._add_cultural_context(movie_uri, row)
         
-        # ============= CERTIFICACIÃN =============
+        # ============= CERTIFICACIAN =============
         self._add_certification(movie_uri, row)
         
         return movie_uri
     
     def _add_basic_properties(self, movie_uri, row):
-        """Agrega propiedades bÃ¡sicas de la pelÃ­cula"""
-        # TÃ­tulo
+        """Agrega propiedades básicas de la película"""
+        # Título
         if title := self._safe_literal(row.get('clean_title')):
             self.graph.add((movie_uri, MOVIE_NS.hasTitle, title))
         
-        # TÃ­tulo original
+        # Título original
         if original_title := self._safe_literal(row.get('original_title')):
             self.graph.add((movie_uri, MOVIE_NS.hasOriginalTitle, original_title))
         
@@ -270,7 +270,7 @@ class RDFMovieGenerator:
         if release_date := self._safe_literal(row.get('release_date'), XSD.date):
             self.graph.add((movie_uri, MOVIE_NS.releaseDate, release_date))
         
-        # DuraciÃ³n en minutos
+        # Duración en minutos
         if runtime := self._safe_int(row.get('runtime')):
             self.graph.add((movie_uri, MOVIE_NS.runtime, Literal(runtime, datatype=XSD.integer)))
         
@@ -304,8 +304,8 @@ class RDFMovieGenerator:
             self.graph.add((movie_uri, MOVIE_NS.hasBackdropUrl, Literal(backdrop_url)))
     
     def _add_genres(self, movie_uri, row):
-        """Agrega gÃ©neros como instancias"""
-        # Procesar gÃ©neros one-hot encoding
+        """Agrega géneros como instancias"""
+        # Procesar géneros one-hot encoding
         genre_columns = [col for col in row.index if col.startswith('genre_')]
         
         for genre_col in genre_columns:
@@ -314,11 +314,11 @@ class RDFMovieGenerator:
                 genre_uri = self._create_genre_uri(genre_name)
                 
                 if genre_uri:
-                    # Crear instancia del gÃ©nero
+                    # Crear instancia del género
                     self.graph.add((genre_uri, RDF.type, MOVIE_NS.MainGenre))
                     self.graph.add((genre_uri, MOVIE_NS.genreName, Literal(genre_name)))
                     
-                    # Relacionar pelÃ­cula con gÃ©nero
+                    # Relacionar película con género
                     self.graph.add((movie_uri, MOVIE_NS.hasMainGenre, genre_uri))
     
     def _add_crew(self, movie_uri, row):
@@ -453,7 +453,7 @@ class RDFMovieGenerator:
                         self.graph.add((movie_uri, MOVIE_NS.hasKeyword, keyword_uri))
     
     def _add_production_companies(self, movie_uri, row):
-        """Agrega compaÃ±Ã­as de producciÃ³n"""
+        """Agrega compañías de producción"""
         companies_str = row.get('production_companies')
         
         if pd.notna(companies_str) and companies_str != '':
@@ -471,28 +471,28 @@ class RDFMovieGenerator:
     
     def _add_narrative_elements(self, movie_uri, row):
         """Agrega elementos narrativos (tone, theme, plot_structure) como Object Properties con instancias"""
-        # Tone (puede tener mÃºltiples valores separados por |)
+        # Tone (puede tener múltiples valores separados por |)
         tone = row.get('tone')
         if pd.notna(tone) and tone != '':
-            # Procesar mÃºltiples tonos separados por |
+            # Procesar múltiples tonos separados por |
             tones = [t.strip() for t in str(tone).split('|') if t.strip()]
             for tone_name in tones:
                 tone_uri = self._create_tone_uri(tone_name)
                 if tone_uri:
-                    # Determinar la clase especÃ­fica de tono
+                    # Determinar la clase específica de tono
                     tone_class = self._get_tone_class(tone_name)
                     
                     # Crear instancia del tono
                     self.graph.add((tone_uri, RDF.type, tone_class))
                     self.graph.add((tone_uri, MOVIE_NS.toneName, Literal(tone_name)))
                     
-                    # Relacionar pelÃ­cula con tono usando Object Property
+                    # Relacionar película con tono usando Object Property
                     self.graph.add((movie_uri, MOVIE_NS.hasTone, tone_uri))
         
-        # Theme (puede ser string o mÃºltiples separados por |)
+        # Theme (puede ser string o múltiples separados por |)
         theme = row.get('theme')
         if pd.notna(theme) and theme != '':
-            # Procesar mÃºltiples temas separados por |
+            # Procesar múltiples temas separados por |
             themes = [t.strip() for t in str(theme).split('|') if t.strip()]
             for theme_name in themes:
                 theme_uri = self._create_theme_uri(theme_name)
@@ -501,7 +501,7 @@ class RDFMovieGenerator:
                     self.graph.add((theme_uri, RDF.type, MOVIE_NS.Theme))
                     self.graph.add((theme_uri, MOVIE_NS.themeName, Literal(theme_name)))
                     
-                    # Relacionar pelÃ­cula con tema usando Object Property
+                    # Relacionar película con tema usando Object Property
                     self.graph.add((movie_uri, MOVIE_NS.hasTheme, theme_uri))
         
         # Plot Structure
@@ -509,20 +509,20 @@ class RDFMovieGenerator:
         if pd.notna(plot_structure) and plot_structure != '':
             plot_structure_uri = self._create_plot_structure_uri(plot_structure)
             if plot_structure_uri:
-                # Determinar la clase especÃ­fica de estructura
+                # Determinar la clase específica de estructura
                 plot_class = self._get_plot_structure_class(plot_structure)
                 
                 # Crear instancia de la estructura de trama
                 self.graph.add((plot_structure_uri, RDF.type, plot_class))
                 
-                # Relacionar pelÃ­cula con estructura usando Object Property
+                # Relacionar película con estructura usando Object Property
                 self.graph.add((movie_uri, MOVIE_NS.hasPlotStructure, plot_structure_uri))
     
     def _add_ratings(self, movie_uri, row):
         """
         Agrega calificaciones y votos usando propiedades ESTANDARIZADAS para consistencia con Gemini queries.
         
-        IMPORTANTE: Usa propiedades genÃ©ricas (hasRating, hasVoteCount) en lugar de mÃºltiples variantes
+        IMPORTANTE: Usa propiedades genéricas (hasRating, hasVoteCount) en lugar de múltiples variantes
         (hasTMDbRating, hasIMDbRating, hasAverageRating, etc) que confunden a Gemini al generar SPARQL.
         
         Strategy:
@@ -530,7 +530,7 @@ class RDFMovieGenerator:
         2. Fallback: usar IMDb rating si no existe promedio
         3. Fallback: usar TMDb rating si no existe IMDb
         
-        Resultado: Una sola propiedad 'movie:hasRating' para que Gemini sepa dÃ³nde buscar
+        Resultado: Una sola propiedad 'movie:hasRating' para que Gemini sepa dónde buscar
         """
         # Determinar rating a usar (con fallback chain)
         final_rating = None
@@ -546,7 +546,7 @@ class RDFMovieGenerator:
             final_rating = tmdb_rating
             rating_source = 'TMDb'
         
-        # Agregar rating Ãºnico estandarizado para Gemini
+        # Agregar rating único estandarizado para Gemini
         if final_rating:
             self.graph.add((movie_uri, MOVIE_NS.hasRating, 
                           Literal(final_rating, datatype=XSD.float)))
@@ -566,46 +566,46 @@ class RDFMovieGenerator:
         elif tmdb_votes := self._safe_int(row.get('tmdb_votes')):
             final_vote_count = tmdb_votes
         
-        # Agregar vote count Ãºnico estandarizado
+        # Agregar vote count único estandarizado
         if final_vote_count:
             self.graph.add((movie_uri, MOVIE_NS.hasVoteCount, 
                           Literal(final_vote_count, datatype=XSD.integer)))
         
         # NOTA: No agregamos hasTMDbRating, hasIMDbRating, hasAverageRating, hasMetascore por separado
-        # para evitar confundir a Gemini. Si se necesita informaciÃ³n source, usar logging en lugar de RDF.
+        # para evitar confundir a Gemini. Si se necesita información source, usar logging en lugar de RDF.
     
     
     def _add_cultural_context(self, movie_uri, row):
-        """Agrega contexto cultural (paÃ­ses, idiomas, perÃ­odo histÃ³rico) usando Object Properties"""
-        # Idioma original (como cÃ³digo ISO) - mantener como Data Property
+        """Agrega contexto cultural (países, idiomas, período histórico) usando Object Properties"""
+        # Idioma original (como código ISO) - mantener como Data Property
         if original_language := row.get('original_language'):
             if pd.notna(original_language) and original_language != '':
                 self.graph.add((movie_uri, MOVIE_NS.hasOriginalLanguage, 
                               Literal(original_language)))
         
-        # PaÃ­ses de producciÃ³n - crear instancias y usar Object Property
+        # Países de producción - crear instancias y usar Object Property
         countries_str = row.get('countries')
         if pd.notna(countries_str) and countries_str != '':
-            # Mantener tambiÃ©n la propiedad de datos para compatibilidad
+            # Mantener también la propiedad de datos para compatibilidad
             self.graph.add((movie_uri, MOVIE_NS.hasProductionCountries, 
                           Literal(countries_str)))
             
-            # Crear instancias de paÃ­ses
+            # Crear instancias de países
             countries = [c.strip() for c in str(countries_str).split('|') if c.strip()]
             for country_name in countries:
                 country_uri = self._create_country_uri(country_name)
                 if country_uri:
-                    # Crear instancia del paÃ­s
+                    # Crear instancia del país
                     self.graph.add((country_uri, RDF.type, MOVIE_NS.CountryOfOrigin))
                     self.graph.add((country_uri, MOVIE_NS.countryName, Literal(country_name)))
                     
-                    # Relacionar pelÃ­cula con paÃ­s usando Object Property
+                    # Relacionar película con país usando Object Property
                     self.graph.add((movie_uri, MOVIE_NS.hasCountryOfOrigin, country_uri))
         
         # Idiomas hablados - crear instancias y usar Object Property
         languages_str = row.get('languages')
         if pd.notna(languages_str) and languages_str != '':
-            # Mantener tambiÃ©n la propiedad de datos para compatibilidad
+            # Mantener también la propiedad de datos para compatibilidad
             self.graph.add((movie_uri, MOVIE_NS.hasSpokenLanguages, 
                           Literal(languages_str)))
             
@@ -617,30 +617,30 @@ class RDFMovieGenerator:
                     # Crear instancia del idioma
                     self.graph.add((language_uri, RDF.type, MOVIE_NS.Language))
                     
-                    # Relacionar pelÃ­cula con idioma usando Object Property
+                    # Relacionar película con idioma usando Object Property
                     self.graph.add((movie_uri, MOVIE_NS.hasLanguage, language_uri))
         
-        # PerÃ­odo histÃ³rico (de inferencia NLP) - usar Object Property
+        # Período histórico (de inferencia NLP) - usar Object Property
         historical_period = row.get('historical_period')
         if pd.notna(historical_period) and historical_period != '':
             period_uri = self._create_historical_period_uri(historical_period)
             if period_uri:
-                # Determinar la clase especÃ­fica de perÃ­odo
+                # Determinar la clase específica de período
                 period_class = self._get_historical_period_class(historical_period)
                 
-                # Crear instancia del perÃ­odo histÃ³rico
+                # Crear instancia del período histórico
                 self.graph.add((period_uri, RDF.type, period_class))
                 self.graph.add((period_uri, MOVIE_NS.periodName, Literal(historical_period)))
                 
-                # Relacionar pelÃ­cula con perÃ­odo usando Object Property
+                # Relacionar película con período usando Object Property
                 self.graph.add((movie_uri, MOVIE_NS.hasHistoricalPeriod, period_uri))
     
     def _add_certification(self, movie_uri, row):
-        """Agrega certificaciÃ³n etaria"""
+        """Agrega certificación etaria"""
         certification = row.get('certification_us')
         
         if pd.notna(certification) and certification != '' and certification != 'N/A':
-            # Crear instancia de certificaciÃ³n
+            # Crear instancia de certificación
             cert_uri = URIRef(f"{MOVIE_DATA_NS}certification_{certification}")
             
             self.graph.add((cert_uri, RDF.type, MOVIE_NS.Certification))
@@ -650,20 +650,20 @@ class RDFMovieGenerator:
     
     def generate_from_dataframe(self, df, max_movies=None):
         """Genera tripletas RDF desde un DataFrame"""
-        logger.info(f"Generando tripletas RDF para {len(df)} pelÃ­culas...")
+        logger.info(f"Generando tripletas RDF para {len(df)} películas...")
         
         if max_movies:
             df = df.head(max_movies)
-            logger.info(f"Procesando solo las primeras {max_movies} pelÃ­culas")
+            logger.info(f"Procesando solo las primeras {max_movies} películas")
         
         for idx, row in df.iterrows():
             try:
                 self.add_movie(row)
             except Exception as e:
-                logger.error(f"Error procesando pelÃ­cula {row.get('movieId')}: {e}")
+                logger.error(f"Error procesando película {row.get('movieId')}: {e}")
                 continue
         
-        logger.info(f"GeneraciÃ³n completada. Total de tripletas: {len(self.graph)}")
+        logger.info(f"Generación completada. Total de tripletas: {len(self.graph)}")
         return self.graph
     
     def save_graph(self, output_file, format='turtle'):
@@ -705,7 +705,7 @@ class RDFMovieGenerator:
         logger.info(f"Grafo incremental guardado exitosamente ({len(self.graph):,} tripletas)")
     
     def get_statistics(self):
-        """Obtiene estadÃ­sticas del grafo generado"""
+        """Obtiene estadísticas del grafo generado"""
         stats = {
             'total_triples': len(self.graph),
             'movies': len(list(self.graph.subjects(RDF.type, MOVIE_NS.FeatureFilm))),
@@ -722,31 +722,58 @@ class RDFMovieGenerator:
 
 # Uso
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Genera tripletas RDF de pelÃ­culas')
+    parser = argparse.ArgumentParser(description='Genera tripletas RDF de películas')
     parser.add_argument('--max-movies', type=int, default=None, help='Numero maximo de peliculas a procesar')
     parser.add_argument(
         '--no-incremental',
         action='store_true',
         help='Desactiva merge incremental y sobrescribe TTL con el lote actual'
     )
+    parser.add_argument(
+        '--input-file',
+        type=str,
+        default=None,
+        help='Archivo CSV de entrada (default: movies_nlp_enriched.csv si existe, else movies_enriched.csv)'
+    )
     parser.add_argument('legacy_max_movies', nargs='?', type=int, help=argparse.SUPPRESS)
     args = parser.parse_args()
     
-    # Cargar datos
-    logger.info("Cargando datos de movies_nlp_enriched.csv...")
-    df = pd.read_csv(PROCESSED_DIR / 'movies_nlp_enriched.csv')
+    # Determinar archivo de entrada con fallback logic
+    if args.input_file:
+        input_file = Path(args.input_file)
+        if not input_file.exists():
+            logger.error(f"Archivo especificado no existe: {input_file}")
+            sys.exit(1)
+    else:
+        # Fallback: intenta movies_nlp_enriched.csv, luego movies_enriched.csv
+        nlp_enriched = PROCESSED_DIR / 'movies_nlp_enriched.csv'
+        enriched = PROCESSED_DIR / 'movies_enriched.csv'
+        
+        if nlp_enriched.exists():
+            input_file = nlp_enriched
+            logger.info("Usando movies_nlp_enriched.csv (NLP inference incluido)")
+        elif enriched.exists():
+            input_file = enriched
+            logger.info("Usando movies_enriched.csv (NLP inference no disponible)")
+        else:
+            logger.error(f"No se encontraron archivos de entrada en {PROCESSED_DIR}")
+            sys.exit(1)
     
-    logger.info(f"Total de pelÃ­culas en el dataset: {len(df)}")
+    # Cargar datos
+    logger.info(f"Cargando datos de {input_file.name}...")
+    df = pd.read_csv(input_file)
+    
+    logger.info(f"Total de películas en el dataset: {len(df)}")
     
     # Crear generador
     generator = RDFMovieGenerator()
     
-    # Determinar cuÃ¡ntas pelÃ­culas procesar
+    # Determinar cuántas películas procesar
     max_movies = args.max_movies if args.max_movies is not None else args.legacy_max_movies
     if max_movies:
-        logger.info(f"Procesando {max_movies} pelÃ­culas (especificado por argumento)")
+        logger.info(f"Procesando {max_movies} películas (especificado por argumento)")
     else:
-        logger.info("Procesando TODAS las pelÃ­culas del dataset")
+        logger.info("Procesando TODAS las películas del dataset")
     
     # Generar tripletas
     generator.generate_from_dataframe(df, max_movies=max_movies)
@@ -764,13 +791,13 @@ if __name__ == "__main__":
             format='turtle'
         )
     
-    # Mostrar estadÃ­sticas
+    # Mostrar estadísticas
     stats = generator.get_statistics()
     logger.info("\n" + "="*50)
-    logger.info("=== ESTADÃSTICAS DEL GRAFO GENERADO ===")
+    logger.info("=== ESTADASTICAS DEL GRAFO GENERADO ===")
     logger.info("="*50)
     for key, value in stats.items():
         logger.info(f"  {key.replace('_', ' ').title()}: {value:,}")
     logger.info("="*50)
     logger.info(f"\nArchivo generado: {output_file}")
-    logger.info(f"TamaÃ±o del grafo: {len(generator.graph):,} tripletas")
+    logger.info(f"Tamaño del grafo: {len(generator.graph):,} tripletas")

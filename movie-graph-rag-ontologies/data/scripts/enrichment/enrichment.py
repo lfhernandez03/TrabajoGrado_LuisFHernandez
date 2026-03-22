@@ -22,11 +22,11 @@ class MovieEnricher:
     """Enriquece datos de peliculas con APIs externas (TMDB y OMDb)"""
 
     def __init__(self):
-        """Inicializa enriquecedor con validación de credenciales de API"""
+        """Inicializa enriquecedor con validacion de credenciales de API"""
         self.tmdb_key = TMDB_API_KEY
         self.omdb_key = OMDB_API_KEY
         
-        # Validar que las API keys estén configuradas
+        # Validar que las API keys esten configuradas
         if not self.tmdb_key or not self.omdb_key:
             missing = []
             if not self.tmdb_key:
@@ -90,7 +90,7 @@ class MovieEnricher:
         try:
             tmdb_id = int(tmdb_id)
             
-            # Detalles de la película
+            # Detalles de la pelicula
             movie_url = f"{TMDB_BASE_URL}/movie/{tmdb_id}?api_key={self.tmdb_key}&language=es-ES"
             movie_response = requests.get(movie_url, timeout=10)
             
@@ -108,7 +108,7 @@ class MovieEnricher:
             
             result = {}
             
-            # Datos principales de la película
+            # Datos principales de la pelicula
             if movie_response.status_code == 200:
                 movie_data = movie_response.json()
                 result['budget'] = movie_data.get('budget', 0)
@@ -126,7 +126,7 @@ class MovieEnricher:
                 result['poster_path'] = movie_data.get('poster_path', '')
                 result['backdrop_path'] = movie_data.get('backdrop_path', '')
                 
-                # Países de producción
+                # Paises de produccion
                 countries = movie_data.get('production_countries', [])
                 result['countries'] = '|'.join([c.get('name', '') for c in countries])
                 
@@ -138,7 +138,7 @@ class MovieEnricher:
                 companies = movie_data.get('production_companies', [])
                 result['production_companies'] = '|'.join([c.get('name', '') for c in companies])
             
-            # Certificación etaria
+            # Certificacion etaria
             if release_dates_response.status_code == 200:
                 release_data = release_dates_response.json()
                 certifications = self._extract_certifications(release_data)
@@ -150,7 +150,7 @@ class MovieEnricher:
                 crew = credits.get('crew', [])
                 cast = credits.get('cast', [])
                 
-                # Extraer roles específicos del crew
+                # Extraer roles especificos del crew
                 result['director'] = self._extract_crew_members(crew, 'Director')
                 result['writer'] = self._extract_crew_members(crew, 'Screenplay')
                 result['cinematographer'] = self._extract_crew_member(crew, 'Director of Photography')
@@ -158,7 +158,7 @@ class MovieEnricher:
                 result['editor'] = self._extract_crew_member(crew, 'Editor')
                 result['producer'] = self._extract_crew_members(crew, 'Producer')
                 
-                # Clasificar actores por rol según la ontología
+                # Clasificar actores por rol segun la ontologia
                 lead_actors = []
                 supporting_actors = []
                 lead_characters = []
@@ -178,7 +178,7 @@ class MovieEnricher:
                         supporting_actors.append(actor_name)
                         supporting_characters.append(character_name)
                 
-                # Guardar clasificación según ontología
+                # Guardar clasificacion segun ontologia
                 result['lead_actors'] = '|'.join(lead_actors)
                 result['lead_characters'] = '|'.join(lead_characters)
                 result['supporting_actors'] = '|'.join(supporting_actors)
@@ -202,7 +202,7 @@ class MovieEnricher:
             return None
     
     def _extract_certifications(self, release_data):
-            """Extrae certificaciones por país"""
+            """Extrae certificaciones por pais"""
             certifications = {}
             results = release_data.get('results', [])
             
@@ -210,12 +210,12 @@ class MovieEnricher:
                 country_code = country_data.get('iso_3166_1', '')
                 releases = country_data.get('release_dates', [])
                 
-                # Buscar la certificación (puede haber múltiples releases)
+                # Buscar la certificacion (puede haber multiples releases)
                 for release in releases:
                     cert = release.get('certification', '')
-                    if cert:  # Si hay certificación, la guardamos
+                    if cert:  # Si hay certificacion, la guardamos
                         certifications[country_code] = cert
-                        break  # Tomamos la primera certificación válida
+                        break  # Tomamos la primera certificacion valida
             
             return certifications
 
@@ -227,7 +227,7 @@ class MovieEnricher:
         return ''
     
     def _extract_crew_members(self, crew, job_title):
-        """Extrae nombres de múltiples miembros del crew por puesto"""
+        """Extrae nombres de multiples miembros del crew por puesto"""
         members = [person.get('name', '') for person in crew if person.get('job') == job_title]
         return '|'.join(members) if members else ''
     
@@ -277,7 +277,7 @@ class MovieEnricher:
         return enriched_df
 
     def upsert_movies_enriched(self, df_new, output_file: Path, max_movies: int | None = None):
-        """Guarda resultados enriquecidos sin perder películas existentes (upsert por movieId)."""
+        """Guarda resultados enriquecidos sin perder peliculas existentes (upsert por movieId)."""
         if output_file.exists():
             logger.info("Modo incremental enrichment: combinando con movies_enriched.csv existente")
             existing_df = pd.read_csv(output_file)
@@ -293,30 +293,30 @@ class MovieEnricher:
             merged_df = merged_df.head(max_movies)
 
         merged_df.to_csv(output_file, index=False)
-        logger.info(f"Archivo enriquecido guardado: {output_file} ({len(merged_df)} películas)")
+        logger.info(f"Archivo enriquecido guardado: {output_file} ({len(merged_df)} peliculas)")
         return merged_df
     
     def _expand_genres(self, df):
-        """Convierte géneros en columnas one-hot encoding"""
+        """Convierte generos en columnas one-hot encoding"""
         if 'genres' not in df.columns:
             return df
         
-        logger.info("Expandiendo géneros a one-hot encoding...")
+        logger.info("Expandiendo generos a one-hot encoding...")
         
-        # Obtener todos los géneros únicos
+        # Obtener todos los generos unicos
         all_genres = set()
         for genres_str in df['genres'].dropna():
             if genres_str:
                 genres = genres_str.split('|')
                 all_genres.update(genres)
         
-        # Crear columna binaria por cada género
+        # Crear columna binaria por cada genero
         for genre in sorted(all_genres):
             df[f'genre_{genre}'] = df['genres'].apply(
                 lambda x: 1 if pd.notna(x) and genre in x.split('|') else 0
             )
         
-        logger.info(f"Géneros expandidos: {len(all_genres)} columnas creadas")
+        logger.info(f"Generos expandidos: {len(all_genres)} columnas creadas")
         return df
     
     def _expand_actors(self, df):
@@ -365,24 +365,24 @@ class MovieEnricher:
         return df
     
     def _simplify_crew(self, df):
-        """Simplifica datos del crew manteniendo solo el primero para roles múltiples"""
+        """Simplifica datos del crew manteniendo solo el primero para roles multiples"""
         logger.info("Simplificando datos del crew...")
         
-        # Director: solo el primero (puede haber múltiples directores)
+        # Director: solo el primero (puede haber multiples directores)
         if 'director' in df.columns:
             df['main_director'] = df['director'].apply(
                 lambda x: x.split('|')[0] if pd.notna(x) and x else ''
             )
             df = df.drop('director', axis=1)
         
-        # Productor: solo el primero (puede haber múltiples productores)
+        # Productor: solo el primero (puede haber multiples productores)
         if 'producer' in df.columns:
             df['main_producer'] = df['producer'].apply(
                 lambda x: x.split('|')[0] if pd.notna(x) and x else ''
             )
             df = df.drop('producer', axis=1)
         
-        # Writer: solo el primero (puede haber múltiples escritores)
+        # Writer: solo el primero (puede haber multiples escritores)
         if 'writer' in df.columns:
             df['main_writer'] = df['writer'].apply(
                 lambda x: x.split('|')[0] if pd.notna(x) and x else ''
@@ -390,7 +390,7 @@ class MovieEnricher:
             df = df.drop('writer', axis=1)
         
         logger.info("Crew simplificado: director, productor y escritor principales")
-        logger.info("Crew técnico mantenido: cinematographer, composer, editor")
+        logger.info("Crew tecnico mantenido: cinematographer, composer, editor")
         return df
 
 
@@ -437,7 +437,7 @@ if __name__ == "__main__":
         if max_movies:
             enriched_df = enriched_df.head(max_movies)
         enriched_df.to_csv(output_file, index=False)
-        logger.info(f"Archivo enriquecido sobrescrito: {output_file} ({len(enriched_df)} películas)")
+        logger.info(f"Archivo enriquecido sobrescrito: {output_file} ({len(enriched_df)} peliculas)")
     else:
         enricher.upsert_movies_enriched(enriched_df, output_file, max_movies=max_movies)
     

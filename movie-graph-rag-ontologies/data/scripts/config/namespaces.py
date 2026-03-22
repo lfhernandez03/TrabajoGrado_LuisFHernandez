@@ -1,12 +1,12 @@
 """
-Configuración centralizada de namespaces y URIs para las ontologías del sistema.
+Configuracion centralizada de namespaces y URIs para las ontologias del sistema.
 Define los prefijos RDF y URIs base para movie, context y bridge ontologies.
 
-IMPORTANTE: Este es el ÚNICO lugar donde se definen los namespaces para los scripts.
-Todos los scripts RDF deben importar desde aquí para evitar inconsistencias.
+IMPORTANTE: Este es el UNICO lugar donde se definen los namespaces para los scripts.
+Todos los scripts RDF deben importar desde aqui para evitar inconsistencias.
 
-Este archivo es una copia del archivo de configuración del backend para mantener
-consistencia entre los scripts de generación de datos y el backend.
+Este archivo es una copia del archivo de configuracion del backend para mantener
+consistencia entre los scripts de generacion de datos y el backend.
 """
 
 from rdflib import Namespace
@@ -16,7 +16,7 @@ from rdflib.namespace import RDF, RDFS, OWL, XSD, FOAF
 BASE_URI = "http://www.semanticweb.org/movierecommendation/"
 
 # ============================================================================
-# NAMESPACES PRINCIPALES (TBox - Ontologías)
+# NAMESPACES PRINCIPALES (TBox - Ontologias)
 # ============================================================================
 MOVIE_NS = Namespace(f"{BASE_URI}ontologies/2025/movie-ontology#")
 CONTEXT_NS = Namespace(f"{BASE_URI}ontologies/2025/context-ontology#")
@@ -40,17 +40,17 @@ ROLE_DATA_NS = Namespace(f"{BASE_URI}data/role/")
 THEME_DATA_NS = Namespace(f"{BASE_URI}data/theme/")
 TONE_DATA_NS = Namespace(f"{BASE_URI}data/tone/")
 
-# Aliases para compatibilidad con código existente
+# Aliases para compatibilidad con codigo existente
 HISTORICAL_PERIOD_DATA_NS = PERIOD_DATA_NS  # Alias para consistencia
 PLOT_STRUCTURE_DATA_NS = PLOTSTRUCTURE_DATA_NS  # Alias para consistencia
 
 # ============================================================================
-# NAMESPACES EXTERNOS ESTÁNDAR
+# NAMESPACES EXTERNOS ESTANDAR
 # ============================================================================
 SCHEMA = Namespace("http://schema.org/")
 DBO = Namespace("http://dbpedia.org/ontology/")
 
-# Namespaces estándar de RDFLib (re-exportados para conveniencia)
+# Namespaces estandar de RDFLib (re-exportados para conveniencia)
 RDF_NS = RDF
 RDFS_NS = RDFS
 OWL_NS = OWL
@@ -61,7 +61,7 @@ FOAF_NS = FOAF
 # MAPEOS Y UTILIDADES
 # ============================================================================
 
-# Mapeo de prefijos para SPARQL (alineado con las ontologías TTL)
+# Mapeo de prefijos para SPARQL (alineado con las ontologias TTL)
 SPARQL_PREFIXES = {
     "movie": MOVIE_NS,
     "context": CONTEXT_NS,

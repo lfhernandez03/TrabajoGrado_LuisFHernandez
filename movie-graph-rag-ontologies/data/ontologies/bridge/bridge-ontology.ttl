@@ -101,7 +101,7 @@
       Movie("Nightcrawler"): compatibilityScore=0.85 (intenso, nocturno, 117min NO pasa)
       → Ajuste: Usuario realmente necesita más tiempo o películas más cortas
     
-    Versión: 2.0 - Refactorización para GraphRAG
+    Versión: 2.1 - Temporal context and certification-based kid-friendly
     Autor: Luis Fernando Hernández Solís
     Institución: Universidad del Valle - Escuela de Ingeniería de Sistemas y Computación
     Año: 2026
@@ -500,6 +500,28 @@
     Usado para matching SPARQL exacto con EmotionalContext.desiredEnergyLevel.
     """@es .
 
+:compatibleTimeOfDay rdf:type owl:DatatypeProperty ;
+    rdfs:domain movie:Movie ;
+    rdfs:range xsd:string ;
+    rdfs:label "compatible time of day"@en ,
+               "momento del día compatible"@es ;
+    rdfs:comment """
+    Momento del día en que esta película es más apropiada.
+    Valores válidos: 'morning', 'afternoon', 'evening', 'night'.
+    Cardinalidad ilimitada. Inferido desde géneros, mood y compañía compatibles.
+    Matching SPARQL exacto con time_of_day inferido desde ContextSnapshot.hourOfDay.
+    """@es .
+
+:timeMatchScore rdf:type owl:DatatypeProperty ;
+    rdfs:domain movie:Movie ;
+    rdfs:range xsd:float ;
+    rdfs:label "time match score"@en ,
+               "puntuación de coincidencia temporal"@es ;
+    rdfs:comment """
+    Proporción de períodos del día compatibles (0.0–1.0).
+    Calculado como: count(compatibleTimeOfDay) / 4.
+    """@es .
+
 :isKidFriendly rdf:type owl:DatatypeProperty ,
                         owl:FunctionalProperty ;
     rdfs:domain movie:Movie ;
@@ -507,15 +529,22 @@
     rdfs:label "is kid friendly"@en ,
                "es apta para niños"@es ;
     rdfs:comment """
-    Indica si la película es apropiada para niños.
-    
-    Criterios:
-    - Género: Animation, Family, Adventure, Fantasy, Music
-    - Certificación: G, PG
-    - Contenido: No violencia excesiva, lenguaje apropiado
-    
-    Usado para filtrado automático cuando SocialContext.hasChildren=true.
-    """@es .
+Indica si la película es apropiada para audiencia infantil.
+
+Señal primaria — certificación MPAA:
+- G            → siempre true
+- PG           → true SOLO si tiene género Animation o Children
+- PG-13, R, NC-17 → siempre false
+
+Señal secundaria — géneros (cuando no hay certificación):
+- Animation, Children, Family → true
+- cualquier otro → false
+
+IMPORTANTE: Este predicado se usa como filtro DURO solo cuando
+el contexto indica children_age_hint = 'young' (niños pequeños).
+Cuando children_age_hint es null o 'teen', se usa como señal de
+scoring positiva pero NO excluye películas del resultado.
+"""@es .
 
 #################################################################
 #    3. Reglas SWRL - Filtrado Lógico Automático
@@ -927,7 +956,7 @@ movie:Movie rdfs:subClassOf [
     
     Autor: Luis Fernando Hernández Solís
     Universidad del Valle - Escuela de Ingeniería de Sistemas y Computación
-    Versión: 2.0 - Refactorización para GraphRAG
+    Versión: 2.1 - Temporal context and certification-based kid-friendly
     Año: 2026
     
     """@es .

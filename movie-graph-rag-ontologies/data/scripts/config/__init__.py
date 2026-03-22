@@ -1,15 +1,15 @@
 """
-Configuración centralizada para scripts RDF del sistema de recomendación de películas.
+Configuracion centralizada para scripts RDF del sistema de recomendacion de peliculas.
 
 Este paquete contiene:
 - namespaces.py: Definiciones centralizadas de namespaces RDF/OWL
-- config.py: Configuración general (si existe)
+- config.py: Configuracion general (si existe)
 """
 
 from .namespaces import *
 
 __all__ = [
-    # Namespaces de ontologías
+    # Namespaces de ontologias
     'MOVIE_NS',
     'CONTEXT_NS',
     'BRIDGE_NS',
@@ -37,7 +37,7 @@ __all__ = [
     'SCHEMA',
     'DBO',
     
-    # Namespaces estándar
+    # Namespaces estandar
     'RDF', 'RDF_NS',
     'RDFS', 'RDFS_NS',
     'OWL', 'OWL_NS',

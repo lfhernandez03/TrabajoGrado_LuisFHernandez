@@ -3,7 +3,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# API KEYS - Validar variables de entorno críticas
+# API KEYS - Validar variables de entorno criticas
 OMDB_API_KEY = os.getenv('OMDB_API_KEY')
 TMDB_API_KEY = os.getenv('TMDB_API_KEY')
 
@@ -33,7 +33,7 @@ RATE_LIMIT_DELAY = 0.5 # Segundos entre requests (OMDB: 45 req/min = min 1.33s, 
 # Namespace de la ontologia
 MOVIE_NS = "http://www.semanticweb.org/movierecommendation/ontologies/2025/movie-ontology"
 
-# Mapeo de géneros MovieLens → Ontología
+# Mapeo de generos MovieLens → Ontologia
 GENRE_MAPPING = {
     'Action': 'Action',
     'Adventure': 'Adventure',
@@ -79,24 +79,24 @@ TONE_KEYWORDS = {
     }
 }
 
-# 2. PESOS PARA CÁLCULO DE SCORE
+# 2. PESOS PARA CALCULO DE SCORE
 TONE_WEIGHTS = {
     'keyword_primary': 3,      # Palabra clave primaria en keywords
     'keyword_secondary': 2,    # Palabra clave secundaria en keywords
     'overview_primary': 2,     # Palabra clave primaria en sinopsis
     'overview_secondary': 1,   # Palabra clave secundaria en sinopsis
-    'genre_match': 1.5,        # Coincidencia con género principal
-    'tagline': 1               # Aparición en tagline
+    'genre_match': 1.5,        # Coincidencia con genero principal
+    'tagline': 1               # Aparicion en tagline
 }
 
-# 3. UMBRALES DE DECISIÓN
+# 3. UMBRALES DE DECISION
 TONE_THRESHOLDS = {
-    'min_score': 2,            # Score mínimo para asignar un tono
+    'min_score': 2,            # Score minimo para asignar un tono
     'high_confidence': 5,      # Score para confianza alta (>80%)
-    'multi_tone_threshold': 3  # Diferencia mínima para considerar tono secundario
+    'multi_tone_threshold': 3  # Diferencia minima para considerar tono secundario
 }
 
-# 4. MAPEO MEJORADO GÉNERO → TONO (con scores de confianza)
+# 4. MAPEO MEJORADO GENERO → TONO (con scores de confianza)
 GENRE_TONE_MAPPING = {
     'Comedy': {'primary': 'ComedyTone', 'confidence': 0.8},
     'Horror': {'primary': 'DarkTone', 'confidence': 0.9},
@@ -126,11 +126,11 @@ THEME_KEYWORDS = {
     'Love': ['love', 'romance', 'relationship', 'marriage', 'couple']
 }
 
-# 6. MAPEO DE ESTRUCTURA NARRATIVA (basado en keywords y duración)
+# 6. MAPEO DE ESTRUCTURA NARRATIVA (basado en keywords y duracion)
 PLOT_STRUCTURE_RULES = {
     'LinearNarrative': {
         'keywords': ['journey', 'quest', 'mission', 'search', 'adventure'],
-        'runtime_range': (90, 180),  # Películas tradicionales
+        'runtime_range': (90, 180),  # Peliculas tradicionales
         'genres': ['Adventure', 'Action', 'Drama']
     },
     'NonLinearNarrative': {
@@ -145,7 +145,7 @@ PLOT_STRUCTURE_RULES = {
     }
 }
 
-# 7. MAPEO DE PERÍODO HISTÓRICO (por año y keywords)
+# 7. MAPEO DE PERIODO HISTORICO (por ano y keywords)
 HISTORICAL_PERIOD_MAPPING = {
     'Contemporary': {
         'year_range': (2000, 2030),
@@ -161,7 +161,7 @@ HISTORICAL_PERIOD_MAPPING = {
     }
 }
 
-# 8. CLASIFICACIÓN DE TIPOS DE PELÍCULA (por runtime y géneros)
+# 8. CLASIFICACION DE TIPOS DE PELICULA (por runtime y generos)
 MOVIE_TYPE_RULES = {
     'FeatureFilm': {
         'runtime_min': 40,
@@ -187,10 +187,10 @@ NLP_STOPWORDS = [
     'based', 'inspired', 'adaptation', 'version', 'chronicles'
 ]
 
-# 10. CONFIGURACIÓN DE CONFIANZA PARA MÚLTIPLES TONOS
+# 10. CONFIGURACION DE CONFIANZA PARA MULTIPLES TONOS
 MULTI_TONE_CONFIG = {
-    'enabled': True,                    # Permitir múltiples tonos
-    'max_tones': 2,                     # Máximo de tonos a asignar
-    'secondary_tone_min_score': 3,      # Score mínimo para tono secundario
-    'score_difference_threshold': 1.5   # Diferencia máxima entre tonos para considerarlos
+    'enabled': True,                    # Permitir multiples tonos
+    'max_tones': 2,                     # Maximo de tonos a asignar
+    'secondary_tone_min_score': 3,      # Score minimo para tono secundario
+    'score_difference_threshold': 1.5   # Diferencia maxima entre tonos para considerarlos
 }

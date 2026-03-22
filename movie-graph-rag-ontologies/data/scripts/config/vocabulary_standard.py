@@ -61,9 +61,9 @@ COMPANION_VOCABULARY = {
     'solo': 'solo',                         # alone
     'pareja': 'pareja',                     # with partner/spouse
     'familia': 'familia',                   # with family
-    'familia_con_niños': 'familia con niños',  # with family AND children
+    'familia_con_ninos': 'familia con ninos',  # with family AND children
     'amigos': 'amigos',                     # with friends
-    'compañeros': 'compañeros',             # with colleagues
+    'companeros': 'companeros',             # with colleagues
     'grupo_grande': 'grupo grande',         # with large group
 }
 
@@ -143,7 +143,7 @@ def normalize_mood(mood_input: str) -> str:
         if normalized == standard_value.lower():
             return standard_value
     
-    # Try without accents (for cases like "nostalgico" vs "nostálgico")
+    # Try without accents (for cases like "nostalgico" vs "nostalgico")
     import unicodedata
     no_accents = ''.join(
         c for c in unicodedata.normalize('NFD', normalized)
@@ -249,10 +249,10 @@ GEMINI_PROPERTY_DOCUMENTATION = """
 
 ## Bridge Ontology Compatibility Properties (for semantic matching)
 - bridge:compatibleMood (xsd:string) - Best compatible mood
-  Valid values: feliz, relajado, estresado, triste, ansioso, emocionado, aburrido, curioso, romántico, nostálgico, aventurero, nervioso, reflexivo, contemplativo, social
+  Valid values: feliz, relajado, estresado, triste, ansioso, emocionado, aburrido, curioso, romantico, nostalgico, aventurero, nervioso, reflexivo, contemplativo, social
 
 - bridge:compatibleCompanion (xsd:string) - Best compatible companion type
-  Valid values: solo, pareja, familia, familia con niños, amigos, compañeros, grupo grande
+  Valid values: solo, pareja, familia, familia con ninos, amigos, companeros, grupo grande
 
 - bridge:compatibleEnergyLevel (xsd:string) - Best compatible energy level
   Valid values: bajo, medio, alto
