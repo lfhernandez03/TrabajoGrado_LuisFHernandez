@@ -6,7 +6,7 @@ from app.api.schemas.recommendation import (
     RecommendationRequest,
     RecommendationResponse,
 )
-from app.application.use_cases.recommendation import RecommendationUseCase
+from app.application.use_cases.recommendation.recommendation_use_case import RecommendationUseCase
 from app.domain.entities.auth_user import AuthUser
 
 router = APIRouter(prefix="/recommendation", tags=["recommendation"])

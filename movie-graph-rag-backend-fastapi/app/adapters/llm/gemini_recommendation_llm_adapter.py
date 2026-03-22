@@ -55,28 +55,33 @@ _NLU_SYSTEM_PROMPT = (
 
 QUERY_TYPE_INSTRUCTIONS: dict[str, str] = {
     "general": (
-        "Explica en máximo 4 frases por qué estas películas encajan con lo que el usuario busca. "
-        "Sé específico sobre el tono y estilo de cada recomendación."
+        "Explica detalladamente (5-7 frases) por qué estas películas encajan con lo que el usuario busca. "
+        "Sé específico sobre el tono, estilo y elementos que hacen cada película especialmente relevante. "
+        "Menciona detalles de la trama o atmósfera que conectan con la búsqueda del usuario."
     ),
     "activity": (
-        "El usuario recibió estas recomendaciones basadas en su actividad reciente. "
-        "Explica en 3 frases qué preferencias de sus búsquedas anteriores se reflejan en estas sugerencias. "
-        "Menciona géneros o estilos que el usuario ha explorado."
+        "El usuario recibió estas recomendaciones basadas en su actividad reciente y preferencias históricas. "
+        "Explica detalladamente (5-7 frases) qué patrones en sus búsquedas anteriores se reflejan en estas sugerencias. "
+        "Menciona géneros, directores o estilos que el usuario ha explorado y cómo se conectan con estas películas. "
+        "Destaca qué hace estas recomendaciones especialmente alineadas con su perfil."
     ),
     "cold_start": (
-        "Es la primera vez que el usuario interactúa con el sistema. "
-        "Explica en 2 frases por qué estas películas son un buen punto de partida. "
-        "Al final, invita al usuario a marcar favoritos para mejorar las próximas recomendaciones."
+        "Es la primera vez que el usuario interactúa con el sistema, así que estas recomendaciones están basadas en el contexto de su consulta. "
+        "Explica detalladamente (5-7 frases) por qué estas películas son un excelente punto de partida. "
+        "Destaca la diversidad en géneros o estilos para ayudarle a explorar. "
+        "Invita al usuario a marcar favoritos para mejorar las próximas recomendaciones."
     ),
     "mood_driven": (
         "El estado emocional del usuario fue la señal principal para esta selección. "
-        "Explica en 3 frases cómo el tono, ritmo o temática de estas películas conecta con ese estado de ánimo. "
-        "Usa lenguaje empático y directo."
+        "Explica detalladamente (5-7 frases) cómo el tono, ritmo, temática y atmósfera de estas películas conecta con ese específico estado de ánimo. "
+        "Sé concreto: describe escenas o elementos de cada película que generan la emoción deseada. "
+        "Usa lenguaje empático y evocador."
     ),
     "social": (
-        "El contexto social fue el factor determinante. "
-        "Explica en 3 frases por qué estas películas son adecuadas para el grupo o compañía descrita. "
-        "Si hay niños presentes, menciona por qué el contenido es apropiado para ellos."
+        "El contexto social fue el factor determinante en esta selección. "
+        "Explica detalladamente (5-7 frases) por qué estas películas son perfectas para el grupo o compañía descrita. "
+        "Si hay niños, explica en detalle el contenido apropiado, temas seguros y por qué es entretenido para todas las edades. "
+        "Si es un grupo de amigos o pareja, destaca elementos sociales como humor, drama o romance que hacen la experience compartida."
     ),
 }
 
@@ -269,16 +274,30 @@ class GeminiRecommendationLlmAdapter(RecommendationLlmClientPort):
     ) -> str:
         if not movies_with_scores:
             return (
-                "Aun no tengo suficientes senales para recomendarte peliculas. "
-                "Agrega favoritos y vuelve a intentar. "
-                f"Consulta recibida: '{query}'."
+                "Lamentablemente, no encontré películas que coincidan exactamente con tu búsqueda en este momento. "
+                f"Tu consulta fue: '{query}'. "
+                "Te sugiero marcar algunas películas como favoritas para que el sistema aprenda mejor tus preferencias, "
+                "o intenta con una búsqueda más general. "
+                "Vuelve a intentar después de agregar favoritos para obtener recomendaciones más personalizadas."
             )
 
-        titles = ", ".join(movie.get("title", "") for movie in movies_with_scores[:3])
+        titles_with_genres = []
+        for movie in movies_with_scores[:5]:
+            title = movie.get("title", "Sin título")
+            genre = movie.get("genreName", "")
+            year = movie.get("releaseDate", "")
+            if genre:
+                titles_with_genres.append(f"{title} ({genre}, {year})")
+            else:
+                titles_with_genres.append(f"{title}")
+        
+        titles_str = ", ".join(titles_with_genres)
         return (
-            "Prepare recomendaciones basadas en tu consulta y tus senales actuales. "
-            f"Las opciones mas fuertes son: {titles}. "
-            f"Contexto detectado: {context_summary}."
+            f"Basándome en tu consulta '{query}', preparé estas recomendaciones: {titles_str}. "
+            f"Estas películas se alinean con el contexto que detecté ({context_summary}). "
+            "Cada una ofrece una experiencia única: unas son más relajantes, otras más emocionantes, "
+            "y todas han sido seleccionadas porque encajan con lo que buscas. "
+            "Si alguna te gusta, márcala como favorita para mejorar futuras recomendaciones."
         )
 
     def generate_recommendation_explanation(
@@ -303,12 +322,15 @@ class GeminiRecommendationLlmAdapter(RecommendationLlmClientPort):
                 contents=prompt,
                 config=genai.types.GenerateContentConfig(
                     system_instruction=(
-                        "Eres un asistente de recomendación de películas. "
-                        "Responde siempre en español. "
-                        "Sigue exactamente las instrucciones de formato y longitud."
+                        "Eres un experto asistente de recomendación de películas con profundo conocimiento de cine. "
+                        "Tu tarea es explicar por qué las películas recomendadas son perfectas para el usuario. "
+                        "Siempre responde en español. "
+                        "Sé apasionado, detallado y específico. "
+                        "Explica elementos de la trama, atmósfera, tono y por qué conectan con lo que el usuario busca. "
+                        "Evita ser genérico: haz que cada explicación sea personal y convincente."
                     ),
-                    temperature=0.4,
-                    max_output_tokens=300,
+                    temperature=0.5,
+                    max_output_tokens=600,
                 ),
             )
             return response.text

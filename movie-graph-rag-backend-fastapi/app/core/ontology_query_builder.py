@@ -228,6 +228,76 @@ def _safe_cross_ontology_fallback(limit: int = 30) -> str:
     )
 
 
+def build_genre_semantic_fallback_sparql(
+    genres: list[str] | None,
+    has_children: bool,
+    excluded_normalized: set[str],
+    limit: int = 40,
+) -> str:
+    """Build genre-based semantic fallback SPARQL when bridge predicates might not exist.
+    
+    This is used when:
+    - User provides genre preferences without explicit mood/companion signals
+    - AND social context indicates need for semantic filtering (e.g., has_children)
+    
+    The query adds semantic constraints based on genre + context without relying on
+    bridge predicates, allowing graceful fallback if bridge properties aren't populated.
+    """
+    safe_limit = max(1, min(100, int(limit)))
+    
+    genre_filter = ""
+    if genres:
+        genre_values = ", ".join(
+            f'"{_escape_sparql_literal(g)}"' for g in genres if str(g).strip()
+        )
+        genre_filter = f"  FILTER(?genreName IN ({genre_values}))\n"
+    
+    kid_friendly_suggestion = ""
+    if has_children and ("Animation" in (genres or []) or "Family" in (genres or [])):
+        # For kids viewing, prioritize appropriate certifications
+        # This uses movie properties instead of bridge predicates
+        kid_friendly_suggestion = (
+            "  OPTIONAL { ?movie movie:hasCertification ?cert }\n"
+            "  OPTIONAL { ?movie bridge:isKidFriendly ?kf }\n"
+        )
+    
+    exclusion_filter = ""
+    if excluded_normalized:
+        clauses = [
+            f'!CONTAINS(LCASE(STR(?title)), LCASE("{_escape_sparql_literal(value)}"))'
+            for value in sorted(excluded_normalized)[:10]
+            if str(value).strip()
+        ]
+        if clauses:
+            exclusion_filter = f"  FILTER({' && '.join(clauses)})\n"
+    
+    candidate = (
+        "PREFIX movie: <http://www.semanticweb.org/movierecommendation/ontologies/2025/movie-ontology#>\n"
+        "PREFIX bridge: <http://www.semanticweb.org/movierecommendation/ontologies/2025/bridge-ontology#>\n"
+        "PREFIX schema1: <http://schema.org/>\n"
+        "PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>\n"
+        "\n"
+        "SELECT DISTINCT ?movie ?title ?genreName ?runtime ?rating ?posterUrl ?releaseDate\n"
+        "WHERE {\n"
+        "  ?movie rdf:type movie:FeatureFilm ;\n"
+        "         movie:hasTitle ?title .\n"
+        "  OPTIONAL { ?movie movie:hasMainGenre/movie:genreName ?genreName }\n"
+        "  OPTIONAL { ?movie movie:runtime ?runtime }\n"
+        "  OPTIONAL { ?movie movie:hasRating ?rating }\n"
+        "  OPTIONAL { ?movie schema1:image ?posterUrl }\n"
+        "  OPTIONAL { ?movie movie:releaseDate ?releaseDate }\n"
+        f"{kid_friendly_suggestion}"
+        f"{genre_filter}"
+        f"{exclusion_filter}"
+        "}\n"
+        "ORDER BY DESC(?rating) DESC(?releaseDate)\n"
+        f"LIMIT {safe_limit}"
+    )
+    
+    
+    return candidate if _is_valid_sparql_query(candidate) else _safe_cross_ontology_fallback(limit=safe_limit)
+
+
 def _is_valid_sparql_query(query_text: str) -> bool:
     normalized = query_text.strip()
     upper = normalized.upper()
@@ -282,38 +352,33 @@ def build_cross_ontology_sparql_from_signals(
     excluded_normalized: set[str],
     limit: int = 30,
 ) -> str:
-    """Build SPARQL query using Option C properties (best + all values).
-    
-    OPCIÓN C STRATEGY:
-    - Uses bridge:bestCompatibleMood for fast, exact matching (score 0.9)
-    - Alternative: bridge:allCompatibleMoods contains pipe-separated values for flexible matching
-    - Same for companion and energy level properties
-    
-    Current implementation uses 'best' properties for optimal performance.
-    For flexible semantic matching, parse allCompatibleMoods in post-processing.
+    """Build SPARQL query using bridge semantic compatibility predicates.
+
+    Uses exact matching over bridge:compatibleMood / bridge:compatibleCompanion /
+    bridge:compatibleEnergyLevel so semantic filters are always effective when
+    signals are present.
     """
     safe_limit = max(1, min(100, int(limit)))
 
-    # OPTION C: Use bestCompatibleMood for primary matching
     mood_filter = ""
     if mood_es:
-        mood_filter = f'  OPTIONAL {{ ?movie bridge:bestCompatibleMood ?bestMood }}\n  FILTER(!BOUND(?bestMood) || ?bestMood = "{_escape_sparql_literal(mood_es)}")\n'
+        mood_filter = (
+            f'  ?movie bridge:compatibleMood "{_escape_sparql_literal(mood_es)}" .\n'
+        )
 
-    # OPTION C: Use bestCompatibleCompanion for primary matching
     companion_filter = ""
     if companion_es:
         companion_filter = (
-            f'  OPTIONAL {{ ?movie bridge:bestCompatibleCompanion ?bestCompanion }}\n  FILTER(!BOUND(?bestCompanion) || ?bestCompanion = "{_escape_sparql_literal(companion_es)}")\n'
+            f'  ?movie bridge:compatibleCompanion "{_escape_sparql_literal(companion_es)}" .\n'
         )
 
-    # OPTION C: Use bestCompatibleEnergyLevel for primary matching
     energy_filter = ""
     if energy_es:
         energy_filter = (
-            f'  OPTIONAL {{ ?movie bridge:bestCompatibleEnergyLevel ?bestEnergy }}\n  FILTER(!BOUND(?bestEnergy) || ?bestEnergy = "{_escape_sparql_literal(energy_es)}")\n'
+            f'  ?movie bridge:compatibleEnergyLevel "{_escape_sparql_literal(energy_es)}" .\n'
         )
 
-    children_filter = "  OPTIONAL { ?movie bridge:isKidFriendly ?kidFriendlyOptional }\n  FILTER(!BOUND(?kidFriendlyOptional) || ?kidFriendlyOptional = true)\n" if has_children else ""
+    children_filter = "  ?movie bridge:isKidFriendly true .\n" if has_children else ""
     runtime_filter = (
         f"  FILTER(!BOUND(?runtime) || ?runtime <= {int(runtime_max)})\n"
         if runtime_max is not None
@@ -443,11 +508,37 @@ def build_cross_ontology_sparql(
             ),
         ))
 
+    genre_set = {str(genre).strip().lower() for genre in (ctx.genres or []) if str(genre).strip()}
+    family_or_animation_query = bool({"family", "animation"}.intersection(genre_set))
+    if not attempts and family_or_animation_query:
+        attempts.append((
+            "ontology_kids_only",
+            build_cross_ontology_sparql_from_signals(
+                mood_es=None,
+                companion_es=None,
+                energy_es=None,
+                has_children=True,
+                runtime_max=runtime_max,
+                excluded_normalized=excluded_normalized,
+                limit=40,
+            ),
+        ))
+        # Add fallback if bridge predicates aren't populated
+        attempts.append((
+            "genre_semantic_family",
+            build_genre_semantic_fallback_sparql(
+                genres=ctx.genres,
+                has_children=True,
+                excluded_normalized=excluded_normalized,
+                limit=40,
+            ),
+        ))
+
     seen: set[str] = set()
     unique: list[tuple[str, str]] = []
     for name, query in attempts:
         if query not in seen:
             seen.add(query)
             unique.append((name, query))
-
+    
     return unique
