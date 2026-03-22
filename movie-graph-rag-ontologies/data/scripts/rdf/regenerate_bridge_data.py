@@ -191,16 +191,20 @@ def parse_bridge_data(path: Path) -> dict:
     return movies
 
 
-def parse_movies_data(path: Path) -> tuple[dict[str, list[str]], dict[str, str]]:
-    """Parse movies_data.ttl for genres and certifications.
+def parse_movies_data(path: Path) -> tuple[dict[str, list[str]], dict[str, str], dict[str, str], dict[str, str]]:
+    """Parse movies_data.ttl for genres, certifications, titles, and runtimes.
 
     Returns:
         genre_map: {movie_uri: [genre_name_strings]}
         cert_map:  {movie_uri: certification_string}  e.g. "G", "PG", "R"
+        title_map: {movie_uri: title_string}
+        runtime_map: {movie_uri: runtime_string}
     """
     content = path.read_text(encoding="utf-8")
     genre_map: dict[str, list[str]] = {}
     cert_map: dict[str, str] = {}
+    title_map: dict[str, str] = {}
+    runtime_map: dict[str, str] = {}
 
     blocks = re.split(r"\n(?=moviedata:movie_)", content)
     for block in blocks:
@@ -220,7 +224,15 @@ def parse_movies_data(path: Path) -> tuple[dict[str, list[str]], dict[str, str]]
         if cert_match:
             cert_map[uri] = cert_match.group(1).rstrip(".")
 
-    return genre_map, cert_map
+        title_match = re.search(r'movie:hasTitle\s+"([^"]+)"', block)
+        if title_match:
+            title_map[uri] = title_match.group(1)
+
+        runtime_match = re.search(r"movie:runtime\s+(\d+)", block)
+        if runtime_match:
+            runtime_map[uri] = runtime_match.group(1)
+
+    return genre_map, cert_map, title_map, runtime_map
 
 
 def infer_times_of_day(moods: list[str], companions: list[str]) -> list[str]:
@@ -246,11 +258,38 @@ def infer_times_of_day(moods: list[str], companions: list[str]) -> list[str]:
 def enrich(
     movie: dict, genres: list[str], certification: str | None
 ) -> dict:
-    """Enrich movie with inferred predicates."""
+    """Enrich movie with inferred predicates.
+    
+    If moods/companions/energy are missing, generates them from genres.
+    """
     enriched = movie.copy()
 
-    # Infer times of day from existing moods/companions
-    times = infer_times_of_day(movie["moods"], movie["companions"])
+    # Generate moods from genres if not already present
+    if not enriched["moods"]:
+        moods_set = set()
+        for genre in genres:
+            if genre in GENRE_TO_MOODS:
+                moods_set.update(GENRE_TO_MOODS[genre])
+        enriched["moods"] = list(moods_set) if moods_set else []
+
+    # Generate companions from genres if not already present
+    if not enriched["companions"]:
+        companions_set = set()
+        for genre in genres:
+            if genre in GENRE_TO_COMPANIONS:
+                companions_set.update(GENRE_TO_COMPANIONS[genre])
+        enriched["companions"] = list(companions_set) if companions_set else []
+
+    # Generate energy levels from genres if not already present
+    if not enriched["energy"]:
+        energy_set = set()
+        for genre in genres:
+            if genre in GENRE_TO_ENERGY:
+                energy_set.update(GENRE_TO_ENERGY[genre])
+        enriched["energy"] = list(energy_set) if energy_set else []
+
+    # Infer times of day from moods/companions
+    times = infer_times_of_day(enriched["moods"], enriched["companions"])
     enriched["times"] = times
 
     # Compute kid-friendly flag
@@ -294,13 +333,24 @@ def to_ttl(movie: dict) -> str:
     for time_of_day in movie["times"]:
         lines.append(f'    bridge:compatibleTimeOfDay "{time_of_day}" ;')
 
-    # Add timeMatchScore
+    # Compute compatibility scores
+    # Base score for each category (0.9 if values present, 0.5 if empty)
+    mood_score = 0.9 if movie["moods"] else 0.5
+    social_score = 0.9 if movie["companions"] else 0.5
+    energy_score = 0.9 if movie["energy"] else 0.5
+    
+    # Average the scores for overall compatibility
+    overall_score = round((mood_score + social_score + energy_score) / 3.0, 2)
+    
+    # Add time match score (based on breadth of available times)
     time_match_score = round(len(movie["times"]) / 4.0, 2)
-    lines.append(f'    bridge:timeMatchScore "{time_match_score}"^^xsd:float ;')
-
-    # Add isKidFriendly
-    kid_friendly_str = "true" if movie["is_kid_friendly"] else "false"
-    lines.append(f"    bridge:isKidFriendly {kid_friendly_str} .")
+    
+    lines.append(f'    bridge:isKidFriendly {"true" if movie["is_kid_friendly"] else "false"} ;')
+    lines.append(f'    bridge:compatibilityScore "{overall_score}"^^xsd:float ;')
+    lines.append(f'    bridge:moodMatchScore "{mood_score}"^^xsd:float ;')
+    lines.append(f'    bridge:socialMatchScore "{social_score}"^^xsd:float ;')
+    lines.append(f'    bridge:energyMatchScore "{energy_score}"^^xsd:float ;')
+    lines.append(f'    bridge:timeMatchScore "{time_match_score}"^^xsd:float .')
 
     return "\n".join(lines)
 
@@ -317,6 +367,10 @@ def _validate_output(path: Path) -> None:
     has_energy = len(re.findall(r"bridge:compatibleEnergyLevel ", content))
     has_time = len(re.findall(r"bridge:compatibleTimeOfDay ", content))
     has_time_score = content.count("bridge:timeMatchScore ")
+    has_compatibility = content.count("bridge:compatibilityScore ")
+    has_mood_score = content.count("bridge:moodMatchScore ")
+    has_social_score = content.count("bridge:socialMatchScore ")
+    has_energy_score = content.count("bridge:energyMatchScore ")
 
     def unique_vals(predicate: str) -> list[str]:
         return sorted(set(re.findall(rf'bridge:{predicate} "([^"]+)"', content)))
@@ -327,7 +381,11 @@ def _validate_output(path: Path) -> None:
     print(f"compatibleCompanion triples:       {has_companion}")
     print(f"compatibleEnergyLevel triples:     {has_energy}")
     print(f"compatibleTimeOfDay triples:       {has_time}")
-    print(f"timeMatchScore triples:            {has_time_score}")
+    print(f"Compatibility scores:              {has_compatibility}")
+    print(f"  - moodMatchScore:                {has_mood_score}")
+    print(f"  - socialMatchScore:              {has_social_score}")
+    print(f"  - energyMatchScore:              {has_energy_score}")
+    print(f"  - timeMatchScore:                {has_time_score}")
     print(f"isKidFriendly true:                {kid_true}")
     print(f"'familia con ninos' triples:       {familia_ninos}")
     print(f"Unique moods:      {unique_vals('compatibleMood')}")
@@ -340,7 +398,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(
         description="Regenerate bridge_data.ttl with correct predicate structure"
     )
-    parser.add_argument("--bridge", required=True, help="Path to bridge_data.ttl")
+    parser.add_argument("--bridge", required=False, default=None, help="Path to bridge_data.ttl (optional, for incremental merge)")
     parser.add_argument(
         "--movies",
         required=True,
@@ -358,23 +416,55 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    bridge_path = Path(args.bridge)
+    bridge_path = Path(args.bridge) if args.bridge else None
     movies_path = Path(args.movies)
     output_path = Path(args.output)
 
-    print(f"Reading {bridge_path}...")
-    bridge_movies = parse_bridge_data(bridge_path)
-    print(f"  Found {len(bridge_movies)} movie blocks")
+    # Read bridge data if provided
+    bridge_movies: dict[str, dict] = {}
+    if bridge_path and bridge_path.exists():
+        print(f"Reading {bridge_path}...")
+        bridge_movies = parse_bridge_data(bridge_path)
+        print(f"  Found {len(bridge_movies)} movie blocks")
+    else:
+        if bridge_path:
+            print(f"WARNING: {bridge_path} not found — generating fresh bridge data from movies_data.ttl")
+        else:
+            print("Generating fresh bridge data from movies_data.ttl (no incremental merge)")
 
     genre_map: dict[str, list[str]] = {}
     cert_map: dict[str, str] = {}
+    title_map: dict[str, str] = {}
+    runtime_map: dict[str, str] = {}
     if movies_path.exists():
         print(f"Reading {movies_path}...")
-        genre_map, cert_map = parse_movies_data(movies_path)
+        genre_map, cert_map, title_map, runtime_map = parse_movies_data(movies_path)
         print(f"  Found genres for {len(genre_map)} movies")
         print(f"  Found certifications for {len(cert_map)} movies")
     else:
-        print(f"WARNING: {movies_path} not found — using mood/companion signals only")
+        print(f"ERROR: {movies_path} not found — cannot proceed")
+        return
+
+    # If no bridge data was provided, create entries from movies_data.ttl only
+    if not bridge_movies:
+        print("Creating new bridge data entries from movies_data.ttl...")
+        for movie_uri in genre_map.keys():
+            title = title_map.get(movie_uri, "")
+            runtime = runtime_map.get(movie_uri, "")
+            ttl_block = f"{movie_uri} a movie:Movie ;"
+            if title:
+                ttl_block += f'\n    movie:hasTitle "{title}" ;'
+            if runtime:
+                ttl_block += f"\n    movie:runtime {runtime} ;"
+            
+            bridge_movies[movie_uri] = {
+                "uri": movie_uri,
+                "block": ttl_block,
+                "moods": [],
+                "companions": [],
+                "energy": [],
+                "main_genre": "",
+            }
 
     print("Enriching...")
     ttl_blocks: list[str] = []

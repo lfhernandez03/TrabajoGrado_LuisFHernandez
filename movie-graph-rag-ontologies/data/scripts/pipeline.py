@@ -360,8 +360,9 @@ def run_pipeline(
         '--output', str(bridge_output_file)
     ]
     
-    # Si existe un bridge_data.ttl previo, pasarlo para merge incremental
-    if bridge_input_file.exists():
+    # Si existe un bridge_data.ttl previo Y se quiere merge incremental, pasarlo
+    # De lo contrario, generar un nuevo bridge_data.ttl solo con la data procesada
+    if bridge_input_file.exists() and incremental:
         bridge_args.extend(['--bridge', str(bridge_input_file)])
     
     steps.append({
