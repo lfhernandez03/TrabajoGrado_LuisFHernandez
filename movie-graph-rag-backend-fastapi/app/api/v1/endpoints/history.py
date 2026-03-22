@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
-from app.api.dependencies import get_current_user, get_query_history_use_case
+from app.api.di import get_current_user_di as get_current_user, get_query_history_use_case_di as get_query_history_use_case
 from app.api.schemas.history import CreateQueryHistoryRequest, QueryHistoryResponse
-from app.application.use_cases.query_history import QueryHistoryUseCase
+from app.application.use_cases.history import QueryHistoryUseCase
 from app.domain.entities.auth_user import AuthUser
 from app.domain.entities.query_history import QueryHistory
 

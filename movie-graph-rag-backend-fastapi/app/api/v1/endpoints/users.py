@@ -1,13 +1,13 @@
 from fastapi import APIRouter, Depends, status
 
-from app.api.dependencies import get_current_user, get_user_favorites_use_case
+from app.api.di import get_current_user_di as get_current_user, get_user_favorites_use_case_di as get_user_favorites_use_case
 from app.api.schemas.favorites import (
     FavoriteMovieRequest,
     FavoriteMovieResponse,
     FavoritesResponse,
     RemoveFavoriteRequest,
 )
-from app.application.use_cases.user_favorites import UserFavoritesUseCase
+from app.application.use_cases.users import UserFavoritesUseCase
 from app.domain.entities.auth_user import AuthUser
 from app.domain.entities.favorite_movie import FavoriteMovie
 

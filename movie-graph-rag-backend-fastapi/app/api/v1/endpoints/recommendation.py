@@ -1,12 +1,12 @@
 from fastapi import APIRouter, Depends, Query
 
-from app.api.dependencies import get_current_user, get_recommendation_use_case
+from app.api.di import get_current_user_di as get_current_user, get_recommendation_use_case_di as get_recommendation_use_case
 from app.api.schemas.recommendation import (
     RecommendationDebugResponse,
     RecommendationRequest,
     RecommendationResponse,
 )
-from app.application.use_cases.recommendation.recommendation_use_case import RecommendationUseCase
+from app.application.use_cases.recommendation import RecommendationUseCase
 from app.domain.entities.auth_user import AuthUser
 
 router = APIRouter(prefix="/recommendation", tags=["recommendation"])

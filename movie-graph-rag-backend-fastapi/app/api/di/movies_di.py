@@ -6,11 +6,13 @@ from app.application.events import get_event_bus, RecommendationEventHandler
 from app.adapters.repositories.mongo_user_favorites_repository import MongoUserFavoritesRepositoryAdapter
 from app.adapters.repositories.mongo_query_history_repository import MongoQueryHistoryRepositoryAdapter
 from app.adapters.repositories.mongo_movie_catalog_repository import MongoMovieCatalogRepositoryAdapter
-from app.application.use_cases.user_favorites import UserFavoritesUseCase
-from app.application.use_cases.query_history import QueryHistoryUseCase
+from app.adapters.repositories.mongo_recommendation_metrics_repository import MongoRecommendationMetricsRepositoryAdapter
+from app.application.use_cases.users import UserFavoritesUseCase
+from app.application.use_cases.history import QueryHistoryUseCase
 from app.application.use_cases.recommendation.recommendation_use_case import (
     RecommendationUseCase,
 )
+from app.application.use_cases.recommendation import RecommendationMetricsUseCase
 from app.api.di.common_di import (
     get_mongo_db_singleton,
     get_recommendation_llm_client_singleton,
@@ -32,10 +34,17 @@ def get_query_history_repository_singleton() -> MongoQueryHistoryRepositoryAdapt
 
 
 @lru_cache(maxsize=1)
-def get_movies_repository_singleton_movies() -> MongoMovieCatalogRepositoryAdapter:
-    """Get movies repository (cached singleton)"""
+def get_recommendation_metrics_repository_singleton() -> MongoRecommendationMetricsRepositoryAdapter:
+    """Get recommendation metrics repository (cached singleton)"""
     mongo = get_mongo_db_singleton()
-    return MongoMovieCatalogRepositoryAdapter(mongo)
+    return MongoRecommendationMetricsRepositoryAdapter(db=mongo)
+
+
+@lru_cache(maxsize=1)
+def get_recommendation_metrics_use_case_singleton() -> RecommendationMetricsUseCase:
+    """Get recommendation metrics use case (cached singleton)"""
+    repo = get_recommendation_metrics_repository_singleton()
+    return RecommendationMetricsUseCase(repository=repo)
 
 
 @lru_cache(maxsize=1)
@@ -60,9 +69,9 @@ def get_recommendation_use_case_singleton() -> RecommendationUseCase:
     history_use_case = get_query_history_use_case_singleton()
     
     return RecommendationUseCase(
-        recommendation_llm_client=llm_client,
         favorites_use_case=favorites_use_case,
         history_use_case=history_use_case,
+        llm_client=llm_client,
     )
 
 
@@ -106,6 +115,16 @@ def get_query_history_use_case_di() -> QueryHistoryUseCase:
 def get_recommendation_use_case_di() -> RecommendationUseCase:
     """FastAPI dependency: get recommendation use case"""
     return get_recommendation_use_case_singleton()
+
+
+def get_recommendation_metrics_repository_di() -> MongoRecommendationMetricsRepositoryAdapter:
+    """FastAPI dependency: get recommendation metrics repository"""
+    return get_recommendation_metrics_repository_singleton()
+
+
+def get_recommendation_metrics_use_case_di() -> RecommendationMetricsUseCase:
+    """FastAPI dependency: get recommendation metrics use case"""
+    return get_recommendation_metrics_use_case_singleton()
 
 
 def initialize_recommendation_module():

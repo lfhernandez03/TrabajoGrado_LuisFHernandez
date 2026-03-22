@@ -6,7 +6,7 @@ from typing import Any
 from app.adapters.repositories.mongo_movie_catalog_repository import (
     MongoMovieCatalogRepositoryAdapter,
 )
-from app.application.use_cases.query_history import QueryHistoryUseCase
+from app.application.use_cases.history import QueryHistoryUseCase
 from app.domain.entities.query_history import QueryHistory
 
 

@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, Query
 
-from app.api.dependencies import get_current_user, get_movies_use_case
+from app.api.di import get_current_user_di as get_current_user, get_movies_use_case_di as get_movies_use_case
 from app.api.schemas.movies import (
     ConnectionExplorerResponse,
     MovieResponse,

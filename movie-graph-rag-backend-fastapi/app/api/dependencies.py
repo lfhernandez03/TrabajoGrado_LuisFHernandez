@@ -16,12 +16,12 @@ from app.adapters.repositories.mongo_recommendation_metrics_repository import (
 from app.adapters.repositories.mongo_user_favorites_repository import (
     MongoUserFavoritesRepositoryAdapter,
 )
-from app.application.use_cases.auth_user import AuthUserUseCase
+from app.application.use_cases.auth import AuthUserUseCase
 from app.application.use_cases.movies import MoviesUseCase
-from app.application.use_cases.query_history import QueryHistoryUseCase
+from app.application.use_cases.history import QueryHistoryUseCase
 from app.application.use_cases.recommendation.recommendation_use_case import RecommendationUseCase
-from app.application.use_cases.recommendation_metrics import RecommendationMetricsUseCase
-from app.application.use_cases.user_favorites import UserFavoritesUseCase
+from app.application.use_cases.recommendation import RecommendationMetricsUseCase
+from app.application.use_cases.users import UserFavoritesUseCase
 from app.core.database import get_database
 from app.core.security import decode_access_token
 from app.domain.entities.auth_user import AuthUser

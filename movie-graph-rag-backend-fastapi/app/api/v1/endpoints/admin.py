@@ -1,13 +1,13 @@
 from fastapi import APIRouter, Depends, Query
 
-from app.api.dependencies import get_current_admin, get_recommendation_metrics_use_case
+from app.api.di import get_current_admin_di as get_current_admin, get_recommendation_metrics_use_case_di as get_recommendation_metrics_use_case
 from app.api.schemas.admin_metrics import (
     AdminRecommendationMetricsResponse,
     RecommendationMetricItemResponse,
     RecommendationMetricSummaryResponse,
 )
 from app.api.schemas.auth import AuthUserResponse
-from app.application.use_cases.recommendation_metrics import RecommendationMetricsUseCase
+from app.application.use_cases.recommendation import RecommendationMetricsUseCase
 from app.domain.entities.auth_user import AuthUser
 
 router = APIRouter(prefix="/admin", tags=["admin"])

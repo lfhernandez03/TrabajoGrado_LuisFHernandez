@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 
-from app.api.dependencies import get_auth_use_case, get_current_user
+from app.api.di import get_auth_use_case_di as get_auth_use_case, get_current_user_di as get_current_user
 from app.api.schemas.auth import (
     AuthResponse,
     AuthUserResponse,
@@ -9,7 +9,7 @@ from app.api.schemas.auth import (
     RegisterRequest,
     TokenResponse,
 )
-from app.application.use_cases.auth_user import AuthUserUseCase
+from app.application.use_cases.auth import AuthUserUseCase
 from app.domain.entities.auth_user import AuthUser
 from app.domain.errors import (
     EmailAlreadyRegisteredError,

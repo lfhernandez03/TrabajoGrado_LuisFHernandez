@@ -15,8 +15,8 @@ from app.core.ontology_query_builder import (
     delete_context_snapshot,
     build_context_triples_turtle,
 )
-from app.application.use_cases.query_history import QueryHistoryUseCase
-from app.application.use_cases.user_favorites import UserFavoritesUseCase
+from app.application.use_cases.history import QueryHistoryUseCase
+from app.application.use_cases.users import UserFavoritesUseCase
 from .models import RecommendationResult, MovieRecommendation, DebugInfo
 
 logger = logging.getLogger(__name__)

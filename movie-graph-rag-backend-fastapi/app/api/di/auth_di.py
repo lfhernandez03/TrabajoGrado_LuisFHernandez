@@ -4,12 +4,14 @@ from functools import lru_cache
 
 from app.core.config import settings
 from app.core.database import get_database
+from app.core.security import decode_access_token
 from app.adapters.repositories.mongo_auth_user_repository import MongoAuthUserRepositoryAdapter
-from app.application.use_cases.auth_user import AuthUserUseCase
+from app.application.use_cases.auth import AuthUserUseCase
+from app.domain.entities.auth_user import AuthUser
 from app.api.di.common_di import get_mongo_db_singleton
 
 from fastapi import Depends, HTTPException, status
-from fastapi.security import HTTPBearer
+from fastapi.security import OAuth2PasswordBearer
 
 
 @lru_cache(maxsize=1)
@@ -23,7 +25,7 @@ def get_auth_user_repository_singleton() -> MongoAuthUserRepositoryAdapter:
 def get_auth_use_case_singleton() -> AuthUserUseCase:
     """Get auth use case (cached singleton)"""
     repo = get_auth_user_repository_singleton()
-    return AuthUserUseCase(repo, settings)
+    return AuthUserUseCase(repo)
 
 
 # FastAPI dependency injection functions
@@ -38,34 +40,36 @@ def get_auth_use_case_di() -> AuthUserUseCase:
 
 
 # Security dependencies
-http_bearer = HTTPBearer()
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/token")
 
 
-async def get_current_user_di(credentials = Depends(http_bearer)):
+def get_current_user_di(
+    token: str = Depends(oauth2_scheme),
+    use_case: AuthUserUseCase = Depends(get_auth_use_case_di),
+) -> AuthUser:
     """
     FastAPI dependency: get current authenticated user.
     Extracts and validates JWT token from Authorization header.
     """
-    auth_use_case = get_auth_use_case_singleton()
-    user = auth_use_case.verify_token(credentials.credentials)
-    
-    if not user:
+    try:
+        payload = decode_access_token(token)
+        user_id = payload["sub"]
+        return use_case.get_me(user_id)
+    except ValueError as exc:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid authentication credentials",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    return user
+        ) from exc
 
 
-async def get_current_admin_di(current_user=Depends(get_current_user_di)):
+def get_current_admin_di(current_user: AuthUser = Depends(get_current_user_di)) -> AuthUser:
     """
     FastAPI dependency: get current admin user.
     Requires user to be authenticated AND have admin role.
     """
-    if current_user.get("role") != "admin":
+    if current_user.role != "admin":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Admin access required",
+            detail="Admin role required",
         )
     return current_user
