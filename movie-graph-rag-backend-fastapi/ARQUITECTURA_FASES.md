@@ -14,7 +14,7 @@ Trabajo de grado — Universidad del Valle, Escuela de Ingeniería de Sistemas y
 | 2 | Core components: estrategia, scorer, perfil, explorador | ✅ Completo |
 | 2.5 | Flujo conversacional y endpoint `/chat` | ✅ Completo |
 | 3 | `RecommendationUseCase` limpio con nuevos componentes | ✅ Completo |
-| 4 | Endpoints del explorador de conexiones | ⏳ Pendiente |
+| 4 | Endpoints del explorador de conexiones | ✅ Completo |
 | 5 | Métricas: ILD, precisión semántica, umbral cold start | ⏳ Pendiente |
 
 ---
@@ -607,15 +607,158 @@ El use case ahora recibe `(llm_client, profile_service)` en lugar de `(favorites
 
 ---
 
-### Fase 4 — Endpoints del explorador de conexiones
+## Fase 4 — Endpoints del explorador de conexiones
 
-Tres nuevos endpoints usando `ConnectionExplorer`:
+**Archivos nuevos/modificados:**
+- `app/api/schemas/connections.py` *(nuevo)*
+- `app/api/v1/endpoints/connections.py` *(nuevo)*
+- `app/api/v1/router.py` *(modificado — router registrado)*
+
+### Tres endpoints REST
 
 ```
-GET /api/v1/movies/connections/path?from=Inception&to=The+Prestige
+GET /api/v1/movies/connections/path?source=Inception&target=The+Prestige
 GET /api/v1/movies/connections/neighborhood?title=Inception&depth=2
 GET /api/v1/movies/connections/centrality?genre=Drama&limit=20
 ```
+
+Todos requieren JWT (`Authorization: Bearer {token}`). El prefijo `/movies/connections` está definido en el router del módulo de endpoints.
+
+---
+
+### 4.1 — `GET /path`
+
+Encuentra el camino más corto entre dos películas en el grafo de conocimiento, usando el BFS del `ConnectionExplorer`.
+
+**Parámetros:**
+
+| Parámetro | Tipo | Requerido | Descripción |
+|-----------|------|-----------|-------------|
+| `source`  | string | Sí | Título de la película origen |
+| `target`  | string | Sí | Título de la película destino |
+
+**Respuesta (`ConnectionPathResponse`):**
+```json
+{
+  "source": "Inception",
+  "target": "The Prestige",
+  "found": true,
+  "hops": [
+    { "from_title": "Inception", "to_title": "The Prestige", "relation": "same_director" }
+  ],
+  "length": 1
+}
+```
+
+Valores posibles de `relation`: `"same_director"`, `"same_genre"`, `"same_mood_profile"`.
+Si no existe camino en ≤ 3 saltos: `"found": false`, `"hops": []`.
+
+---
+
+### 4.2 — `GET /neighborhood`
+
+Devuelve el grafo de vecindad alrededor de una película hasta N saltos. Los nodos representan películas; las aristas indican el tipo de relación.
+
+**Parámetros:**
+
+| Parámetro | Tipo | Default | Descripción |
+|-----------|------|---------|-------------|
+| `title`   | string | — | Título de la película central |
+| `depth`   | int (1–3) | `2` | Profundidad de expansión |
+
+**Respuesta (`NetworkGraphResponse`):**
+```json
+{
+  "center_title": "Inception",
+  "nodes": [
+    { "uri": "http://ont/m1", "title": "Inception", "genre": "Sci-Fi", "rating": 8.8, "poster_url": null },
+    { "uri": "http://ont/m2", "title": "Interstellar", "genre": "Sci-Fi", "rating": 8.6, "poster_url": "..." }
+  ],
+  "edges": [
+    { "source_uri": "http://ont/m1", "target_uri": "http://ont/m2", "relation": "same_genre" }
+  ],
+  "node_count": 2,
+  "edge_count": 1
+}
+```
+
+Limitado a 60 nodos para mantener respuestas manejables.
+
+---
+
+### 4.3 — `GET /centrality`
+
+Devuelve las películas más centrales del grafo (mayor rating + compatibilityScore), opcionalmente filtradas por género. Útil para pantallas de inicio y cold start.
+
+**Parámetros:**
+
+| Parámetro | Tipo | Default | Descripción |
+|-----------|------|---------|-------------|
+| `genre`   | string | `null` | Filtrar por género (opcional) |
+| `limit`   | int (1–100) | `20` | Número máximo de películas |
+
+**Respuesta (`CentralityResponse`):**
+```json
+{
+  "genre": "Drama",
+  "movies": [
+    {
+      "title": "The Shawshank Redemption",
+      "posterUrl": "https://...",
+      "runtime": 142,
+      "genreName": "Drama",
+      "releaseDate": "1994",
+      "averageRating": 9.3,
+      "compatibilityScore": 0.95,
+      "moodMatchScore": 0.88,
+      "socialMatchScore": 0.72,
+      "energyMatchScore": 0.60,
+      "timeMatchScore": 0.80,
+      "kidFriendly": false
+    }
+  ],
+  "total": 1
+}
+```
+
+Cada película en `movies` es idéntica al esquema `RecommendedMovieResponse` para consistencia entre endpoints.
+
+---
+
+### 4.4 — Inyección de dependencias
+
+`ConnectionExplorer` es stateless (sin estado interno, sin dependencias del constructor), por lo que se crea una sola instancia por proceso usando `@lru_cache(maxsize=1)`:
+
+```python
+@lru_cache(maxsize=1)
+def _explorer_singleton() -> ConnectionExplorer:
+    return ConnectionExplorer()
+
+def get_connection_explorer() -> ConnectionExplorer:
+    return _explorer_singleton()
+```
+
+No se agregó al DI global (`movies_di.py`) porque el explorador no necesita pasar por el contenedor de dependencias del use case. FastAPI lo inyecta directamente en cada endpoint vía `Depends(get_connection_explorer)`.
+
+---
+
+### Smoke test — Phase 4
+
+**Script:** `scripts/smoke_test_phase4.py`
+
+25 checks en 7 secciones, sin requerir Fuseki ni Gemini activos:
+
+| Sección | Checks |
+|---------|--------|
+| Imports (módulo, schemas, endpoint, prefijo de router) | 4 |
+| Dataclasses (`ConnectionHop`, `ConnectionPath.length`, `NetworkGraph`, `_esc`) | 4 |
+| Pydantic schemas (serialización, campos opcionales, conteos) | 5 |
+| `ConnectionExplorer` con Fuseki mockeado | 7 |
+| Helper `_movie_to_response` | 2 |
+| `Movie.from_fuseki_row` con datos de centralidad | 2 |
+| Registro de rutas en `api_router` | 1 |
+
+Resultado: **25/25 PASS**.
 
 ---
 
