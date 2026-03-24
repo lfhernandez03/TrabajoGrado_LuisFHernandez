@@ -32,7 +32,7 @@ COMPANION_ES_MAP = {
     "partner": "pareja",
     "family": "familia",
     "friends": "amigos",
-    "family_with_kids": "familia con niños",
+    "family_with_kids": "familia con ninos",
 }
 
 ENERGY_ES_MAP = {
@@ -403,8 +403,8 @@ def build_cross_ontology_sparql_from_signals(
         "PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>\n"
         "\n"
         "SELECT DISTINCT ?movie ?title ?genreName ?runtime ?rating ?posterUrl\n"
-        "                ?releaseDate ?compatibilityScore ?moodMatch ?socialMatch\n"
-        "                ?energyMatch ?kidFriendly\n"
+        "                ?releaseDate ?compatibilityScore ?moodMatchScore ?socialMatchScore\n"
+        "                ?energyMatchScore ?timeMatchScore ?kidFriendly\n"
         "WHERE {\n"
         "  ?movie rdf:type movie:FeatureFilm ;\n"
         "         movie:hasTitle ?title .\n"
@@ -414,9 +414,10 @@ def build_cross_ontology_sparql_from_signals(
         "  OPTIONAL { ?movie schema1:image ?posterUrl }\n"
         "  OPTIONAL { ?movie movie:releaseDate ?releaseDate }\n"
         "  OPTIONAL { ?movie bridge:compatibilityScore ?compatibilityScore }\n"
-        "  OPTIONAL { ?movie bridge:moodMatchScore ?moodMatch }\n"
-        "  OPTIONAL { ?movie bridge:socialMatchScore ?socialMatch }\n"
-        "  OPTIONAL { ?movie bridge:energyMatchScore ?energyMatch }\n"
+        "  OPTIONAL { ?movie bridge:moodMatchScore ?moodMatchScore }\n"
+        "  OPTIONAL { ?movie bridge:socialMatchScore ?socialMatchScore }\n"
+        "  OPTIONAL { ?movie bridge:energyMatchScore ?energyMatchScore }\n"
+        "  OPTIONAL { ?movie bridge:timeMatchScore ?timeMatchScore }\n"
         "  OPTIONAL { ?movie bridge:isKidFriendly ?kidFriendly }\n"
         f"{mood_filter}"
         f"{companion_filter}"

@@ -15,6 +15,10 @@ class MovieRecommendation:
     year: Optional[int] = None
     runtime: Optional[int] = None
     posterUrl: Optional[str] = None
+    moodMatchScore: Optional[float] = None
+    socialMatchScore: Optional[float] = None
+    energyMatchScore: Optional[float] = None
+    timeMatchScore: Optional[float] = None
 
 
 @dataclass

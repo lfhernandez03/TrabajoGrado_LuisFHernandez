@@ -130,6 +130,35 @@ def _score_movies(
             year = int(row.get("year", 0)) if row.get("year") else None
             runtime = int(row.get("runtime", 0)) if row.get("runtime") else None
             poster_url = row.get("posterUrl")
+            
+            # Extract semantic match scores from bridge data
+            mood_match = None
+            try:
+                if row.get("moodMatchScore"):
+                    mood_match = float(row["moodMatchScore"])
+            except Exception:
+                pass
+            
+            social_match = None
+            try:
+                if row.get("socialMatchScore"):
+                    social_match = float(row["socialMatchScore"])
+            except Exception:
+                pass
+            
+            energy_match = None
+            try:
+                if row.get("energyMatchScore"):
+                    energy_match = float(row["energyMatchScore"])
+            except Exception:
+                pass
+            
+            time_match = None
+            try:
+                if row.get("timeMatchScore"):
+                    time_match = float(row["timeMatchScore"])
+            except Exception:
+                pass
 
             # Simple scoring: rating * 0.40 + normalized_degree * 0.45 + genre_match * 0.15
             score = 0.0
@@ -161,6 +190,10 @@ def _score_movies(
                     year=year,
                     runtime=runtime,
                     posterUrl=poster_url,
+                    moodMatchScore=mood_match,
+                    socialMatchScore=social_match,
+                    energyMatchScore=energy_match,
+                    timeMatchScore=time_match,
                 )
             )
         except Exception as e:
