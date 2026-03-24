@@ -2,6 +2,7 @@
 from functools import lru_cache
 
 from app.core.database import get_database
+from app.core.profile_service import ProfileService
 from app.application.events import get_event_bus, RecommendationEventHandler
 from app.adapters.repositories.mongo_user_favorites_repository import MongoUserFavoritesRepositoryAdapter
 from app.adapters.repositories.mongo_query_history_repository import MongoQueryHistoryRepositoryAdapter
@@ -12,6 +13,7 @@ from app.application.use_cases.history import QueryHistoryUseCase
 from app.application.use_cases.recommendation.recommendation_use_case import (
     RecommendationUseCase,
 )
+from app.application.use_cases.recommendation.chat_use_case import ChatUseCase
 from app.application.use_cases.recommendation import RecommendationMetricsUseCase
 from app.api.di.common_di import (
     get_mongo_db_singleton,
@@ -91,6 +93,20 @@ def _setup_recommendation_event_handlers():
     event_bus.subscribe(RecommendationCacheMissEvent, handler.on_cache_miss)
 
 
+@lru_cache(maxsize=1)
+def get_profile_service_singleton() -> ProfileService:
+    """Get ProfileService singleton (in-process cache, no external deps)."""
+    return ProfileService()
+
+
+@lru_cache(maxsize=1)
+def get_chat_use_case_singleton() -> ChatUseCase:
+    """Get ChatUseCase singleton."""
+    llm_client = get_recommendation_llm_client_singleton()
+    profile_service = get_profile_service_singleton()
+    return ChatUseCase(llm_client=llm_client, profile_service=profile_service)
+
+
 # FastAPI dependency injection functions
 def get_favorite_repository_di() -> MongoUserFavoritesRepositoryAdapter:
     """FastAPI dependency: get favorite repository"""
@@ -125,6 +141,11 @@ def get_recommendation_metrics_repository_di() -> MongoRecommendationMetricsRepo
 def get_recommendation_metrics_use_case_di() -> RecommendationMetricsUseCase:
     """FastAPI dependency: get recommendation metrics use case"""
     return get_recommendation_metrics_use_case_singleton()
+
+
+def get_chat_use_case_di() -> ChatUseCase:
+    """FastAPI dependency: get chat use case"""
+    return get_chat_use_case_singleton()
 
 
 def initialize_recommendation_module():
