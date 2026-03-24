@@ -13,7 +13,7 @@ Trabajo de grado — Universidad del Valle, Escuela de Ingeniería de Sistemas y
 | 1.5 | Bridge data v2 | 🔄 Generado — pendiente de recargar en Fuseki |
 | 2 | Core components: estrategia, scorer, perfil, explorador | ✅ Completo |
 | 2.5 | Flujo conversacional y endpoint `/chat` | ✅ Completo |
-| 3 | `RecommendationUseCase` limpio con nuevos componentes | ⏳ Pendiente |
+| 3 | `RecommendationUseCase` limpio con nuevos componentes | ✅ Completo |
 | 4 | Endpoints del explorador de conexiones | ⏳ Pendiente |
 | 5 | Métricas: ILD, precisión semántica, umbral cold start | ⏳ Pendiente |
 
@@ -538,15 +538,72 @@ Content-Type: application/json
 
 ---
 
-## Fases pendientes
+## Fase 3 — Limpieza de `RecommendationUseCase`
 
-### Fase 3 — Limpieza de `RecommendationUseCase`
+**Archivos modificados:**
+- `app/application/use_cases/recommendation/recommendation_use_case.py` *(reescrito)*
+- `app/domain/ports/recommendation_llm_client.py` *(nuevo método)*
+- `app/adapters/llm/gemini_recommendation_llm_adapter.py` *(nuevo método)*
+- `app/core/conversation_context.py` *(bugs corregidos)*
+- `app/api/schemas/recommendation.py` *(esquema actualizado)*
+- `app/application/use_cases/recommendation/__init__.py` *(exportaciones limpias)*
+- `app/api/di/movies_di.py` *(DI actualizado)*
 
-El `RecommendationUseCase` actual (450 líneas) mezcla extracción de contexto, construcción de SPARQL, scoring y generación de explicaciones. La Fase 3 lo reescribirá usando los componentes de la Fase 2, reduciéndolo a < 100 líneas.
+### Qué se hizo
 
-El nuevo use case tendrá exactamente el mismo flujo que `ChatUseCase` pero para requests de un solo turno (sin sesión ni merge de contexto). Esto elimina duplicación y consolida la lógica de pipeline en un solo lugar.
+#### Bugs corregidos en Phase 2/2.5
 
-Además, en Fase 3 se actualizará `GeminiAdapter.extract_query_context()` para devolver `UserContext` directamente (eliminando el puente `query_context_to_user_context`).
+1. **Import no usado** en `conversation_context.py`: `from dataclasses import replace` eliminado.
+2. **Raw query en bridge**: `query_context_to_user_context` recibía `qctx.intent` ("family", "horror") para detectar `children_age_hint` en lugar del texto real del usuario. Se agregó el parámetro `raw_query: str` y se corrigió la llamada en `ChatUseCase`.
+3. **`_infer_children_age_hint`** renombrada a `infer_children_age_hint` (pública) para poder usarla desde el adaptador Gemini.
+4. **`_attach_raw_query`** eliminada de `chat_use_case.py` — ahora `raw_query` se pasa directamente a la función de conversión.
+
+#### Nuevo método `extract_user_context` en el LLM port y el adaptador
+
+```python
+# RecommendationLlmClientPort
+def extract_user_context(
+    self,
+    query: str,
+    now: datetime | None = None,
+    session_id: str | None = None,
+) -> UserContext: ...
+```
+
+El `GeminiAdapter` implementa este método llamando a Gemini con el mismo NLU prompt y construyendo `UserContext` directamente (sin pasar por `QueryContext`). Injección de `time_of_day` desde `now`, detección de `children_age_hint` desde el texto crudo, y fallback a keyword extraction con `confidence=0.5`.
+
+#### `RecommendationUseCase` — de 450 líneas a ~100
+
+El pipeline del nuevo use case:
+
+```
+llm.extract_user_context(query)        → UserContext
+profile_service.get(user_id)           → UserProfile
+build_strategy(ctx, profile)           → [(name, sparql), ...]
+_run_strategy(attempts)                → (rows, strategy_used)
+score_and_select(rows, ctx, profile)   → [Movie × 5]
+llm.generate_recommendation_explanation() → explanation
+profile_service.archive_context(...)   → escribe en Fuseki
+```
+
+Eliminados del use case anterior:
+- Toda la lógica de scoring inline (ahora en `scorer.py`)
+- Toda la generación de SPARQL inline (ahora en `query_strategy.py`)
+- La inyección/limpieza del snapshot RDF (ya no se usa en el flujo single-turn)
+- El MMR inline (ahora en `scorer.py`)
+- Las dependencias a `UserFavoritesUseCase` y `QueryHistoryUseCase`
+
+El use case ahora recibe `(llm_client, profile_service)` en lugar de `(favorites_use_case, history_use_case, llm_client)`.
+
+#### Esquema de respuesta actualizado
+
+`RecommendedMovieResponse` ahora devuelve los campos ricos del `Movie` domain model en lugar del esquema simplificado anterior:
+
+| Antes | Ahora |
+|-------|-------|
+| `movieUri`, `title`, `score`, `genres: list`, `rating`, `year`, `runtime`, `posterUrl` | `title`, `posterUrl`, `runtime`, `genreName`, `releaseDate`, `averageRating`, `compatibilityScore`, `moodMatchScore`, `socialMatchScore`, `energyMatchScore`, `timeMatchScore`, `kidFriendly` |
+
+`ChatMovieResponse` es ahora un alias de `RecommendedMovieResponse` — ambos endpoints devuelven exactamente la misma estructura de película.
 
 ---
 

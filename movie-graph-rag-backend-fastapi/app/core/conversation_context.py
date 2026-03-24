@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import re
-from dataclasses import replace
 from datetime import datetime, timedelta
 from typing import TYPE_CHECKING
 
@@ -45,7 +44,12 @@ _ADULT_TOKENS = re.compile(
 )
 
 
-def _infer_children_age_hint(raw_query: str) -> str | None:
+def infer_children_age_hint(raw_query: str) -> str | None:
+    """Detect children age group from the raw query text.
+
+    Returns "young" (<12), "teen" (12-17), "adult" (18+), or None (unknown).
+    Public so adapters and tests can call it directly.
+    """
     if _YOUNG_TOKENS.search(raw_query):
         return "young"
     if _TEEN_TOKENS.search(raw_query):
@@ -62,6 +66,7 @@ def _infer_children_age_hint(raw_query: str) -> str | None:
 def query_context_to_user_context(
     qctx: "QueryContext",
     *,
+    raw_query: str = "",
     session_id: str | None = None,
     now: datetime | None = None,
 ) -> UserContext:
@@ -70,14 +75,15 @@ def query_context_to_user_context(
     This bridge is temporary until Phase 3 updates the LLM adapter to return
     UserContext directly.  It maps the nested social_context dict to flat fields
     and injects server-clock time_of_day.
+
+    ``raw_query`` must be the original user text so that ``infer_children_age_hint``
+    can detect keywords like "niños pequeños" — qctx.intent is a category label
+    ("family", "horror") and would never match those patterns.
     """
     social = qctx.social_context or {}
-    companion = social.get("companionType")          # "alone", "partner", "friends", "family"
+    companion = social.get("companionType")
     has_children = bool(social.get("hasChildren", False))
-
-    children_age_hint = _infer_children_age_hint(qctx.intent or "")
-    if not children_age_hint and has_children and qctx.intent:
-        children_age_hint = _infer_children_age_hint(qctx.intent)
+    children_age_hint = infer_children_age_hint(raw_query)
 
     return UserContext(
         mood=qctx.mood,
@@ -91,7 +97,7 @@ def query_context_to_user_context(
         time_of_day=get_time_of_day(now),
         children_age_hint=children_age_hint,
         session_id=session_id,
-        raw_query=qctx.intent or "",
+        raw_query=raw_query,
     )
 
 

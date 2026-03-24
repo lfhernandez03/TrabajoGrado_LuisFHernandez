@@ -139,10 +139,10 @@ class ChatUseCase:
             qctx = self._llm.extract_query_context(last_query)
             new_ctx = query_context_to_user_context(
                 qctx,
+                raw_query=last_query,
                 session_id=session_id,
                 now=now,
             )
-            new_ctx = _attach_raw_query(new_ctx, last_query)
         except Exception as exc:
             logger.warning("NLU extraction failed: %s — using bare context", exc)
             new_ctx = UserContext(
@@ -218,12 +218,6 @@ class ChatUseCase:
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
-
-def _attach_raw_query(ctx: UserContext, raw_query: str) -> UserContext:
-    """Return a copy of ctx with raw_query set."""
-    from dataclasses import replace as dc_replace
-    return dc_replace(ctx, raw_query=raw_query)
-
 
 def _build_context_summary(ctx: UserContext) -> str:
     parts: list[str] = []

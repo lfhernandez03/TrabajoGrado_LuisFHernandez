@@ -2,11 +2,14 @@ from __future__ import annotations
 
 import json
 import re
+from datetime import datetime
 
 from google import genai
 
 from app.core.config import settings
+from app.core.conversation_context import get_time_of_day, infer_children_age_hint
 from app.domain.entities.query_context import QueryContext
+from app.domain.entities.recommendation_models import UserContext
 from app.domain.ports.recommendation_llm_client import RecommendationLlmClientPort
 
 
@@ -207,6 +210,74 @@ class GeminiRecommendationLlmAdapter(RecommendationLlmClientPort):
             return QueryContext.model_validate(data)
         except Exception:
             return self._keyword_extract_context(query.lower())
+
+    def extract_user_context(
+        self,
+        query: str,
+        now: datetime | None = None,
+        session_id: str | None = None,
+    ) -> UserContext:
+        """Call the NLU pipeline and return a UserContext directly.
+
+        Uses the same Gemini prompt as extract_query_context but builds
+        UserContext instead of QueryContext, injecting server-clock time_of_day
+        and detecting children_age_hint from the raw query text.
+        """
+        llm_ok = False
+        data: dict = {}
+        try:
+            client = genai.Client(api_key=settings.gemini_api_key)
+            response = client.models.generate_content(
+                model=settings.gemini_model,
+                contents=query,
+                config=genai.types.GenerateContentConfig(
+                    system_instruction=_NLU_SYSTEM_PROMPT,
+                    temperature=0.1,
+                    max_output_tokens=300,
+                    response_mime_type="application/json",
+                ),
+            )
+            data = json.loads(response.text)
+            llm_ok = True
+        except Exception:
+            pass
+
+        if llm_ok:
+            social = data.get("social_context") or {}
+            companion = social.get("companionType")
+            has_children = bool(social.get("hasChildren", False))
+            return UserContext(
+                mood=data.get("mood"),
+                companion=companion,
+                has_children=has_children,
+                energy=None,
+                genres=list(data.get("genres") or []),
+                runtime_max=data.get("runtime_max"),
+                exclusions=list(data.get("exclusions") or []),
+                confidence=0.9,
+                time_of_day=get_time_of_day(now),
+                children_age_hint=infer_children_age_hint(query),
+                session_id=session_id,
+                raw_query=query,
+            )
+
+        # Keyword fallback — build UserContext from keyword extraction
+        qctx = self._keyword_extract_context(query.lower())
+        social = qctx.social_context or {}
+        return UserContext(
+            mood=qctx.mood,
+            companion=social.get("companionType"),
+            has_children=bool(social.get("hasChildren", False)),
+            energy=None,
+            genres=list(qctx.genres or []),
+            runtime_max=qctx.runtime_max,
+            exclusions=list(qctx.exclusions or []),
+            confidence=0.5,
+            time_of_day=get_time_of_day(now),
+            children_age_hint=infer_children_age_hint(query),
+            session_id=session_id,
+            raw_query=query,
+        )
 
     def _build_prompt(
         self,

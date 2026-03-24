@@ -67,13 +67,10 @@ def get_query_history_use_case_singleton() -> QueryHistoryUseCase:
 def get_recommendation_use_case_singleton() -> RecommendationUseCase:
     """Get recommendation use case (cached singleton)"""
     llm_client = get_recommendation_llm_client_singleton()
-    favorites_use_case = get_user_favorites_use_case_singleton()
-    history_use_case = get_query_history_use_case_singleton()
-    
+    profile_service = get_profile_service_singleton()
     return RecommendationUseCase(
-        favorites_use_case=favorites_use_case,
-        history_use_case=history_use_case,
         llm_client=llm_client,
+        profile_service=profile_service,
     )
 
 

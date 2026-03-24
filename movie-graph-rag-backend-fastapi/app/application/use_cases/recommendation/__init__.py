@@ -1,15 +1,9 @@
 from .recommendation_use_case import RecommendationUseCase
 from .recommendation_metrics import RecommendationMetricsUseCase
-from .models import (
-    RecommendationResult,
-    MovieRecommendation,
-    DebugInfo,
-)
+from .chat_use_case import ChatUseCase
 
 __all__ = [
     "RecommendationUseCase",
     "RecommendationMetricsUseCase",
-    "RecommendationResult",
-    "MovieRecommendation",
-    "DebugInfo",
+    "ChatUseCase",
 ]
