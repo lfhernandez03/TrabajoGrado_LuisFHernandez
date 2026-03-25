@@ -57,6 +57,26 @@ def _esc(value: str) -> str:
     return str(value).replace("\\", "\\\\").replace('"', '\\"').replace("\n", " ")
 
 
+# ---------------------------------------------------------------------------
+# Genre name normalisation
+# ---------------------------------------------------------------------------
+# The NLU (Gemini) sometimes returns genre names that differ from the exact
+# literals stored in the movie ontology.  Map known mismatches here.
+_GENRE_ALIASES: dict[str, str] = {
+    "family": "Children",           # NLU: "Family"  → ontology: "Children"
+    "science fiction": "Sci-Fi",    # NLU: "Science Fiction" → ontology: "Sci-Fi"
+    "sci fi": "Sci-Fi",
+    "scifi": "Sci-Fi",
+    "kids": "Children",
+    "children's": "Children",
+}
+
+
+def _normalize_genre(genre: str) -> str:
+    """Map NLU genre names to the exact literals used in the movie ontology."""
+    return _GENRE_ALIASES.get(genre.strip().lower(), genre)
+
+
 def _genre_filter_sparql(
     genres: list[str],
     excluded: set[str],
@@ -64,7 +84,7 @@ def _genre_filter_sparql(
     runtime_max: int | None,
 ) -> str:
     """SELECT filtered by genre names — fallback when no mood/companion signals."""
-    genre_values = ", ".join(f'"{_esc(g)}"' for g in genres if str(g).strip())
+    genre_values = ", ".join(f'"{_esc(_normalize_genre(g))}"' for g in genres if str(g).strip())
     genre_filter = f"  FILTER(?genreName IN ({genre_values}))\n" if genre_values else ""
 
     children_filter = "  ?movie bridge:isKidFriendly true .\n" if hard_kid_filter else ""
@@ -164,7 +184,10 @@ def build_strategy(ctx: UserContext, profile: UserProfile) -> list[tuple[str, st
 
     attempts: list[tuple[str, str]] = []
 
-    # ── 1. ontology_full: mood + companion + energy + optional kid filter ───
+    # Normalised genre list for SPARQL filters (NLU → ontology literals)
+    norm_genres = [_normalize_genre(g) for g in ctx.genres] if ctx.genres else None
+
+    # ── 1. ontology_full: mood + companion + energy + genre + optional kid ──
     if mood_es and companion_es:
         attempts.append((
             "ontology_full",
@@ -176,10 +199,11 @@ def build_strategy(ctx: UserContext, profile: UserProfile) -> list[tuple[str, st
                 runtime_max=ctx.runtime_max,
                 excluded_normalized=excluded,
                 limit=30,
+                genres=norm_genres,
             ),
         ))
 
-    # ── 2. ontology_mood_companion: mood + companion, relax energy/runtime ──
+    # ── 2. ontology_mood_companion: mood + companion + genre, relax energy ──
     if mood_es and companion_es:
         attempts.append((
             "ontology_mood_companion",
@@ -191,10 +215,11 @@ def build_strategy(ctx: UserContext, profile: UserProfile) -> list[tuple[str, st
                 runtime_max=None,
                 excluded_normalized=excluded,
                 limit=40,
+                genres=norm_genres,
             ),
         ))
 
-    # ── 3. ontology_mood_only: just mood (drop companion) ───────────────────
+    # ── 3. ontology_mood_only: just mood (drop companion, keep genre) ───────
     if mood_es:
         attempts.append((
             "ontology_mood_only",
@@ -206,10 +231,11 @@ def build_strategy(ctx: UserContext, profile: UserProfile) -> list[tuple[str, st
                 runtime_max=ctx.runtime_max,
                 excluded_normalized=excluded,
                 limit=40,
+                genres=norm_genres,
             ),
         ))
 
-    # ── 4. ontology_companion_only: just companion (drop mood) ──────────────
+    # ── 4. ontology_companion_only: just companion (drop mood, keep genre) ──
     if companion_es:
         attempts.append((
             "ontology_companion_only",
@@ -221,6 +247,7 @@ def build_strategy(ctx: UserContext, profile: UserProfile) -> list[tuple[str, st
                 runtime_max=None,
                 excluded_normalized=excluded,
                 limit=40,
+                genres=norm_genres,
             ),
         ))
 
@@ -229,7 +256,7 @@ def build_strategy(ctx: UserContext, profile: UserProfile) -> list[tuple[str, st
         attempts.append((
             "genre_filter",
             _genre_filter_sparql(
-                genres=ctx.genres,
+                genres=[_normalize_genre(g) for g in ctx.genres],
                 excluded=excluded,
                 hard_kid_filter=hard_kid_filter,
                 runtime_max=ctx.runtime_max,
@@ -240,7 +267,7 @@ def build_strategy(ctx: UserContext, profile: UserProfile) -> list[tuple[str, st
     if profile.is_cold_start and ctx.genres:
         attempts.append((
             "centrality_ranking",
-            _centrality_ranking_sparql(genre=ctx.genres[0]),
+            _centrality_ranking_sparql(genre=_normalize_genre(ctx.genres[0])),
         ))
 
     # ── 7. broad: absolute last resort ──────────────────────────────────────

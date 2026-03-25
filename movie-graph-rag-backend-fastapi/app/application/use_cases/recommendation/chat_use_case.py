@@ -53,19 +53,27 @@ class ChatResult:
 # Pipeline helpers
 # ---------------------------------------------------------------------------
 
+def _unique_movie_count(rows: list[dict]) -> int:
+    """Count distinct movie URIs in a list of raw Fuseki rows."""
+    return len({row.get("movie", "") for row in rows if row.get("movie", "")})
+
+
 def _run_strategy(
     attempts: list[tuple[str, str]],
     min_results: int = _MIN_RESULTS,
 ) -> tuple[list[dict], str]:
-    """Execute strategies in order until min_results rows are found.
+    """Execute strategies in order until min_results unique movies are found.
+
+    Counts unique ?movie URIs rather than raw rows so that a strategy with
+    30 rows for a single movie does not incorrectly signal success.
 
     Returns ``(rows, strategy_name)``.  Returns ``([], "empty")`` if every
-    attempt fails or returns fewer than min_results rows.
+    attempt fails or returns fewer than min_results unique movies.
     """
     for name, sparql in attempts:
         try:
             rows = execute_select_query(sparql)
-            if len(rows) >= min_results:
+            if _unique_movie_count(rows) >= min_results:
                 return rows, name
         except Exception as exc:
             logger.warning("strategy '%s' failed: %s", name, exc)

@@ -309,15 +309,21 @@ class GeminiRecommendationLlmAdapter(RecommendationLlmClientPort):
 
         top: list[str] = []
         for movie in movies_with_scores[:5]:
-            raw_scores = movie.get("semanticScores")
-            scores = raw_scores if isinstance(raw_scores, dict) else {}
             hints: list[str] = []
-            if scores.get("moodMatchScore") is not None:
-                hints.append(f"afinidad_emocional={scores['moodMatchScore']:.1f}")
-            if scores.get("socialMatchScore") is not None:
-                hints.append(f"afinidad_social={scores['socialMatchScore']:.1f}")
-            if scores.get("overallCompatibility") is not None:
-                hints.append(f"compatibilidad={scores['overallCompatibility']:.1f}")
+            # Individual semantic scores are top-level fields in to_response_dict()
+            mood_score = movie.get("moodMatchScore")
+            if mood_score is not None:
+                hints.append(f"afinidad_emocional={float(mood_score):.2f}")
+            social_score = movie.get("socialMatchScore")
+            if social_score is not None:
+                hints.append(f"afinidad_social={float(social_score):.2f}")
+            energy_score = movie.get("energyMatchScore")
+            if energy_score is not None:
+                hints.append(f"afinidad_energia={float(energy_score):.2f}")
+            # overallCompatibility lives inside semanticScores
+            overall = (movie.get("semanticScores") or {}).get("overallCompatibility")
+            if overall is not None:
+                hints.append(f"compatibilidad_general={float(overall):.2f}")
             score_detail = ", ".join(hints)
             line = (
                 f"- {movie.get('title')} (score={movie.get('compatibilityScore')}, "

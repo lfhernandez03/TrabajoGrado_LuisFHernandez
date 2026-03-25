@@ -16,12 +16,23 @@ logger = logging.getLogger(__name__)
 _MIN_RESULTS = 5
 
 
+def _unique_movie_count(rows: list[dict]) -> int:
+    """Count distinct movie URIs in a list of raw Fuseki rows.
+
+    A single movie can appear multiple times when it has several genre
+    assignments (each ?genreName produces a separate row despite SELECT
+    DISTINCT).  Using URI count instead of row count avoids treating 30
+    rows for 1 movie as a successful strategy result.
+    """
+    return len({row.get("movie", "") for row in rows if row.get("movie", "")})
+
+
 def _run_strategy(attempts: list[tuple[str, str]]) -> tuple[list[dict], str]:
-    """Execute attempts in order until >= _MIN_RESULTS rows are found."""
+    """Execute attempts in order until >= _MIN_RESULTS unique movies are found."""
     for name, sparql in attempts:
         try:
             rows = execute_select_query(sparql)
-            if len(rows) >= _MIN_RESULTS:
+            if _unique_movie_count(rows) >= _MIN_RESULTS:
                 return rows, name
         except Exception as exc:
             logger.warning("strategy '%s' failed: %s", name, exc)
@@ -186,6 +197,7 @@ class _Result:
                 "mood": self.context.mood,
                 "companion": self.context.companion,
                 "has_children": self.context.has_children,
+                "children_age_hint": self.context.children_age_hint,
                 "energy": self.context.energy,
                 "genres": self.context.genres,
                 "runtime_max": self.context.runtime_max,

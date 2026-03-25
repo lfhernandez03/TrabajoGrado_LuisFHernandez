@@ -351,12 +351,17 @@ def build_cross_ontology_sparql_from_signals(
     runtime_max: int | None,
     excluded_normalized: set[str],
     limit: int = 30,
+    genres: list[str] | None = None,
 ) -> str:
     """Build SPARQL query using bridge semantic compatibility predicates.
 
     Uses exact matching over bridge:compatibleMood / bridge:compatibleCompanion /
     bridge:compatibleEnergyLevel so semantic filters are always effective when
     signals are present.
+
+    Optional ``genres`` adds a FILTER on genreName so that ontology strategies
+    also respect explicit genre preferences (e.g. Animation when the user asks
+    for a kids' animated movie).
     """
     safe_limit = max(1, min(100, int(limit)))
 
@@ -385,6 +390,15 @@ def build_cross_ontology_sparql_from_signals(
         else ""
     )
 
+    genre_filter = ""
+    if genres:
+        valid_genres = [g for g in genres if str(g).strip()]
+        if valid_genres:
+            genre_values = ", ".join(
+                f'"{_escape_sparql_literal(g)}"' for g in valid_genres
+            )
+            genre_filter = f"  FILTER(?genreName IN ({genre_values}))\n"
+
     exclusions = sorted(excluded_normalized)[:10]
     exclusion_filter = ""
     if exclusions:
@@ -395,6 +409,14 @@ def build_cross_ontology_sparql_from_signals(
         ]
         if clauses:
             exclusion_filter = f"  FILTER({' && '.join(clauses)})\n"
+
+    # When genres are specified, require the genre triple so FILTER can bind ?genreName.
+    # Without genres, keep it OPTIONAL to avoid excluding movies with no genre data.
+    genre_triple = (
+        "  ?movie movie:hasMainGenre/movie:genreName ?genreName .\n"
+        if genre_filter
+        else "  OPTIONAL { ?movie movie:hasMainGenre/movie:genreName ?genreName }\n"
+    )
 
     candidate = (
         "PREFIX movie: <http://www.semanticweb.org/movierecommendation/ontologies/2025/movie-ontology#>\n"
@@ -408,7 +430,7 @@ def build_cross_ontology_sparql_from_signals(
         "WHERE {\n"
         "  ?movie rdf:type movie:FeatureFilm ;\n"
         "         movie:hasTitle ?title .\n"
-        "  OPTIONAL { ?movie movie:hasMainGenre/movie:genreName ?genreName }\n"
+        f"{genre_triple}"
         "  OPTIONAL { ?movie movie:runtime ?runtime }\n"
         "  OPTIONAL { ?movie movie:hasRating ?rating }\n"
         "  OPTIONAL { ?movie schema1:image ?posterUrl }\n"
@@ -424,6 +446,7 @@ def build_cross_ontology_sparql_from_signals(
         f"{energy_filter}"
         f"{children_filter}"
         f"{runtime_filter}"
+        f"{genre_filter}"
         f"{exclusion_filter}"
         "}\n"
         "ORDER BY DESC(?compatibilityScore) DESC(?rating)\n"

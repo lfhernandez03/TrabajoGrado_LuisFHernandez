@@ -40,6 +40,34 @@ def _freshness(release_year: str | None) -> float:
     return max(0.0, min(1.0, (year - _YEAR_BASELINE) / span))
 
 
+_GENRE_ALIASES: dict[str, str] = {
+    "family": "children",
+    "science fiction": "sci-fi",
+    "sci fi": "sci-fi",
+    "scifi": "sci-fi",
+    "kids": "children",
+    "children's": "children",
+}
+
+
+def _genre_match(movie: Movie, ctx: UserContext) -> float:
+    """1.0 if the movie's genre matches any genre in the user's request, 0.0 otherwise.
+
+    Applies the same NLU→ontology normalisation used in query_strategy so that
+    ctx.genres = ["Family"] correctly matches movie.genre = "Children".
+    """
+    if not ctx.genres or not movie.genre:
+        return 0.0
+    movie_genre_lower = movie.genre.strip().lower()
+    for g in ctx.genres:
+        # Normalise the requested genre the same way query_strategy does
+        g_lower = g.strip().lower()
+        normalised = _GENRE_ALIASES.get(g_lower, g_lower)
+        if normalised == movie_genre_lower or g_lower == movie_genre_lower:
+            return 1.0
+    return 0.0
+
+
 def _novelty(movie: Movie, profile: UserProfile) -> float:
     """Prefer genres underrepresented in the user's history.
 
@@ -57,18 +85,24 @@ def _novelty(movie: Movie, profile: UserProfile) -> float:
 # Main scoring formula
 # ---------------------------------------------------------------------------
 
-def _compute_score(movie: Movie, ctx: UserContext, profile: UserProfile) -> float:  # noqa: ARG001
+def _compute_score(movie: Movie, ctx: UserContext, profile: UserProfile) -> float:
     """Composite relevance score for a single movie candidate.
 
     With semantic data (bridge ontology):
-        score = 0.40·rating + 0.30·semantic + 0.15·freshness + 0.15·novelty
+        score = 0.30·rating + 0.25·semantic + 0.25·genre_match + 0.10·freshness + 0.10·novelty
 
     Without semantic data (fallback strategies):
-        score = 0.70·rating + 0.15·freshness + 0.15·novelty
+        score = 0.55·rating + 0.25·genre_match + 0.10·freshness + 0.10·novelty
+
+    Genre match is 1.0 when the movie's genre aligns with the user's explicit request
+    (e.g. "Animation" when they asked for an animated film).  This prevents movies with
+    incorrect bridge-ontology data (e.g. Fight Club flagged isKidFriendly=true) from
+    outranking genuinely relevant movies when all candidates share the same bridge score.
     """
     rating = _norm_rating(movie.rating)
     fresh = _freshness(movie.release_year)
     novel = _novelty(movie, profile)
+    genre = _genre_match(movie, ctx)
 
     # Prefer the direct compatibility_score field; fall back to the dict
     semantic = movie.compatibility_score or 0.0
@@ -76,8 +110,8 @@ def _compute_score(movie: Movie, ctx: UserContext, profile: UserProfile) -> floa
         semantic = float(movie.semantic_scores.get("overallCompatibility", 0.0))
 
     if semantic > 0.0:
-        return 0.40 * rating + 0.30 * semantic + 0.15 * fresh + 0.15 * novel
-    return 0.70 * rating + 0.15 * fresh + 0.15 * novel
+        return 0.30 * rating + 0.25 * semantic + 0.25 * genre + 0.10 * fresh + 0.10 * novel
+    return 0.55 * rating + 0.25 * genre + 0.10 * fresh + 0.10 * novel
 
 
 # ---------------------------------------------------------------------------
@@ -148,14 +182,30 @@ def score_and_select(
     if not candidates:
         return []
 
-    scored: list[tuple[Movie, float]] = []
+    # Deduplicate by URI before scoring.  SPARQL DISTINCT does not prevent
+    # the same movie appearing multiple times when it has several genre
+    # assignments (each genreName produces a separate row).
+    #
+    # Strategy: keep the row whose genreName best matches the requested genres.
+    # If the user asked for "Animation" and a movie appears as both "Action"
+    # and "Animation", we prefer the "Animation" row so _genre_match() gives
+    # it a proper boost rather than scoring it as an Action film.
+    uri_to_entry: dict[str, tuple[Movie, float]] = {}
     for row in candidates:
         try:
             movie = Movie.from_fuseki_row(row)
             score = _compute_score(movie, ctx, profile)
-            scored.append((movie, score))
+            if movie.uri not in uri_to_entry:
+                uri_to_entry[movie.uri] = (movie, score)
+            else:
+                # Upgrade to this row if it scores higher (better genre match)
+                _, existing_score = uri_to_entry[movie.uri]
+                if score > existing_score:
+                    uri_to_entry[movie.uri] = (movie, score)
         except Exception:  # never let a bad row crash the pipeline
             continue
+
+    scored: list[tuple[Movie, float]] = list(uri_to_entry.values())
 
     if not scored:
         return []
