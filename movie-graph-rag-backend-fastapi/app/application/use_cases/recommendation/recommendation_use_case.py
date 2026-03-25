@@ -4,6 +4,7 @@ import logging
 from time import perf_counter
 
 from app.core.fuseki_client import execute_select_query
+from app.core.metrics import ListMetrics, compute_metrics
 from app.core.profile_service import ProfileService
 from app.core.query_strategy import build_strategy
 from app.core.scorer import score_and_select
@@ -87,6 +88,7 @@ class RecommendationUseCase:
         attempts = build_strategy(ctx, profile)
         candidates, strategy = _run_strategy(attempts)
         movies = score_and_select(candidates, ctx, profile, n=5)
+        metrics = compute_metrics(movies, profile)
 
         query_type = _query_type(ctx, profile.is_cold_start)
         explanation = self._explain(query, ctx, movies, query_type)
@@ -101,6 +103,7 @@ class RecommendationUseCase:
             sparql_executed=attempts[0][1] if attempts else "",
             candidates_found=len(candidates),
             context=ctx,
+            metrics=metrics,
             execution_ms=int((perf_counter() - start) * 1000),
             debug={
                 "strategy_used": strategy,
@@ -114,6 +117,11 @@ class RecommendationUseCase:
                     "genres": ctx.genres,
                     "runtime_max": ctx.runtime_max,
                     "confidence": ctx.confidence,
+                },
+                "metrics": {
+                    "ild": metrics.ild,
+                    "semantic_precision": metrics.semantic_precision,
+                    "cold_start_threshold": metrics.cold_start_threshold,
                 },
             },
         )
@@ -156,6 +164,7 @@ class _Result:
         sparql_executed: str,
         candidates_found: int,
         context: UserContext,
+        metrics: ListMetrics,
         execution_ms: int,
         debug: dict,
     ) -> None:
@@ -166,6 +175,7 @@ class _Result:
         self.sparql_executed = sparql_executed
         self.candidates_found = candidates_found
         self.context = context
+        self.metrics = metrics
         self.execution_ms = execution_ms
         self.debug = debug
 
@@ -189,4 +199,10 @@ class _Result:
             "moviesWithScores": [m.to_response_dict() for m in self.movies],
             "explanation": self.explanation,
             "executionTimeMs": self.execution_ms,
+            "metrics": {
+                "ild": self.metrics.ild,
+                "semanticPrecision": self.metrics.semantic_precision,
+                "coldStartThreshold": self.metrics.cold_start_threshold,
+                "movieCount": self.metrics.movie_count,
+            },
         }

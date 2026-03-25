@@ -15,7 +15,7 @@ Trabajo de grado — Universidad del Valle, Escuela de Ingeniería de Sistemas y
 | 2.5 | Flujo conversacional y endpoint `/chat` | ✅ Completo |
 | 3 | `RecommendationUseCase` limpio con nuevos componentes | ✅ Completo |
 | 4 | Endpoints del explorador de conexiones | ✅ Completo |
-| 5 | Métricas: ILD, precisión semántica, umbral cold start | ⏳ Pendiente |
+| 5 | Métricas: ILD, precisión semántica, umbral cold start | ✅ Completo |
 
 ---
 
@@ -762,8 +762,104 @@ Resultado: **25/25 PASS**.
 
 ---
 
-### Fase 5 — Métricas de calidad
+## Fase 5 — Métricas de calidad
 
-- **ILD (Intra-List Diversity):** mide qué tan diversas son las 5 películas recomendadas en una lista. Se calcula como la distancia promedio por pares en el espacio de géneros.
-- **Precisión semántica:** porcentaje de recomendaciones con `compatibilityScore > 0.7`.
-- **Umbral de cold start:** número de snapshots mínimos para salir del modo cold start (actualmente fijo en 3 — la Fase 5 lo hará adaptativo).
+**Archivos nuevos/modificados:**
+- `app/core/metrics.py` *(nuevo)*
+- `app/application/use_cases/recommendation/recommendation_use_case.py` *(integración)*
+- `app/application/use_cases/recommendation/chat_use_case.py` *(integración)*
+- `app/api/schemas/recommendation.py` *(nuevo schema `RecommendationMetricsResponse`)*
+- `app/api/v1/endpoints/recommendation.py` *(expone métricas en `/chat`)*
+
+### 5.1 — `app/core/metrics.py`
+
+Módulo de lógica pura (sin dependencias de framework). Expone:
+
+```python
+@dataclass
+class ListMetrics:
+    ild: float                 # Intra-List Diversity (0–1)
+    semantic_precision: float  # fracción de películas con compatibilityScore > umbral
+    cold_start_threshold: int  # umbral adaptativo de snapshots
+    semantic_threshold: float  # umbral usado (almacenado para transparencia)
+    movie_count: int           # películas en la lista
+
+def compute_ild(movies: list[Movie]) -> float: ...
+def compute_semantic_precision(movies: list[Movie], threshold: float = 0.7) -> float: ...
+def compute_cold_start_threshold(profile: UserProfile) -> int: ...
+def compute_metrics(movies, profile, semantic_threshold=0.7) -> ListMetrics: ...
+```
+
+### 5.2 — ILD (Intra-List Diversity)
+
+Distancia promedio por pares entre las películas de la lista, usando distancia de género binaria:
+
+```
+dist(a, b) = 0  si mismo género
+             1  si géneros distintos (o uno de ellos es None)
+
+ILD = sum(dist(a, b) for all pairs) / C(n, 2)
+```
+
+| Caso extremo | ILD |
+|---|---|
+| Todas del mismo género | 0.0 |
+| Todas de géneros distintos | 1.0 |
+| Lista vacía o de un elemento | 0.0 |
+
+### 5.3 — Precisión semántica
+
+```
+precision = len([m for m in movies if m.compatibility_score > 0.7]) / len(movies)
+```
+
+La comparación es **estrictamente mayor** (`>`), por lo que un score exactamente en el umbral no se cuenta.
+
+### 5.4 — Umbral de cold start adaptativo
+
+Reemplaza el valor fijo de 3. Basado en la diversidad de géneros del perfil del usuario:
+
+| Géneros distintos en `profile.genre_weights` | Diversidad (`min(n,5)/5`) | Umbral |
+|---|---|---|
+| 0 | 0.0 | 5 |
+| 1–2 | 0.2–0.4 | 3 |
+| 3+ | 0.6–1.0 | 2 |
+
+**Rationale:** un usuario que ya demostró preferencias por 3 géneros distintos tiene un perfil suficientemente informativo con sólo 2 snapshots. Un usuario sin historial de géneros requiere 5 snapshots para salir del modo cold start.
+
+### 5.5 — Integración en el pipeline
+
+`compute_metrics(movies, profile)` se llama inmediatamente después de `score_and_select()` en ambos use cases. El resultado se incluye en:
+- El payload de API (`"metrics"` en la respuesta JSON)
+- El debug payload (para `/debug` y logs internos)
+
+**Schema de respuesta:**
+```json
+{
+  "metrics": {
+    "ild": 0.8,
+    "semanticPrecision": 0.6,
+    "coldStartThreshold": 3,
+    "movieCount": 5
+  }
+}
+```
+
+### Smoke test — Phase 5
+
+**Script:** `scripts/smoke_test_phase5.py`
+
+42 checks en 8 secciones, sin requerir Fuseki ni Gemini:
+
+| Sección | Checks |
+|---|---|
+| Imports y campos en schemas/dataclasses | 4 |
+| `ListMetrics` dataclass | 3 |
+| `compute_ild` (casos límite y valores esperados) | 6 |
+| `compute_semantic_precision` (umbral estricto, custom threshold) | 6 |
+| `compute_cold_start_threshold` (5 perfiles distintos) | 5 |
+| `compute_metrics` integración | 8 |
+| Pydantic schema serialización | 5 |
+| `_Result.to_api_dict()` con métricas | 5 |
+
+Resultado: **42/42 PASS**.

@@ -3,6 +3,18 @@ from typing import Any
 from pydantic import BaseModel, Field
 
 
+class RecommendationMetricsResponse(BaseModel):
+    """Quality metrics for a single recommendation list (Phase 5)."""
+
+    ild: float
+    """Intra-List Diversity (0–1). Higher = more genre variety."""
+    semanticPrecision: float
+    """Fraction of movies with compatibilityScore > 0.7."""
+    coldStartThreshold: int
+    """Adaptive minimum snapshots needed to exit cold-start mode."""
+    movieCount: int
+
+
 class RecommendationRequest(BaseModel):
     query: str = Field(..., min_length=1)
 
@@ -43,6 +55,7 @@ class RecommendationResponse(BaseModel):
     moviesWithScores: list[RecommendedMovieResponse]
     explanation: str
     executionTimeMs: int
+    metrics: RecommendationMetricsResponse | None = None
     debugPayload: dict[str, Any] | None = None
 
 
@@ -55,6 +68,7 @@ class RecommendationDebugResponse(BaseModel):
     moviesWithScores: list[RecommendedMovieResponse]
     explanation: str
     executionTimeMs: int
+    metrics: RecommendationMetricsResponse | None = None
     debugPayload: dict[str, Any] | None = None
 
 
@@ -80,3 +94,4 @@ class ChatResponse(BaseModel):
     context_extracted: dict[str, Any]
     execution_ms: int
     turn_count: int = 0
+    metrics: RecommendationMetricsResponse | None = None

@@ -5,6 +5,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from time import perf_counter
 
+from app.core.metrics import ListMetrics, compute_metrics
 from app.core.conversation_context import (
     get_time_of_day,
     merge_contexts,
@@ -40,6 +41,7 @@ class ChatResult:
     strategy_used: str
     context: UserContext
     execution_ms: int
+    metrics: ListMetrics | None = None
     debug: dict = field(default_factory=dict)
 
     @property
@@ -166,6 +168,7 @@ class ChatUseCase:
 
         # ── 6. Score and select with MMR ────────────────────────────────────
         movies = score_and_select(candidates, merged_ctx, profile, n=5)
+        metrics = compute_metrics(movies, profile)
 
         # ── 7. Generate explanation ─────────────────────────────────────────
         query_type = _query_type(merged_ctx, profile.is_cold_start)
@@ -205,12 +208,18 @@ class ChatUseCase:
             explanation=explanation,
             strategy_used=strategy_used,
             context=merged_ctx,
+            metrics=metrics,
             execution_ms=int((perf_counter() - start) * 1000),
             debug={
                 "strategy_attempts": [n for n, _ in attempts],
                 "candidates_found": len(candidates),
                 "query_type": query_type,
                 "is_cold_start": profile.is_cold_start,
+                "metrics": {
+                    "ild": metrics.ild,
+                    "semantic_precision": metrics.semantic_precision,
+                    "cold_start_threshold": metrics.cold_start_threshold,
+                },
             },
         )
 

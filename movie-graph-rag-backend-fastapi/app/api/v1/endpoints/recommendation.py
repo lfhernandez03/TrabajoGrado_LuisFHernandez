@@ -7,6 +7,7 @@ from app.api.schemas.recommendation import (
     ChatRequest,
     ChatResponse,
     RecommendationDebugResponse,
+    RecommendationMetricsResponse,
     RecommendationRequest,
     RecommendationResponse,
 )
@@ -104,6 +105,15 @@ def chat(
         "children_age_hint": result.context.children_age_hint,
     }
 
+    metrics_response = None
+    if result.metrics is not None:
+        metrics_response = RecommendationMetricsResponse(
+            ild=result.metrics.ild,
+            semanticPrecision=result.metrics.semantic_precision,
+            coldStartThreshold=result.metrics.cold_start_threshold,
+            movieCount=result.metrics.movie_count,
+        )
+
     return ChatResponse(
         session_id=result.session_id,
         movies=movies,
@@ -112,4 +122,5 @@ def chat(
         context_extracted=ctx_dict,
         execution_ms=result.execution_ms,
         turn_count=len([m for m in payload.messages if m.role == "user"]),
+        metrics=metrics_response,
     )
