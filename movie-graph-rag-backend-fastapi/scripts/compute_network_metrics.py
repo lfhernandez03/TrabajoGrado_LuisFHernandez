@@ -267,19 +267,42 @@ def compute_centralities(G: "nx.Graph") -> dict[str, dict[str, float]]:
 def detect_communities(G: "nx.Graph") -> tuple[dict[str, int], float]:
     """Run Louvain community detection.
 
+    Tries python-louvain first; falls back to networkx built-in (≥3.0).
+
     Returns:
         partition: {node_uri: cluster_id_int}
         modularity: float
     """
     log("Step 4: Running Louvain community detection ...")
+
+    # --- Attempt 1: python-louvain (pip install python-louvain) ---
     try:
         import community as community_louvain  # type: ignore  # noqa: PLC0415
 
         partition: dict[str, int] = community_louvain.best_partition(G)
-        modularity: float = community_louvain.modularity(partition, G)
+        mod: float = community_louvain.modularity(partition, G)
         n_clusters = len(set(partition.values()))
-        log(f"  Detected {n_clusters} communities. Modularity = {modularity:.4f}")
-        return partition, modularity
+        log(f"  [python-louvain] Detected {n_clusters} communities. Modularity = {mod:.4f}")
+        return partition, mod
+    except ImportError:
+        log("  [INFO] python-louvain not found — trying networkx built-in Louvain ...")
+    except Exception as exc:  # noqa: BLE001
+        log(f"  [WARN] python-louvain error: {exc} — trying networkx built-in ...")
+
+    # --- Attempt 2: networkx.algorithms.community (networkx >= 3.0) ---
+    try:
+        from networkx.algorithms.community import louvain_communities  # type: ignore  # noqa: PLC0415
+        from networkx.algorithms.community.quality import modularity as nx_modularity  # type: ignore  # noqa: PLC0415
+
+        communities = louvain_communities(G, weight="weight", seed=42)
+        partition = {}
+        for cluster_id, node_set in enumerate(communities):
+            for node in node_set:
+                partition[node] = cluster_id
+        mod = nx_modularity(G, communities, weight="weight")
+        n_clusters = len(communities)
+        log(f"  [networkx] Detected {n_clusters} communities. Modularity = {mod:.4f}")
+        return partition, mod
     except Exception as exc:  # noqa: BLE001
         log(f"  [WARN] Community detection failed (skipping): {exc}")
         return {}, 0.0
@@ -362,12 +385,12 @@ def generate_cluster_labels(
 # ---------------------------------------------------------------------------
 
 _DELETE_QUERIES = [
-    "DELETE WHERE { ?m <{ns}degreeCentrality> ?v }",
-    "DELETE WHERE { ?m <{ns}betweennessCentrality> ?v }",
-    "DELETE WHERE { ?m <{ns}pageRank> ?v }",
-    "DELETE WHERE { ?m <{ns}clusteringCoefficient> ?v }",
-    "DELETE WHERE { ?m <{ns}belongsToCluster> ?v }",
-    "DELETE WHERE { ?m <{ns}clusterLabel> ?v }",
+    "DELETE WHERE {{ ?m <{ns}degreeCentrality> ?v }}",
+    "DELETE WHERE {{ ?m <{ns}betweennessCentrality> ?v }}",
+    "DELETE WHERE {{ ?m <{ns}pageRank> ?v }}",
+    "DELETE WHERE {{ ?m <{ns}clusteringCoefficient> ?v }}",
+    "DELETE WHERE {{ ?m <{ns}belongsToCluster> ?v }}",
+    "DELETE WHERE {{ ?m <{ns}clusterLabel> ?v }}",
 ]
 
 _PREFIXES = f"""\
@@ -388,8 +411,14 @@ def _delete_old_metrics() -> None:
 
 
 def _escape_string(s: str) -> str:
-    """Escape backslashes and double quotes for SPARQL string literals."""
-    return s.replace("\\", "\\\\").replace('"', '\\"')
+    """Escape a string for use in a SPARQL double-quoted literal."""
+    return (
+        s.replace("\\", "\\\\")
+        .replace('"', '\\"')
+        .replace("\n", "\\n")
+        .replace("\r", "\\r")
+        .replace("\t", "\\t")
+    )
 
 
 def write_to_fuseki(
