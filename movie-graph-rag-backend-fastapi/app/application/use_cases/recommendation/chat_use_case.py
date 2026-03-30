@@ -5,6 +5,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from time import perf_counter
 
+from app.core.connection_explorer import ConnectionExplorer
 from app.core.metrics import ListMetrics, compute_metrics
 from app.core.conversation_context import (
     get_time_of_day,
@@ -176,7 +177,8 @@ class ChatUseCase:
 
         # ── 6. Score and select with MMR ────────────────────────────────────
         movies = score_and_select(candidates, merged_ctx, profile, n=5)
-        metrics = compute_metrics(movies, profile)
+        explorer = ConnectionExplorer()
+        metrics = compute_metrics(movies, profile, explorer=explorer)
 
         # ── 7. Generate explanation ─────────────────────────────────────────
         query_type = _query_type(merged_ctx, profile.is_cold_start)
@@ -227,6 +229,7 @@ class ChatUseCase:
                     "ild": metrics.ild,
                     "semantic_precision": metrics.semantic_precision,
                     "cold_start_threshold": metrics.cold_start_threshold,
+                    "graph_diversity_score": metrics.graph_diversity_score,
                 },
             },
         )

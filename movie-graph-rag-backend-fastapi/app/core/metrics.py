@@ -1,8 +1,15 @@
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
 from app.domain.entities.recommendation_models import Movie, UserProfile
+
+if TYPE_CHECKING:
+    from app.core.connection_explorer import ConnectionExplorer
+
+logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
 # Configurable thresholds
@@ -14,6 +21,14 @@ _MAX_COLD_START_THRESHOLD = 5          # never require more than 5 snapshots
 _GENRE_DIVERSITY_HIGH = 0.6            # genre diversity ratio → threshold = 2
 _GENRE_DIVERSITY_MED = 0.2             # genre diversity ratio → threshold = 3
 _MAX_GENRES_COUNTED = 5                # cap for normalising genre diversity (0–1)
+_MAX_HOPS = 3                          # BFS depth limit for graph diversity score
+
+
+# ---------------------------------------------------------------------------
+# Module-level path cache (title_a, title_b) → hop count
+# ---------------------------------------------------------------------------
+
+_PATH_CACHE: dict[tuple[str, str], int] = {}
 
 
 # ---------------------------------------------------------------------------
@@ -43,6 +58,7 @@ class ListMetrics:
     cold_start_threshold: int
     semantic_threshold: float
     movie_count: int
+    graph_diversity_score: float = 0.0
 
 
 # ---------------------------------------------------------------------------
@@ -121,6 +137,59 @@ def compute_cold_start_threshold(profile: UserProfile) -> int:
 
 
 # ---------------------------------------------------------------------------
+# Graph Diversity Score — average BFS path distance (Phase 7)
+# ---------------------------------------------------------------------------
+
+def compute_graph_diversity(
+    movies: list[Movie],
+    explorer: ConnectionExplorer,
+) -> float:
+    """Average BFS path distance between pairs of recommended movies, normalized to [0, 1].
+
+    For each unique pair (i, j) the shortest path length (hop count) is looked
+    up via ``explorer.find_path()``.  Results are cached in ``_PATH_CACHE`` so
+    repeated calls within a request do not trigger redundant SPARQL traversals.
+
+    * If a path is not found within the BFS depth limit, the pair is treated as
+      maximally distant (``_MAX_HOPS`` hops).
+    * Lists with fewer than 2 movies have no pairs — 1.0 is returned (perfect
+      diversity by convention).
+
+    Returns a float in [0, 1].  Higher values mean recommendations are more
+    spread out across the knowledge graph.
+    """
+    n = len(movies)
+    if n < 2:
+        return 1.0
+
+    total_normalized = 0.0
+    pairs = 0
+
+    for i in range(n):
+        for j in range(i + 1, n):
+            title_a = movies[i].title or ""
+            title_b = movies[j].title or ""
+            cache_key = tuple(sorted((title_a, title_b)))
+
+            if cache_key not in _PATH_CACHE:
+                try:
+                    path = explorer.find_path(title_a, title_b)
+                    hops = path.length if path.found else _MAX_HOPS
+                except Exception as exc:
+                    logger.warning(
+                        "compute_graph_diversity: find_path(%r, %r) failed: %s",
+                        title_a, title_b, exc,
+                    )
+                    hops = _MAX_HOPS
+                _PATH_CACHE[cache_key] = hops  # type: ignore[index]
+
+            total_normalized += _PATH_CACHE[cache_key] / _MAX_HOPS  # type: ignore[index]
+            pairs += 1
+
+    return total_normalized / pairs if pairs else 0.0
+
+
+# ---------------------------------------------------------------------------
 # Convenience: compute all metrics at once
 # ---------------------------------------------------------------------------
 
@@ -128,6 +197,7 @@ def compute_metrics(
     movies: list[Movie],
     profile: UserProfile,
     semantic_threshold: float = _SEMANTIC_PRECISION_THRESHOLD,
+    explorer: ConnectionExplorer | None = None,
 ) -> ListMetrics:
     """Compute ILD, semantic precision, and adaptive cold-start threshold.
 
@@ -139,10 +209,16 @@ def compute_metrics(
     Returns:
         A :class:`ListMetrics` with all three quality signals populated.
     """
+    graph_diversity = (
+        compute_graph_diversity(movies, explorer)
+        if explorer is not None
+        else 0.0
+    )
     return ListMetrics(
         ild=compute_ild(movies),
         semantic_precision=compute_semantic_precision(movies, semantic_threshold),
         cold_start_threshold=compute_cold_start_threshold(profile),
         semantic_threshold=semantic_threshold,
         movie_count=len(movies),
+        graph_diversity_score=graph_diversity,
     )

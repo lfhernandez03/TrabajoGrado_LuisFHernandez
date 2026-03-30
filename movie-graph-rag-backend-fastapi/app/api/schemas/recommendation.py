@@ -8,6 +8,8 @@ class RecommendationMetricsResponse(BaseModel):
 
     ild: float
     """Intra-List Diversity (0–1). Higher = more genre variety."""
+    graphDiversityScore: float = 0.0
+    """Graph distance diversity — average BFS hops between recommended movies, normalized [0,1]."""
     semanticPrecision: float
     """Fraction of movies with compatibilityScore > 0.7."""
     coldStartThreshold: int

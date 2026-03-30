@@ -16,6 +16,8 @@ Trabajo de grado — Universidad del Valle, Escuela de Ingeniería de Sistemas y
 | 3 | `RecommendationUseCase` limpio con nuevos componentes | ✅ Completo |
 | 4 | Endpoints del explorador de conexiones | ✅ Completo |
 | 5 | Métricas: ILD, precisión semántica, umbral cold start | ✅ Completo |
+| 6 | Pipeline NetworkX offline: centralidades + comunidades en Fuseki | ✅ Completo — requiere ejecutar `scripts/compute_network_metrics.py` contra Fuseki |
+| 7 | Graph Diversity Score basado en distancia BFS | ✅ Completo |
 
 ---
 
@@ -861,5 +863,149 @@ Reemplaza el valor fijo de 3. Basado en la diversidad de géneros del perfil del
 | `compute_metrics` integración | 8 |
 | Pydantic schema serialización | 5 |
 | `_Result.to_api_dict()` con métricas | 5 |
+
+---
+
+## Fase 6 — Pipeline NetworkX offline
+
+**Archivo nuevo:** `scripts/compute_network_metrics.py`
+**Smoke test:** `scripts/smoke_test_phase6.py`
+**pyproject.toml:** agregadas dependencias `networkx>=3.0`, `python-louvain>=0.16`
+
+### Por qué
+
+SPARQL no puede calcular betweenness centrality, coeficiente de clustering ni detectar comunidades Leiden/Louvain. Es necesario exportar el grafo a NetworkX, calcular las métricas offline y persistirlas como tripletas RDF en Fuseki para que el backend las consulte en tiempo de request.
+
+### Qué construyó
+
+Script ejecutable autónomo (sin imports de `app.*`) que:
+1. Obtiene todos los movies con sus directores y géneros via SPARQL
+2. Construye grafo película-película ponderado en NetworkX:
+   - Aristas de director (weight=2) — máximo 30 películas por director
+   - Aristas de género (weight=1) — máximo 100 películas por género (sample si >500)
+3. Calcula con NetworkX: `degree_centrality`, `betweenness_centrality` (k=300, aproximado), `pagerank`, `clustering`
+4. Detecta comunidades con `community_louvain.best_partition` (Louvain) y calcula modularidad
+5. Genera etiquetas de cluster en español usando Gemini (`google-genai`)
+6. Limpia tripletas viejas con DELETE WHERE y escribe nuevas en batches de 500
+
+### Nuevas tripletas escritas en Fuseki
+
+```turtle
+PREFIX movie: <http://www.semanticweb.org/movierecommendation/ontologies/2025/movie-ontology#>
+
+<moviedata:uri>
+    movie:degreeCentrality        "0.0124"^^xsd:float ;
+    movie:betweennessCentrality   "0.0531"^^xsd:float ;
+    movie:pageRank                "0.00038"^^xsd:float ;
+    movie:clusteringCoefficient   "0.2100"^^xsd:float ;
+    movie:belongsToCluster        "14"^^xsd:string ;
+    movie:clusterLabel            "Sci-Fi Épico Contemplativo"^^xsd:string .
+```
+
+### Cómo ejecutar
+
+```bash
+# Desde la raíz del proyecto backend
+cd movie-graph-rag-backend-fastapi
+pip install networkx python-louvain  # si no están instalados
+python scripts/compute_network_metrics.py
+# Verificar resultado:
+python scripts/smoke_test_phase6.py
+```
+
+> **Nota:** betweenness con k=300 puede tardar 10-30 minutos en el grafo completo (~9700 nodos). El resto del pipeline es rápido.
+
+### Decisiones de diseño
+
+- **Sin imports de app.*** — el script tiene sus propias funciones HTTP para Fuseki (stdlib `urllib`), evitando dependencias del runtime de FastAPI
+- **Batches de 500 tripletas** — evita timeouts de Fuseki con INSERT DATA masivos
+- **Graceful fallbacks** — cada paso (betweenness, community detection, Gemini labels) está envuelto en try/except; un fallo parcial no aborta el script completo
+- **Delete antes de insert** — garantiza idempotencia (se puede re-ejecutar sin duplicar tripletas)
+
+### Smoke test — Phase 6
+
+**Script:** `scripts/smoke_test_phase6.py`
+
+Requiere Fuseki activo y que `compute_network_metrics.py` haya corrido exitosamente.
+
+| Sección | Checks |
+|---|---|
+| Conectividad a Fuseki | 1 (abort si falla) |
+| `degreeCentrality` — ≥500 movies, valores en [0,1] | 2 |
+| `belongsToCluster` — ≥5 clusters distintos | 1 |
+| `clusterLabel` — ≥5 labels distintos y no vacíos | 2 |
+| `pageRank` — ≥500 movies, valores > 0.0 | 2 |
+| `clusteringCoefficient` + `betweennessCentrality` | 2 |
+
+---
+
+## Fase 7 — Graph Diversity Score
+
+**Archivos modificados:**
+- `app/core/metrics.py`
+- `app/api/schemas/recommendation.py`
+- `app/application/use_cases/recommendation/chat_use_case.py`
+- `app/application/use_cases/recommendation/recommendation_use_case.py`
+
+**Archivo nuevo:** `scripts/smoke_test_phase7.py`
+
+### Por qué
+
+El ILD existente (Fase 5) usa distancia binaria por género: 0 si mismo género, 1 si distinto. Esto no captura la riqueza semántica del grafo — una película de Drama oscura está más cerca de un Thriller que de una Comedia, pero ILD las trata igual.
+
+`graphDiversityScore` usa la distancia BFS real (hops) entre pares de películas recomendadas. El `ConnectionExplorer.find_path()` ya existía (Fase 4); esta fase lo conecta con las métricas de la lista de recomendaciones.
+
+### Qué construyó
+
+#### `compute_graph_diversity(movies, explorer) -> float`
+
+```python
+def compute_graph_diversity(movies: list[Movie], explorer: ConnectionExplorer) -> float:
+    """Distancia BFS promedio entre todos los pares del top-K, normalizada a [0, 1]."""
+    # Si < 2 películas → sin pares → retorna 1.0
+    # Para cada par (i, j):
+    #   - clave de caché: (min(title_a, title_b), max(title_a, title_b))
+    #   - llama explorer.find_path(title_a, title_b)
+    #   - si path.found: hops = path.length; else: hops = _MAX_HOPS (= 3)
+    #   - normaliza: hops / _MAX_HOPS
+    # Retorna promedio de distancias normalizadas
+```
+
+**Cache:** `_PATH_CACHE: dict[tuple[str, str], int]` a nivel de módulo — persiste entre requests en el mismo proceso.
+
+#### Nuevos campos
+
+`ListMetrics.graph_diversity_score: float = 0.0`
+`RecommendationMetricsResponse.graphDiversityScore: float = 0.0`
+
+#### Integración en use cases
+
+Ambos `ChatUseCase.execute()` y `RecommendationUseCase._run()` crean un `ConnectionExplorer()` local y lo pasan a `compute_metrics(movies, profile, explorer=explorer)`.
+
+`_Result.to_api_dict()` incluye `"graphDiversityScore": self.metrics.graph_diversity_score`.
+
+#### Decisiones de diseño
+
+- **TYPE_CHECKING guard** para importar `ConnectionExplorer` en `metrics.py` — evita import circular en tiempo de ejecución
+- **`explorer=None` como default** — `compute_metrics` sin explorer retorna `graph_diversity_score=0.0`, preservando 100% de compatibilidad con código existente
+- **Fallback a _MAX_HOPS cuando find_path no encuentra camino** — trata películas sin conexión en 3 hops como "máxima diversidad", evitando penalizar listas diversas
+
+### Smoke test — Phase 7
+
+**Script:** `scripts/smoke_test_phase7.py`
+
+16 checks en 7 secciones, sin requerir Fuseki ni Gemini:
+
+| Sección | Checks |
+|---|---|
+| Imports | 2 |
+| `graphDiversityScore` en schema | 2 |
+| Lista de 1 película → 1.0 | 1 |
+| Path no encontrado → trata como distancia máxima | 1 |
+| `ListMetrics.graph_diversity_score` | 2 |
+| `compute_metrics(explorer=None)` → 0.0, ILD correcto | 3 |
+| Serialización Pydantic correcta | 5 |
+
+**Resultado:** 16/16 PASS ✅
 
 Resultado: **42/42 PASS**.
