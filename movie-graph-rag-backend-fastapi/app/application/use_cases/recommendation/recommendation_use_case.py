@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 from time import perf_counter
 
+from app.core.connection_explorer import ConnectionExplorer
 from app.core.fuseki_client import execute_select_query
 from app.core.metrics import ListMetrics, compute_metrics
 from app.core.profile_service import ProfileService
@@ -99,7 +100,8 @@ class RecommendationUseCase:
         attempts = build_strategy(ctx, profile)
         candidates, strategy = _run_strategy(attempts)
         movies = score_and_select(candidates, ctx, profile, n=5)
-        metrics = compute_metrics(movies, profile)
+        explorer = ConnectionExplorer()
+        metrics = compute_metrics(movies, profile, explorer=explorer)
 
         query_type = _query_type(ctx, profile.is_cold_start)
         explanation = self._explain(query, ctx, movies, query_type)
@@ -133,6 +135,7 @@ class RecommendationUseCase:
                     "ild": metrics.ild,
                     "semantic_precision": metrics.semantic_precision,
                     "cold_start_threshold": metrics.cold_start_threshold,
+                    "graph_diversity_score": metrics.graph_diversity_score,
                 },
             },
         )
@@ -213,6 +216,7 @@ class _Result:
             "executionTimeMs": self.execution_ms,
             "metrics": {
                 "ild": self.metrics.ild,
+                "graphDiversityScore": self.metrics.graph_diversity_score,
                 "semanticPrecision": self.metrics.semantic_precision,
                 "coldStartThreshold": self.metrics.cold_start_threshold,
                 "movieCount": self.metrics.movie_count,
