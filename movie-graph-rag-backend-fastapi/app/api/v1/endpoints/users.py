@@ -7,11 +7,15 @@ from app.api.schemas.favorites import (
     FavoritesResponse,
     RemoveFavoriteRequest,
 )
+from app.api.schemas.topology_profile import TopologicalProfileResponse
 from app.application.use_cases.users import UserFavoritesUseCase
+from app.core.profile_service import ProfileService
 from app.domain.entities.auth_user import AuthUser
 from app.domain.entities.favorite_movie import FavoriteMovie
 
 router = APIRouter(prefix="/users", tags=["users"])
+
+_profile_service = ProfileService()
 
 
 @router.get("/me/favorites", response_model=FavoritesResponse)
@@ -65,3 +69,25 @@ def remove_my_favorite(
     return FavoritesResponse(
         favorites=[FavoriteMovieResponse(**favorite.__dict__) for favorite in favorites]
     )
+
+
+@router.get("/me/topology", response_model=TopologicalProfileResponse)
+def get_my_topology(
+    current_user: AuthUser = Depends(get_current_user),
+    use_case: UserFavoritesUseCase = Depends(get_user_favorites_use_case),
+) -> TopologicalProfileResponse:
+    """Devuelve el perfil topologico del usuario basado en sus favoritos.
+
+    Mapea cada pelicula favorita a su comunidad Louvain (Fase 6) y calcula:
+    - **explorationIndex**: entropia de Shannon normalizada [0,1] sobre la
+      distribucion de clusters — 0 = especialista, 1 = explorador.
+    - **dominantClusters**: top 5 comunidades por peso.
+    - **unexploredAdjacent**: clusters adjacentes al dominante aun no explorados.
+    - **temporalTrend**: si el usuario se esta especializando o diversificando,
+      calculado comparando la mitad mas antigua vs. la mas reciente de sus favoritos.
+
+    Requiere que ``scripts/compute_network_metrics.py`` haya asignado clusters a
+    las peliculas en Fuseki (Fase 6).
+    """
+    favorites = use_case.get_my_favorites(current_user.id)
+    return _profile_service.get_topological_profile(current_user.id, favorites)

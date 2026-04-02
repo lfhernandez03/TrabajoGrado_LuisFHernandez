@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import logging
+import math
 from collections import Counter
 from datetime import datetime, timedelta
 from uuid import uuid4
 
 from app.domain.entities.recommendation_models import UserContext, UserProfile
 from app.core.fuseki_client import (
+    execute_select_query,
     execute_update_query,
     get_user_context_history,
 )
@@ -151,6 +153,119 @@ class ProfileService:
         """Evict the user from the profile cache."""
         self._cache.pop(user_id, None)
 
+    def get_topological_profile(
+        self,
+        user_id: str,
+        favorites: list,           # list[FavoriteMovie] — avoid importing entity here
+    ) -> "TopologicalProfileResponse":
+        """Build a topological user profile from the user's favorite movies.
+
+        Maps each favorite to its Louvain community (Phase 6 data), computes
+        a cluster weight distribution, and derives exploration metrics from it.
+
+        Returns a ``TopologicalProfileResponse`` (Pydantic schema).  The import
+        is local to avoid a hard dependency on the API layer at module load time.
+        """
+        from app.api.schemas.topology_profile import (
+            ClusterWeight,
+            TopologicalProfileResponse,
+            UnexploredCluster,
+        )
+
+        _MOVIE_NS = "http://www.semanticweb.org/movierecommendation/ontologies/2025/movie-ontology#"
+
+        total = len(favorites)
+
+        # ── Step 1: map favorite URIs → cluster IDs via SPARQL ─────────────
+        uris = [f.uri for f in favorites if getattr(f, "uri", "")]
+        cluster_of: dict[str, str] = {}   # {uri: clusterId}
+        cluster_labels: dict[str, str] = {}
+
+        if uris:
+            values_clause = " ".join(f"<{u}>" for u in uris)
+            try:
+                rows = execute_select_query(
+                    f"PREFIX movie: <{_MOVIE_NS}>\n"
+                    "SELECT ?movie ?clusterId ?label WHERE {\n"
+                    f"  VALUES ?movie {{ {values_clause} }}\n"
+                    "  ?movie movie:belongsToCluster ?clusterId .\n"
+                    "  OPTIONAL { ?movie movie:clusterLabel ?label }\n"
+                    "}"
+                )
+                for row in rows:
+                    uri = row.get("movie", "")
+                    cid = str(row.get("clusterId", "")).strip()
+                    if uri and cid:
+                        cluster_of[uri] = cid
+                        label = str(row.get("label", "")).strip()
+                        if label and cid not in cluster_labels:
+                            cluster_labels[cid] = label
+            except Exception as exc:
+                logger.warning("get_topological_profile: cluster lookup failed: %s", exc)
+
+        # Fill missing labels
+        for cid in set(cluster_of.values()):
+            cluster_labels.setdefault(cid, f"Cluster {cid}")
+
+        # ── Step 2: cluster counts and weights ──────────────────────────────
+        cluster_counts: Counter[str] = Counter()
+        for fav in favorites:
+            uri = getattr(fav, "uri", "")
+            cid = cluster_of.get(uri)
+            if cid:
+                cluster_counts[cid] += 1
+
+        clustered = sum(cluster_counts.values())
+        weights: dict[str, float] = {}
+        if clustered > 0:
+            weights = {cid: cnt / clustered for cid, cnt in cluster_counts.items()}
+
+        # ── Step 3: exploration index (Shannon entropy, normalized) ─────────
+        exploration_index = _entropy_index(list(weights.values()))
+
+        if exploration_index < 0.3:
+            user_type = "especialista"
+        elif exploration_index > 0.7:
+            user_type = "explorador"
+        else:
+            user_type = "equilibrado"
+
+        # ── Step 4: temporal trend (compare older half vs. recent half) ─────
+        temporal_trend, trend_explanation = _compute_temporal_trend(
+            favorites, cluster_of, clustered
+        )
+
+        # ── Step 5: dominant clusters (top 5, descending by weight) ─────────
+        dominant = [
+            ClusterWeight(
+                clusterId=cid,
+                label=cluster_labels.get(cid, f"Cluster {cid}"),
+                weight=round(weights[cid], 4),
+                moviesSeen=cluster_counts[cid],
+            )
+            for cid, _ in cluster_counts.most_common(5)
+        ]
+
+        # ── Step 6: unexplored adjacent clusters ────────────────────────────
+        unexplored = _find_unexplored(
+            dominant_cluster_id=dominant[0].clusterId if dominant else None,
+            visited_ids=set(cluster_counts.keys()),
+            cluster_labels=cluster_labels,
+            movie_ns=_MOVIE_NS,
+        )
+
+        return TopologicalProfileResponse(
+            userId=user_id,
+            explorationIndex=exploration_index,
+            userType=user_type,
+            dominantClusters=dominant,
+            unexploredAdjacent=unexplored,
+            temporalTrend=temporal_trend,
+            trendExplanation=trend_explanation,
+            totalFavorites=total,
+            clusteredFavorites=clustered,
+        )
+
     # ── Internal ────────────────────────────────────────────────────────────
 
     def _build_profile(self, user_id: str) -> UserProfile:
@@ -225,3 +340,125 @@ def _hour_to_time_of_day(hour: int) -> str | None:
     if hour >= 23 or hour < 6:
         return "night"
     return None
+
+
+# ---------------------------------------------------------------------------
+# Phase 11 helpers
+# ---------------------------------------------------------------------------
+
+def _entropy_index(weights: list[float]) -> float:
+    """Shannon entropy of a weight distribution, normalized to [0, 1].
+
+    0 = all weight on one cluster (specialist).
+    1 = uniform distribution (explorer).
+    """
+    values = [w for w in weights if w > 0]
+    if not values:
+        return 0.5
+    entropy = -sum(p * math.log2(p) for p in values)
+    max_entropy = math.log2(len(values)) if len(values) > 1 else 1.0
+    return round(entropy / max_entropy, 4)
+
+
+def _compute_temporal_trend(
+    favorites: list,
+    cluster_of: dict[str, str],
+    clustered: int,
+) -> tuple[str, str]:
+    """Compare cluster diversity of older vs. recent favorites.
+
+    Requires favorites with ``addedAt`` timestamps and at least 4 clustered
+    favorites.  Falls back to "stable" when insufficient data is available.
+    """
+    dated = sorted(
+        [f for f in favorites if getattr(f, "addedAt", None) and f.uri in cluster_of],
+        key=lambda f: f.addedAt,
+    )
+    n = len(dated)
+    if n < 4:
+        return "stable", f"Insuficientes favoritos con fecha para calcular tendencia ({n} disponibles)."
+
+    mid = n // 2
+    older = dated[:mid]
+    recent = dated[mid:]
+
+    def _weights(subset: list) -> list[float]:
+        counts: Counter[str] = Counter(cluster_of[f.uri] for f in subset)
+        total = sum(counts.values())
+        return [c / total for c in counts.values()] if total else []
+
+    older_idx = _entropy_index(_weights(older))
+    recent_idx = _entropy_index(_weights(recent))
+
+    delta = recent_idx - older_idx
+    if delta < -0.10:
+        return (
+            "specializing",
+            f"Tus {mid} favoritos mas recientes se concentran en menos comunidades "
+            f"(indice {recent_idx:.2f}) que los anteriores (indice {older_idx:.2f}).",
+        )
+    if delta > 0.10:
+        return (
+            "diversifying",
+            f"Tus {mid} favoritos mas recientes se distribuyen en mas comunidades "
+            f"(indice {recent_idx:.2f}) que los anteriores (indice {older_idx:.2f}).",
+        )
+    return (
+        "stable",
+        f"Tu patron de exploracion es estable (reciente {recent_idx:.2f} vs. anterior {older_idx:.2f}).",
+    )
+
+
+def _find_unexplored(
+    dominant_cluster_id: str | None,
+    visited_ids: set[str],
+    cluster_labels: dict[str, str],
+    movie_ns: str,
+    limit: int = 5,
+) -> list:
+    """Return clusters adjacent to the dominant cluster that the user has not visited."""
+    from app.api.schemas.topology_profile import UnexploredCluster
+
+    if not dominant_cluster_id:
+        return []
+
+    try:
+        # Get top genres of the dominant cluster
+        genre_rows = execute_select_query(
+            f"PREFIX movie: <{movie_ns}>\n"
+            "SELECT ?genreName (COUNT(?m) AS ?cnt) WHERE {\n"
+            f'  ?m movie:belongsToCluster "{dominant_cluster_id}" ;\n'
+            "     movie:hasMainGenre/movie:genreName ?genreName .\n"
+            "} GROUP BY ?genreName ORDER BY DESC(?cnt) LIMIT 5"
+        )
+        top_genres = [r["genreName"] for r in genre_rows if r.get("genreName")]
+        if not top_genres:
+            return []
+
+        genre_values = " ".join(f'"{g}"' for g in top_genres)
+        adj_rows = execute_select_query(
+            f"PREFIX movie: <{movie_ns}>\n"
+            "SELECT ?otherClusterId ?otherLabel (COUNT(DISTINCT ?m) AS ?cnt) WHERE {\n"
+            f"  VALUES ?g {{ {genre_values} }}\n"
+            "  ?m movie:hasMainGenre/movie:genreName ?g ;\n"
+            "     movie:belongsToCluster ?otherClusterId .\n"
+            "  OPTIONAL { ?m movie:clusterLabel ?otherLabel }\n"
+            f'  FILTER(?otherClusterId != "{dominant_cluster_id}")\n'
+            "} GROUP BY ?otherClusterId ?otherLabel ORDER BY DESC(?cnt)"
+        )
+
+        seen: set[str] = set()
+        result: list[UnexploredCluster] = []
+        for row in adj_rows:
+            cid = str(row.get("otherClusterId", "")).strip()
+            if not cid or cid in seen or cid in visited_ids:
+                continue
+            seen.add(cid)
+            label = str(row.get("otherLabel", "")).strip() or cluster_labels.get(cid, f"Cluster {cid}")
+            result.append(UnexploredCluster(clusterId=cid, label=label, distanceToDominant=1))
+            if len(result) >= limit:
+                break
+        return result
+    except Exception as exc:
+        logger.warning("_find_unexplored: %s", exc)
+        return []

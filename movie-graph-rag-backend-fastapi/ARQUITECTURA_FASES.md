@@ -1210,3 +1210,46 @@ La formula fallback es identica a la pre-existente — backward compatibility to
 | Fuseki live: bulk fetch con URIs reales de Fase 6 | 4 | OK |
 
 **Resultado:** 25/25 PASS
+
+---
+
+## Fase 11 — Perfil Topologico del Usuario
+
+**Archivos nuevos:**
+- `app/api/schemas/topology_profile.py`
+- `scripts/smoke_test_phase11.py`
+
+**Archivos modificados:**
+- `app/core/profile_service.py` (metodo `get_topological_profile` + helpers `_entropy_index`, `_compute_temporal_trend`, `_find_unexplored`)
+- `app/api/v1/endpoints/users.py` (endpoint `GET /users/me/topology`)
+
+**Dependencia:** Fase 6 completada (tripletas `movie:belongsToCluster` en Fuseki) + Fase 9 (logica de clusters adyacentes)
+
+### Que se construyo
+
+`GET /users/me/topology` — `TopologicalProfileResponse`:
+- Mapea los favoritos del usuario a sus comunidades Louvain via SPARQL (un query con clausula VALUES para todos los URIs).
+- Calcula la distribucion de pesos por cluster y la entropia de Shannon normalizada (`explorationIndex` en [0,1]).
+- Clasifica al usuario: `especialista` (< 0.3) / `equilibrado` (0.3-0.7) / `explorador` (> 0.7).
+- Calcula `temporalTrend` comparando la entropia de la mitad mas antigua vs. la mas reciente de los favoritos (usando `FavoriteMovie.addedAt`).
+- Identifica hasta 5 clusters adyacentes al dominante que el usuario aun no ha explorado.
+
+### Por que se construyo asi
+
+- **Un solo query SPARQL para todos los favoritos:** VALUES clause evita N queries separadas. Los favoritos sin cluster en Fuseki se ignoran silenciosamente (graceful degradation).
+- **Metodo en ProfileService, no en el endpoint:** Mantiene la logica de negocio fuera de la capa HTTP. El endpoint solo orquesta.
+- **Import local de schema Pydantic en ProfileService:** Evita dependencia ciclica a nivel de modulo (`app.core` no debe depender de `app.api` en el import inicial).
+- **Temporal trend con addedAt:** `FavoriteMovie.addedAt` tiene timestamps reales. Comparar mitad antigua vs. reciente da una senal de especializacion/diversificacion autentica.
+- **Top 5 clusters:** Solo se devuelven los 5 dominantes para mantener la respuesta compacta. Los pesos son fracciones del total de favoritos con cluster asignado, no del top-5.
+
+### Prueba de humo
+
+| Seccion | Checks | Resultado |
+|---------|--------|-----------|
+| Schemas importan y serializan | 8 | OK |
+| _entropy_index: especialista=0, explorador=1, casos borde | 5 | OK |
+| _compute_temporal_trend: especializing, diversifying, stable | 3 | OK |
+| ProfileService con favoritos reales de Fuseki | 12 | OK |
+| Endpoint importa, ruta correcta | 3 | OK |
+
+**Resultado:** 31/31 PASS
