@@ -43,7 +43,7 @@ export function MovieCard({
         {hasPoster ? (
           <div className="absolute inset-0 pointer-events-none">
             <Image
-              src={normalizedPosterUrl}
+              src={normalizedPosterUrl as string}
               alt=""
               aria-hidden="true"
               fill
@@ -59,7 +59,7 @@ export function MovieCard({
           <div className="relative w-36 shrink-0 rounded-xl shadow-lg overflow-hidden">
             {hasPoster ? (
               <Image
-                src={normalizedPosterUrl}
+                src={normalizedPosterUrl as string}
                 alt={`Póster de ${movie.title}`}
                 fill
                 sizes="(max-width: 768px) 144px, 144px"
@@ -127,7 +127,7 @@ export function MovieCard({
                 <Star className="h-4 w-4 text-accent" />
                 {hasRating && (
                   <span className="font-medium">
-                    {movie.rating.toFixed(1)}
+                    {movie.rating ? movie.rating.toFixed(1) : "N/A"}
                   </span>
                 )}
                 <span className="text-muted-foreground">Calificación</span>

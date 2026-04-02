@@ -28,9 +28,9 @@ export function MovieRecommendationCard({ movie }: MovieRecommendationCardProps)
   return (
     <div className="bg-background/60 border border-border/50 rounded-lg p-3 flex items-center gap-3">
       <div className="shrink-0 h-14 w-10 bg-primary/10 rounded-md overflow-hidden flex items-center justify-center p-1">
-        {hasPoster ? (
+        {hasPoster && normalizedPosterUrl ? (
           <Image
-            src={normalizedPosterUrl}
+            src={normalizedPosterUrl as string}
             alt={`Póster de ${movie.title}`}
             width={40}
             height={56}
