@@ -5,7 +5,7 @@ Run from project root:
     python scripts/compute_network_metrics.py
 
 Required packages (install separately if not in venv):
-    pip install networkx python-louvain scipy google-genai python-dotenv
+    pip install networkx python-louvain scipy groq python-dotenv
 """
 from __future__ import annotations
 
@@ -33,10 +33,10 @@ load_dotenv()
 
 FUSEKI_URL: str = os.getenv("FUSEKI_URL", "http://localhost:3030")
 FUSEKI_DATASET: str = os.getenv("FUSEKI_DATASET", "Cine")
-FUSEKI_USER: str = os.getenv("FUSEKI_USER", "Admin")
-FUSEKI_PASSWORD: str = os.getenv("FUSEKI_PASSWORD", "Admin")
-GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY", "")
-GEMINI_MODEL: str = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+FUSEKI_USER: str = os.getenv("FUSEKI_USER")
+FUSEKI_PASSWORD: str = os.getenv("FUSEKI_PASSWORD")
+GROQ_API_KEY: str = os.getenv("GROQ_API_KEY", "")
+GROQ_MODEL: str = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
 
 MOVIE_NS = "http://www.semanticweb.org/movierecommendation/ontologies/2025/movie-ontology#"
 XSD_NS = "http://www.w3.org/2001/XMLSchema#"
@@ -317,7 +317,10 @@ def generate_cluster_labels(
     partition: dict[str, int],
     uri_to_genre: dict[str, str],
 ) -> dict[int, str]:
-    """Generate Spanish descriptive labels for each cluster via Gemini.
+    """Generate Spanish descriptive labels for each cluster via Groq.
+
+    All clusters are labelled in a single batched JSON request to minimise
+    API calls and stay within the free-tier rate limits.
 
     Returns:
         labels: {cluster_id: label_str}
@@ -325,7 +328,7 @@ def generate_cluster_labels(
     if not partition:
         return {}
 
-    log("Step 5: Generating cluster labels with Gemini ...")
+    log("Step 5: Generating cluster labels with Groq ...")
 
     # Build cluster -> dominant genres mapping
     cluster_genres: dict[int, collections.Counter] = collections.defaultdict(collections.Counter)
@@ -334,49 +337,99 @@ def generate_cluster_labels(
         if genre:
             cluster_genres[cluster_id][genre] += 1
 
-    labels: dict[int, str] = {}
+    cluster_ids = sorted(set(partition.values()))
 
-    if not GEMINI_API_KEY:
-        log("  [WARN] GEMINI_API_KEY not set — using fallback labels.")
-        for cluster_id in set(partition.values()):
-            labels[cluster_id] = f"Cluster {cluster_id}"
-        return labels
+    def _fallback_labels() -> dict[int, str]:
+        return {cid: f"Cluster {cid}" for cid in cluster_ids}
+
+    if not GROQ_API_KEY:
+        log("  [WARN] GROQ_API_KEY not set — using fallback labels.")
+        return _fallback_labels()
 
     try:
-        from google import genai  # type: ignore  # noqa: PLC0415
+        from groq import Groq  # type: ignore  # noqa: PLC0415
 
-        client = genai.Client(api_key=GEMINI_API_KEY)
+        client = Groq(api_key=GROQ_API_KEY)
     except Exception as exc:  # noqa: BLE001
-        log(f"  [WARN] Could not initialise Gemini client: {exc}. Using fallback labels.")
-        for cluster_id in set(partition.values()):
-            labels[cluster_id] = f"Cluster {cluster_id}"
-        return labels
+        log(f"  [WARN] Could not initialise Groq client: {exc}. Using fallback labels.")
+        return _fallback_labels()
 
-    cluster_ids = sorted(set(partition.values()))
-    log(f"  Generating labels for {len(cluster_ids)} clusters ...")
+    log(f"  Generating labels for {len(cluster_ids)} clusters in one batch ...")
 
-    for cluster_id in cluster_ids:
+    # Build the cluster summary for the prompt (top-5 genres per cluster)
+    cluster_summaries = []
+    for cid in cluster_ids:
+        top_genres = [g for g, _ in cluster_genres[cid].most_common(5)]
+        genres_str = ", ".join(top_genres) if top_genres else "desconocido"
+        cluster_summaries.append(f'  {{"id": {cid}, "genres": "{genres_str}"}}')
+
+    clusters_json = "[\n" + ",\n".join(cluster_summaries) + "\n]"
+
+    prompt = (
+        "Eres un experto en cine. Se te da una lista de clusters de películas "
+        "con sus géneros dominantes. Devuelve SOLO un objeto JSON válido donde "
+        "las claves son los IDs de cluster (como strings) y los valores son "
+        "nombres descriptivos en español de máximo 5 palabras. "
+        "No incluyas explicaciones ni texto adicional fuera del JSON.\n\n"
+        f"Clusters:\n{clusters_json}\n\n"
+        "Ejemplo de respuesta esperada:\n"
+        '{"0": "Ciencia Ficción Épica", "1": "Thriller Psicológico", "2": "Comedia Romántica"}'
+    )
+
+    labels: dict[int, str] = {}
+    try:
+        response = client.chat.completions.create(
+            model=GROQ_MODEL,
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.3,
+            max_tokens=len(cluster_ids) * 20 + 100,
+        )
+        raw = response.choices[0].message.content or ""
+        # Extract the JSON object from the response (strip any surrounding text)
+        start = raw.find("{")
+        end = raw.rfind("}") + 1
+        if start == -1 or end == 0:
+            raise ValueError(f"No JSON object found in Groq response: {raw[:200]}")
+        parsed: dict[str, str] = json.loads(raw[start:end])
+        for cid in cluster_ids:
+            label = str(parsed.get(str(cid), "")).strip().strip('"').strip("'")
+            labels[cid] = label if label else f"Cluster {cid}"
+        log(f"  Cluster labels generated: {len(labels)}")
+    except Exception as exc:  # noqa: BLE001
+        log(f"  [WARN] Groq batch labelling failed: {exc}. Falling back to per-cluster calls ...")
+        labels = _groq_label_per_cluster(client, cluster_ids, cluster_genres)
+
+    return labels
+
+
+def _groq_label_per_cluster(
+    client: object,
+    cluster_ids: list[int],
+    cluster_genres: dict[int, "collections.Counter[str]"],
+) -> dict[int, str]:
+    """Fallback: one Groq call per cluster with a short delay to respect rate limits."""
+    labels: dict[int, str] = {}
+    for cid in cluster_ids:
+        top_genres = [g for g, _ in cluster_genres[cid].most_common(5)]
+        genres_str = ", ".join(top_genres) if top_genres else "desconocido"
+        prompt = (
+            f"Genera un nombre descriptivo en español (máximo 5 palabras) para un cluster "
+            f"de películas cuyos géneros dominantes son: {genres_str}. "
+            "Solo responde con el nombre, sin explicación."
+        )
         try:
-            top_genres = [g for g, _ in cluster_genres[cluster_id].most_common(5)]
-            genres_str = ", ".join(top_genres) if top_genres else "desconocido"
-            prompt = (
-                f"Genera un nombre descriptivo en español (máximo 5 palabras) para un cluster "
-                f"de películas con estas características: géneros dominantes: {genres_str}. "
-                f"Solo responde con el nombre, sin explicación."
+            resp = client.chat.completions.create(  # type: ignore[attr-defined]
+                model=GROQ_MODEL,
+                messages=[{"role": "user", "content": prompt}],
+                temperature=0.3,
+                max_tokens=20,
             )
-            response = client.models.generate_content(
-                model=GEMINI_MODEL,
-                contents=prompt,
-            )
-            label = response.text.strip().strip('"').strip("'")
-            if not label:
-                raise ValueError("Empty response from Gemini")
-            labels[cluster_id] = label
+            label = (resp.choices[0].message.content or "").strip().strip('"').strip("'")
+            labels[cid] = label if label else f"Cluster {cid}"
         except Exception as exc:  # noqa: BLE001
-            log(f"  [WARN] Gemini failed for cluster {cluster_id}: {exc}. Using fallback.")
-            labels[cluster_id] = f"Cluster {cluster_id}"
-
-    log(f"  Cluster labels generated: {len(labels)}")
+            log(f"  [WARN] Groq failed for cluster {cid}: {exc}. Using fallback.")
+            labels[cid] = f"Cluster {cid}"
+        time.sleep(0.5)  # stay within 30 RPM free-tier limit
     return labels
 
 

@@ -18,6 +18,7 @@ Trabajo de grado — Universidad del Valle, Escuela de Ingeniería de Sistemas y
 | 5 | Métricas: ILD, precisión semántica, umbral cold start | ✅ Completo |
 | 6 | Pipeline NetworkX offline: centralidades + comunidades en Fuseki | ✅ Completo — requiere ejecutar `scripts/compute_network_metrics.py` contra Fuseki |
 | 7 | Graph Diversity Score basado en distancia BFS | ✅ Completo |
+| 8 | Dashboard topológico: endpoint REST + frontend Next.js | ✅ Completo — 21/21 smoke tests PASS |
 
 ---
 
@@ -1009,3 +1010,77 @@ Ambos `ChatUseCase.execute()` y `RecommendationUseCase._run()` crean un `Connect
 **Resultado:** 16/16 PASS ✅
 
 Resultado: **42/42 PASS**.
+
+---
+
+## Fase 8 — Dashboard Topológico
+
+**Archivos nuevos:**
+- `app/api/schemas/graph.py`
+- `app/api/v1/endpoints/graph.py`
+- `movie-graph-rag-frontend/services/graph.service.ts`
+- `movie-graph-rag-frontend/app/topology/page.tsx`
+- `scripts/smoke_test_phase8.py`
+
+**Archivos modificados:** `app/api/v1/router.py`
+
+**Dependencia:** Fase 6 completada ✅ (métricas cargadas en Fuseki)
+
+### Qué se construyó
+
+Un endpoint REST y una página frontend que exponen las métricas topológicas globales calculadas offline por el pipeline de Fase 6.
+
+**Backend — `GET /graph/topology`:**
+- Devuelve `GraphTopologyResponse` con cuatro secciones: `graphSummary`, `topByDegree`, `topByBetweenness`, `topByPageRank`, `clusterSummary`.
+- Resultado cacheado en memoria con `@lru_cache(maxsize=1)`: la topología no cambia entre ejecuciones del pipeline, por lo que una sola llamada a Fuseki es suficiente.
+- El campo `isSmallWorld` se deduce dinámicamente: `clusteringCoefficient > 0.3` y `communityCount >= 5`.
+
+**Frontend — `/topology`:**
+- Dashboard con tarjetas de resumen (películas, aristas, grado promedio, clustering, comunidades, modularidad).
+- Tres rankings de centralidad (degree / betweenness / PageRank) con barras horizontales construidas en Tailwind puro — sin dependencia de ninguna librería de gráficas.
+- Tabla de comunidades Louvain con barra de proporción relativa.
+- Banner condicional "Small-world detectado" cuando se cumple la propiedad.
+
+### Por qué se construyó así
+
+- **Sin librería de gráficas:** `package.json` no incluía Recharts ni D3; instalar dependencias externas requiere aprobación y no aporta valor diferencial aquí. Las barras CSS-width son suficientes para mostrar rankings ordinales.
+- **Cache en endpoint:** Las métricas topológicas son estáticas entre ejecuciones del pipeline. Cachear evita N consultas SPARQL por cada visita a la página.
+- **`fetch_limit = limit * 10` en `_fetch_top`:** El JOIN OPTIONAL de género puede producir múltiples filas por película; sobrecargar la consulta y deduplicar garantiza exactamente N entradas únicas.
+- **Patrón singleton idéntico a `connections.py`:** Coherencia con el resto de endpoints de la API.
+
+### Cómo funciona
+
+```
+GET /api/v1/graph/topology
+  → _cached_topology()              # lru_cache(maxsize=1)
+    → _fetch_summary()              # AVG + COUNT sobre tripletas Phase 6
+    → _fetch_top("degreeCentrality", 10)
+    → _fetch_top("betweennessCentrality", 10)
+    → _fetch_top("pageRank", 10)
+    → _fetch_clusters()             # GROUP BY clusterId
+    → GraphTopologyResponse(...)
+```
+
+Frontend: `useEffect → getGraphTopology() → setState(data)` → renderiza tarjetas + barras + tabla.
+
+### Prueba de humo
+
+| Check | Resultado |
+|-------|-----------|
+| Schemas importan y serializan | 5 |
+| Endpoint importa, prefijo correcto, callable | 3 |
+| degreeCentrality ≥500 películas en Fuseki | 1 |
+| top-10 por degree retorna 10 filas | 1 |
+| Valores en [0, 1] | 1 |
+| betweennessCentrality ≥500 películas | 1 |
+| pageRank ≥500 películas | 1 |
+| ≥5 clusters distintos | 1 |
+| clusterLabel no vacío | 1 |
+| `_build_topology()` retorna tipo correcto | 1 |
+| totalMovies ≥500 | 1 |
+| communityCount ≥5 | 1 |
+| topByDegree tiene 10 entradas | 1 |
+| clusterSummary no vacío | 1 |
+| modularity en [0, 1] | 1 |
+
+**Resultado:** 21/21 PASS ✅
