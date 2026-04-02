@@ -70,6 +70,7 @@ class Movie:
     time_match_score: float | None = None
     semantic_scores: dict[str, float] = field(default_factory=dict)
     kid_friendly: bool | None = None
+    serendipity_score: float = 0.0
 
     @classmethod
     def from_fuseki_row(cls, row: dict) -> Movie:
@@ -181,6 +182,7 @@ class Movie:
             "timeMatchScore": self.time_match_score,
             "semanticScores": self.semantic_scores,
             "kidFriendly": self.kid_friendly,
+            "serendipityScore": self.serendipity_score,
         }
 
 

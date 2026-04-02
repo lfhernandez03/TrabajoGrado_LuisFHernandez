@@ -1149,3 +1149,64 @@ GET /clusters
 | GET /movies/{title}/cluster: intraCluster, adyacentes, bridge | 11 | OK |
 
 **Resultado:** 30/30 PASS
+
+---
+
+## Fase 10 — Serendipity Engine formal
+
+**Archivos modificados:**
+- `app/domain/entities/recommendation_models.py` (campo `serendipity_score` en `Movie`)
+- `app/core/scorer.py` (fetch de metricas, formula de serendipity, formula enriquecida)
+- `app/api/schemas/recommendation.py` (campo `serendipityScore` en `RecommendedMovieResponse`)
+- `app/api/v1/endpoints/connections.py` (propagacion en `_movie_to_response`)
+
+**Archivos nuevos:** `scripts/smoke_test_phase10.py`
+
+**Dependencia:** Fase 6 completada (tripletas `betweennessCentrality`, `clusteringCoefficient`, `degreeCentrality` en Fuseki)
+
+### Que se construyo
+
+Serendipity topologico real integrado en el pipeline de scoring. Cada pelicula candidata recibe un `serendipityScore` calculado con metricas de red del grafo de Fase 6, y este score modifica su posicion en el ranking de recomendaciones.
+
+**Formula:**
+```
+serendipity = compatibility x (1 - clustering) x betweenness x (1 - degree)
+serendipity = min(serendipity * 3, 1.0)
+```
+
+- `(1 - clustering)`: favorece peliculas puente con poca cohesion de vecindad
+- `betweenness`: favorece peliculas que conectan comunidades distintas
+- `(1 - degree)`: penaliza peliculas mainstream (muchas conexiones directas)
+
+**Formula de scoring enriquecida (cuando network metrics disponibles):**
+```
+score = 0.35·rating + 0.25·semantic + 0.20·serendipity + 0.10·freshness + 0.10·novelty
+```
+
+**Formula base (sin network, igual que antes de Fase 10):**
+```
+score = 0.30·rating + 0.25·semantic + 0.25·genre + 0.10·freshness + 0.10·novelty
+```
+
+La formula fallback es identica a la pre-existente — backward compatibility total.
+
+### Por que se construyo asi
+
+- **Bulk fetch de metricas:** `_bulk_fetch_network_scores(uris)` hace una sola query SPARQL con clausula `VALUES` para todos los candidatos de una vez. Evita N queries separadas (N = 20-50 candidatos tipicos).
+- **Cache en memoria (`_NETWORK_CACHE`):** Las metricas de red no cambian entre requests. Se cachean indefinidamente en memoria para eliminar latencia en requests subsecuentes.
+- **Import local de `fuseki_client`:** Para evitar imports circulares al iniciar el servidor, `fuseki_client` se importa dentro de `_bulk_fetch_network_scores` en vez de al nivel de modulo.
+- **Serendipity = 0 no aplica la formula enriquecida:** Si betweenness es 0 (la mayoria de peliculas), el serendipity es 0 y se usa la formula base — sin penalizacion.
+- **Peso 20% para serendipity:** Evita que peliculas de nicho con alta betweenness pero baja compatibilidad superen a peliculas semanticamente relevantes. La compatibilidad sigue siendo el factor dominante.
+
+### Prueba de humo
+
+| Seccion | Checks | Resultado |
+|---------|--------|-----------|
+| Movie.serendipity_score + to_response_dict | 4 | OK |
+| RecommendedMovieResponse.serendipityScore | 3 | OK |
+| _compute_serendipity: bridge > mainstream, clamping, edge cases | 6 | OK |
+| _compute_score: seleccion de formula segun datos disponibles | 5 | OK |
+| score_and_select: propagacion de serendipity_score | 3 | OK |
+| Fuseki live: bulk fetch con URIs reales de Fase 6 | 4 | OK |
+
+**Resultado:** 25/25 PASS

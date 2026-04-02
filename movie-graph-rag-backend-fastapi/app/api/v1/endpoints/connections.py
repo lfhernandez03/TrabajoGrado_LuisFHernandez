@@ -52,6 +52,7 @@ def _movie_to_response(movie: Movie) -> RecommendedMovieResponse:
         energyMatchScore=movie.energy_match_score,
         timeMatchScore=movie.time_match_score,
         kidFriendly=movie.kid_friendly,
+        serendipityScore=movie.serendipity_score,
     )
 
 

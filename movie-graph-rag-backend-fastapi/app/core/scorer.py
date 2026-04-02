@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+import logging
 from datetime import datetime
 
 from app.domain.entities.recommendation_models import Movie, UserContext, UserProfile
+
+logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
 # Tuning constants
@@ -11,6 +14,85 @@ _MMR_LAMBDA = 0.7          # trade-off relevance vs diversity (higher = more rel
 _RATING_MAX = 10.0         # IMDB-style scale
 _YEAR_BASELINE = 1990      # movies at/before this year get freshness ≈ 0
 _CURRENT_YEAR = datetime.utcnow().year
+
+_MOVIE_NS = "http://www.semanticweb.org/movierecommendation/ontologies/2025/movie-ontology#"
+
+# ---------------------------------------------------------------------------
+# Network metrics cache (populated once per batch of candidates)
+# ---------------------------------------------------------------------------
+
+# {movie_uri: {"betweenness": float, "clustering": float, "degree": float}}
+_NETWORK_CACHE: dict[str, dict[str, float]] = {}
+
+
+def _bulk_fetch_network_scores(uris: list[str]) -> None:
+    """Fetch Phase 6 network metrics for all uncached URIs in one SPARQL query.
+
+    Results are stored in ``_NETWORK_CACHE``.  URIs with no metrics in Fuseki
+    are cached as empty dicts so they are not re-queried on the next request.
+    """
+    missing = [u for u in uris if u not in _NETWORK_CACHE]
+    if not missing:
+        return
+
+    try:
+        from app.core.fuseki_client import execute_select_query  # local import avoids circular dep at startup
+
+        values_clause = " ".join(f"<{u}>" for u in missing)
+        rows = execute_select_query(
+            f"PREFIX movie: <{_MOVIE_NS}>\n"
+            "SELECT ?movie ?betweenness ?clustering ?degree WHERE {\n"
+            f"  VALUES ?movie {{ {values_clause} }}\n"
+            "  OPTIONAL { ?movie movie:betweennessCentrality ?betweenness }\n"
+            "  OPTIONAL { ?movie movie:clusteringCoefficient ?clustering }\n"
+            "  OPTIONAL { ?movie movie:degreeCentrality ?degree }\n"
+            "}"
+        )
+        uri_scores: dict[str, dict[str, float]] = {}
+        for row in rows:
+            uri = row.get("movie", "")
+            if not uri:
+                continue
+            try:
+                uri_scores[uri] = {
+                    "betweenness": float(row.get("betweenness") or 0.0),
+                    "clustering": float(row.get("clustering") or 0.0),
+                    "degree": float(row.get("degree") or 0.0),
+                }
+            except (ValueError, TypeError):
+                uri_scores[uri] = {}
+        for uri in missing:
+            _NETWORK_CACHE[uri] = uri_scores.get(uri, {})
+    except Exception as exc:
+        logger.debug("Network scores fetch skipped: %s", exc)
+        for uri in missing:
+            _NETWORK_CACHE[uri] = {}
+
+
+def _compute_serendipity(movie: Movie, network: dict[str, float]) -> float:
+    """Topological serendipity score for a single movie.
+
+    Formula (from the architecture plan):
+        serendipity = compatibility
+                      x (1 - clustering)    # low clustering = bridge node
+                      x betweenness         # connects different communities
+                      x (1 - degree)        # anti-popularity bias
+
+    The raw product is tiny (three sub-unit values multiplied), so it is
+    scaled up by 3x and clamped to [0, 1].
+
+    Returns 0.0 when network metrics are unavailable.
+    """
+    if not network:
+        return 0.0
+    betweenness = network.get("betweenness", 0.0)
+    clustering = network.get("clustering", 0.0)
+    degree = network.get("degree", 0.0)
+    if betweenness == 0.0:
+        return 0.0
+    compatibility = movie.compatibility_score or 0.0
+    raw = compatibility * (1.0 - clustering) * betweenness * (1.0 - degree)
+    return min(raw * 3.0, 1.0)
 
 
 # ---------------------------------------------------------------------------
@@ -85,19 +167,26 @@ def _novelty(movie: Movie, profile: UserProfile) -> float:
 # Main scoring formula
 # ---------------------------------------------------------------------------
 
-def _compute_score(movie: Movie, ctx: UserContext, profile: UserProfile) -> float:
+def _compute_score(
+    movie: Movie,
+    ctx: UserContext,
+    profile: UserProfile,
+    network: dict[str, float] | None = None,
+) -> float:
     """Composite relevance score for a single movie candidate.
 
-    With semantic data (bridge ontology):
+    With semantic + network data (Phases 5 + 6):
+        score = 0.35·rating + 0.25·semantic + 0.20·serendipity + 0.10·freshness + 0.10·novelty
+
+    With semantic data only (bridge ontology, Phase 5):
         score = 0.30·rating + 0.25·semantic + 0.25·genre_match + 0.10·freshness + 0.10·novelty
 
     Without semantic data (fallback strategies):
         score = 0.55·rating + 0.25·genre_match + 0.10·freshness + 0.10·novelty
 
-    Genre match is 1.0 when the movie's genre aligns with the user's explicit request
-    (e.g. "Animation" when they asked for an animated film).  This prevents movies with
-    incorrect bridge-ontology data (e.g. Fight Club flagged isKidFriendly=true) from
-    outranking genuinely relevant movies when all candidates share the same bridge score.
+    Genre match is 1.0 when the movie's genre aligns with the user's explicit request.
+    Serendipity replaces genre_match when network metrics are available — the bridge
+    ontology's compatibility_score already encodes semantic genre compatibility.
     """
     rating = _norm_rating(movie.rating)
     fresh = _freshness(movie.release_year)
@@ -108,6 +197,12 @@ def _compute_score(movie: Movie, ctx: UserContext, profile: UserProfile) -> floa
     semantic = movie.compatibility_score or 0.0
     if not semantic and movie.semantic_scores:
         semantic = float(movie.semantic_scores.get("overallCompatibility", 0.0))
+
+    if semantic > 0.0 and network:
+        serendipity = _compute_serendipity(movie, network)
+        movie.serendipity_score = round(serendipity, 4)
+        if serendipity > 0.0:
+            return 0.35 * rating + 0.25 * semantic + 0.20 * serendipity + 0.10 * fresh + 0.10 * novel
 
     if semantic > 0.0:
         return 0.30 * rating + 0.25 * semantic + 0.25 * genre + 0.10 * fresh + 0.10 * novel
@@ -190,11 +285,24 @@ def score_and_select(
     # If the user asked for "Animation" and a movie appears as both "Action"
     # and "Animation", we prefer the "Animation" row so _genre_match() gives
     # it a proper boost rather than scoring it as an Action film.
-    uri_to_entry: dict[str, tuple[Movie, float]] = {}
+
+    # Parse all candidates first so we have their URIs for the bulk fetch.
+    parsed: list[Movie] = []
     for row in candidates:
         try:
-            movie = Movie.from_fuseki_row(row)
-            score = _compute_score(movie, ctx, profile)
+            parsed.append(Movie.from_fuseki_row(row))
+        except Exception:
+            continue
+
+    # Bulk-fetch Phase 6 network metrics (one SPARQL query for all candidates).
+    all_uris = [m.uri for m in parsed if m.uri]
+    _bulk_fetch_network_scores(all_uris)
+
+    uri_to_entry: dict[str, tuple[Movie, float]] = {}
+    for movie in parsed:
+        try:
+            network = _NETWORK_CACHE.get(movie.uri) if movie.uri else None
+            score = _compute_score(movie, ctx, profile, network=network)
             if movie.uri not in uri_to_entry:
                 uri_to_entry[movie.uri] = (movie, score)
             else:
