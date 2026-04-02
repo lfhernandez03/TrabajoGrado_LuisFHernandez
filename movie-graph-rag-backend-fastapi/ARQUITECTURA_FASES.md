@@ -19,6 +19,7 @@ Trabajo de grado — Universidad del Valle, Escuela de Ingeniería de Sistemas y
 | 6 | Pipeline NetworkX offline: centralidades + comunidades en Fuseki | ✅ Completo — requiere ejecutar `scripts/compute_network_metrics.py` contra Fuseki |
 | 7 | Graph Diversity Score basado en distancia BFS | ✅ Completo |
 | 8 | Dashboard topológico: endpoint REST + frontend Next.js | ✅ Completo — 21/21 smoke tests PASS |
+| 9 | Recomendacion por comunidad: GET /movies/{title}/cluster + GET /clusters | ✅ Completo — 30/30 smoke tests PASS |
 
 ---
 
@@ -1084,3 +1085,67 @@ Frontend: `useEffect → getGraphTopology() → setState(data)` → renderiza ta
 | modularity en [0, 1] | 1 |
 
 **Resultado:** 21/21 PASS ✅
+
+---
+
+## Fase 9 — Recomendacion por Comunidad
+
+**Archivos nuevos:**
+- `app/api/schemas/clusters.py`
+- `app/api/v1/endpoints/clusters.py`
+- `services/clusters.service.ts` (frontend — solo tipos y cliente HTTP)
+- `scripts/smoke_test_phase9.py`
+
+**Archivos modificados:** `app/api/v1/router.py`
+
+**Dependencia:** Fase 6 completada (tripletas `movie:belongsToCluster` y `movie:clusterLabel` en Fuseki)
+
+### Que se construyo
+
+Dos endpoints REST que exponen la estructura de comunidades Louvain calculada en Fase 6:
+
+**`GET /movies/{title}/cluster`** — `MovieClusterResponse`:
+- Encuentra la comunidad (cluster) a la que pertenece la pelicula.
+- Devuelve hasta 10 peliculas del mismo cluster ordenadas por rating (**intra-cluster**).
+- Devuelve hasta 3 clusters adyacentes con peliculas puente (**inter-cluster**), identificados como los clusters que comparten mas generos dominantes con el cluster fuente.
+
+**`GET /clusters`** — `ClusterListResponse`:
+- Lista todas las comunidades ordenadas por tamano.
+- Incluye etiqueta generada por LLM, numero de peliculas y hasta 3 ejemplos representativos.
+- Resultado cacheado con `@lru_cache(maxsize=1)` — la lista de clusters no cambia entre ejecuciones del pipeline.
+
+### Por que se construyo asi
+
+- **Intra vs. inter-cluster:** Ambos tipos de recomendacion son diferenciales frente a sistemas convencionales — ningun modelo de collaborative filtering puede hacer recomendacion semantica por comunidades topologicas.
+- **`_cached_cluster_list()` con lru_cache:** La lista de clusters requiere dos queries SPARQL (tallas + ejemplos). Se cachea en memoria para que la pagina de clusters no ejecute queries en cada visita.
+- **Busqueda de adyacentes por generos compartidos:** El enfoque basado en `VALUES ?sharedGenre` en SPARQL es preciso y eficiente; Fuseki optimiza el join con indice de propiedades. La alternativa (PageRank sobre clusters) requeriria datos que no estan en Fuseki.
+- **Deduplicacion en Python:** Los OPTIONAL en SPARQL pueden producir multiples filas por pelicula (una por genero). Se deduplicacion por titulo antes de devolver la lista.
+
+### Como funciona
+
+```
+GET /movies/{title}/cluster
+  1. SPARQL: find ?clusterId + ?clusterLabel for ?title
+  2. SPARQL: COUNT(DISTINCT ?m) WHERE belongsToCluster = clusterId
+  3. SPARQL: top genres in cluster (GROUP BY genreName)
+  4. SPARQL: top 50 intra-cluster movies ORDER BY rating → deduplicate → take 10
+  5. SPARQL: adjacent clusters sharing dominant genres (GROUP BY otherClusterId)
+  6. for each adjacent cluster: SPARQL top 3 bridge movies → AdjacentCluster
+
+GET /clusters
+  → _cached_cluster_list()          # lru_cache(maxsize=1)
+    1. SPARQL: GROUP BY clusterId → sizes + labels
+    2. SPARQL: all movies ORDER BY clusterId DESC(rating) LIMIT 3000
+       → group in Python, take first 3 per cluster → exampleMovies
+```
+
+### Prueba de humo
+
+| Seccion | Checks | Resultado |
+|---------|--------|-----------|
+| Schemas importan y serializan | 6 | OK |
+| Endpoints importan, rutas presentes | 6 | OK |
+| GET /clusters: >=5 clusters, ordenados, con ejemplos | 7 | OK |
+| GET /movies/{title}/cluster: intraCluster, adyacentes, bridge | 11 | OK |
+
+**Resultado:** 30/30 PASS
