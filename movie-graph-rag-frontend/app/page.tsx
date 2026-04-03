@@ -1,321 +1,241 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Navbar } from "@/components/shared/Navbar";
-import {
-  SearchBar,
-  SearchResults,
-  ContextRecommendation,
-  DiscoverySection,
-  FeaturedMoviesSection,
-  MovieDetailsDialog,
-  HistoryDialog,
-  FloatingChatButton,
-} from "@/components/home";
+import { Navbar } from "@/components/organisms/Navbar";
+import { HeroSection, type HeroMovie } from "@/components/organisms/HeroSection";
+import { RecommendationCarousel } from "@/components/organisms/RecommendationCarousel";
+import { type MovieCardMovie } from "@/components/organisms/MovieCard";
+import { MovieDetailsDialog } from "@/components/home/MovieDetailsDialog";
 import { Movie, searchMovies, getMovieExamples } from "@/services/movies.service";
 import { getActivityRecommendation } from "@/services/chat.service";
-import { getMyHistory, HistoryEntry } from "@/services/history.service";
 import {
   addMyFavorite,
   FavoriteMovie,
   getMyFavorites,
   removeMyFavorite,
 } from "@/services/favorites.service";
-import { buildDisplaySparqlQuery } from "@/lib/sparql";
 import { toast } from "sonner";
-import { useAuth } from "@/hooks/useAuth";
 import { useRouter } from "next/navigation";
 
+// ── Adapters ─────────────────────────────────────────────────────────────────
+
+function toCardMovie(movie: Movie | FavoriteMovie): MovieCardMovie {
+  return {
+    uri: movie.uri,
+    title: movie.title,
+    posterUrl: movie.posterUrl,
+    year: movie.year,
+    runtime: movie.runtime,
+    genres: movie.genres,
+    rating: movie.rating,
+    director: (movie as Movie).director,
+  };
+}
+
 export default function Home() {
-  const { user } = useAuth();
   const router = useRouter();
 
-  // Search state
-  const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState<Movie[]>([]);
-  const [isSearching, setIsSearching] = useState(false);
-  const [hasSearched, setHasSearched] = useState(false);
-  const [lastSparqlQuery, setLastSparqlQuery] = useState("");
+  // ── Hero ──────────────────────────────────────────────────────────────────
+  const [heroMovie, setHeroMovie] = useState<HeroMovie | null>(null);
+  const [heroLoading, setHeroLoading] = useState(true);
+  const [heroFavorite, setHeroFavorite] = useState(false);
 
-  // Movie details dialog
+  // ── Carousels ─────────────────────────────────────────────────────────────
+  const [carousel1, setCarousel1] = useState<MovieCardMovie[]>([]);
+  const [carousel2, setCarousel2] = useState<MovieCardMovie[]>([]);
+  const [carousel3, setCarousel3] = useState<MovieCardMovie[]>([]);
+  const [carouselLoading, setCarouselLoading] = useState(true);
+
+  // ── Favorites ─────────────────────────────────────────────────────────────
+  const [favorites, setFavorites] = useState<FavoriteMovie[]>([]);
+
+  // ── Movie details dialog ──────────────────────────────────────────────────
   const [selectedMovie, setSelectedMovie] = useState<Movie | null>(null);
   const [showDetailsDialog, setShowDetailsDialog] = useState(false);
 
-  // History dialog
-  const [showHistoryDialog, setShowHistoryDialog] = useState(false);
-  const [history, setHistory] = useState<HistoryEntry[]>([]);
-  const [loadingHistory, setLoadingHistory] = useState(false);
-
-  const [favorites, setFavorites] = useState<FavoriteMovie[]>([]);
-
-  // Context recommendation
-  const [contextMovie, setContextMovie] = useState<Movie | null>(null);
-  const [loadingContext, setLoadingContext] = useState(true);
-
-  const loadHistory = useCallback(async () => {
-    try {
-      setLoadingHistory(true);
-      setHistory(await getMyHistory(10));
-    } catch (error) {
-      console.error("Error cargando historial:", error);
-    } finally {
-      setLoadingHistory(false);
-    }
-  }, []);
-
-  const loadContextRecommendation = useCallback(async () => {
-    try {
-      setLoadingContext(true);
-      const recommendation = await getActivityRecommendation();
-
-      const bestMovie = recommendation.moviesWithScores?.[0];
-      if (bestMovie) {
-        const canonicalResults = await searchMovies({ q: bestMovie.title, limit: 8 });
-        const normalizedBestTitle = bestMovie.title.trim().toLowerCase();
-        const canonicalMovie = canonicalResults.find(
-          (movie) => movie.title.trim().toLowerCase() === normalizedBestTitle,
-        );
-
-        if (canonicalMovie) {
-          setContextMovie({
-            ...canonicalMovie,
-            posterUrl: canonicalMovie.posterUrl || bestMovie.posterUrl,
-            runtime: canonicalMovie.runtime ?? bestMovie.runtime,
-            rating: canonicalMovie.rating ?? bestMovie.averageRating,
-            relationReason:
-              typeof bestMovie.compatibilityScore === "number"
-                ? `Compatibilidad estimada: ${Math.round(bestMovie.compatibilityScore * 100)}%`
-                : canonicalMovie.relationReason,
-          });
-          return;
-        }
-
-        setContextMovie({
-          uri:
-            bestMovie.uri ||
-            `context:${bestMovie.title.toLowerCase().replace(/\s+/g, "-")}`,
-          title: bestMovie.title,
-          posterUrl: bestMovie.posterUrl,
-          runtime: bestMovie.runtime,
-          year: bestMovie.releaseDate ? Number(bestMovie.releaseDate) || undefined : undefined,
-          genres: bestMovie.genreName ? [bestMovie.genreName] : [],
-          rating: bestMovie.averageRating,
-          description: bestMovie.description,
-          relationReason:
-            typeof bestMovie.compatibilityScore === "number"
-              ? `Compatibilidad estimada: ${Math.round(bestMovie.compatibilityScore * 100)}%`
-              : undefined,
-        });
-        return;
-      }
-
-      const movies = await getMovieExamples(3);
-      const nonDemoMovie = movies.find(
-        (movie) => movie.title.trim().toLowerCase() !== "demo movie"
-      );
-      if (nonDemoMovie) {
-        setContextMovie(nonDemoMovie);
-      } else if (movies.length > 0) {
-        setContextMovie(movies[0]);
-      } else {
-        setContextMovie(null);
-      }
-    } catch (error) {
-      console.error("Error cargando recomendación contextual:", error);
-      try {
-        const movies = await getMovieExamples(1);
-        setContextMovie(movies[0] || null);
-      } catch {
-        setContextMovie(null);
-      }
-    } finally {
-      setLoadingContext(false);
-    }
-  }, []);
+  // ── Data loading ──────────────────────────────────────────────────────────
 
   const loadFavorites = useCallback(async () => {
     try {
-      const list = await getMyFavorites();
-      setFavorites(list);
-    } catch (error) {
-      console.error("Error cargando favoritos:", error);
+      setFavorites(await getMyFavorites());
+    } catch {
+      // silently fail — user may not be authenticated
     }
   }, []);
 
+  const loadHero = useCallback(async () => {
+    setHeroLoading(true);
+    try {
+      const rec = await getActivityRecommendation();
+      const best = rec.moviesWithScores?.[0];
+      if (best) {
+        // Try to enrich with canonical poster
+        try {
+          const results = await searchMovies({ q: best.title, limit: 5 });
+          const canonical = results.find(
+            (m) => m.title.trim().toLowerCase() === best.title.trim().toLowerCase()
+          );
+          if (canonical) {
+            setHeroMovie({
+              title: canonical.title,
+              posterUrl: canonical.posterUrl ?? best.posterUrl,
+              genreName: best.genreName ?? canonical.genres?.[0],
+              genres: canonical.genres,
+              director: canonical.director,
+              runtime: canonical.runtime ?? best.runtime,
+              compatibilityScore: best.compatibilityScore,
+              explanation: rec.explanation,
+            });
+            return;
+          }
+        } catch { /* ignore enrichment errors */ }
+
+        setHeroMovie({
+          title: best.title,
+          posterUrl: best.posterUrl,
+          genreName: best.genreName,
+          runtime: best.runtime,
+          compatibilityScore: best.compatibilityScore,
+          explanation: rec.explanation,
+        });
+      } else {
+        // Fallback to an example movie
+        const examples = await getMovieExamples(1);
+        if (examples[0]) {
+          setHeroMovie({ title: examples[0].title, posterUrl: examples[0].posterUrl });
+        }
+      }
+    } catch {
+      const examples = await getMovieExamples(1).catch(() => []);
+      if (examples[0]) setHeroMovie({ title: examples[0].title, posterUrl: examples[0].posterUrl });
+    } finally {
+      setHeroLoading(false);
+    }
+  }, []);
+
+  const loadCarousels = useCallback(async () => {
+    setCarouselLoading(true);
+    try {
+      // All three carousels use getMovieExamples until neighborhood/centrality
+      // endpoints return data (Phase 5 backend dependency)
+      const [a, b, c] = await Promise.all([
+        getMovieExamples(12),
+        getMovieExamples(12),
+        getMovieExamples(12),
+      ]);
+      setCarousel1(a.map(toCardMovie));
+      setCarousel2(b.map(toCardMovie));
+      setCarousel3(c.map(toCardMovie));
+    } catch {
+      toast.error("No se pudieron cargar las recomendaciones");
+    } finally {
+      setCarouselLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadFavorites();
+    loadHero();
+    loadCarousels();
+  }, [loadFavorites, loadHero, loadCarousels]);
+
+  // ── Favorites helpers ─────────────────────────────────────────────────────
+
   const isFavorite = useCallback(
-    (movieUri: string) => favorites.some((favorite) => favorite.uri === movieUri),
-    [favorites],
+    (uri: string) => favorites.some((f) => f.uri === uri),
+    [favorites]
   );
 
   const handleToggleFavorite = useCallback(
-    async (movie: Movie) => {
+    async (movie: MovieCardMovie) => {
+      if (!movie.uri) return;
       try {
-        const wasFavorite = isFavorite(movie.uri);
-        const updatedFavorites = wasFavorite
+        const was = isFavorite(movie.uri);
+        const updated = was
           ? await removeMyFavorite(movie.uri)
-          : await addMyFavorite(movie);
-
-        setFavorites(updatedFavorites);
-
-        if (wasFavorite) {
-          toast.success(`"${movie.title}" se eliminó de favoritos`);
-        } else {
-          toast.success(`"${movie.title}" se agregó a favoritos`);
-        }
-      } catch (error) {
-        console.error("Error actualizando favorito:", error);
+          : await addMyFavorite(movie as Movie);
+        setFavorites(updated);
+        toast.success(was ? `"${movie.title}" eliminado de favoritos` : `"${movie.title}" agregado a favoritos`);
+        // Update hero fav status
+        if (heroMovie && movie.title === heroMovie.title) setHeroFavorite(!was);
+      } catch {
         toast.error("No se pudo actualizar favoritos");
       }
     },
-    [isFavorite],
+    [isFavorite, heroMovie]
   );
 
-  useEffect(() => {
-    loadHistory();
-    loadContextRecommendation();
-    loadFavorites();
-  }, [loadHistory, loadContextRecommendation, loadFavorites]);
-
-  const performSearch = useCallback(
-    async (query: string, limit = 9) => {
-      if (!query.trim()) {
-        toast.error("Por favor ingresa un término de búsqueda");
-        return;
-      }
-
-      setLastSparqlQuery(buildDisplaySparqlQuery(query));
-      setIsSearching(true);
-
-      try {
-        const results = await searchMovies({ q: query, limit });
-        setSearchResults(results);
-        setHasSearched(true);
-
-        if (results.length === 0) {
-          toast.info("No se encontraron películas con ese criterio");
-        }
-
-        loadHistory();
-      } catch (error) {
-        console.error("Error buscando películas:", error);
-        toast.error("Error al buscar películas");
-      } finally {
-        setIsSearching(false);
-      }
-    },
-    [loadHistory],
-  );
-
-  const handleSearch = () => performSearch(searchQuery);
-
-  const handleViewDetails = (movie: Movie) => {
-    setSelectedMovie(movie);
+  const handleViewDetails = useCallback((movie: MovieCardMovie) => {
+    setSelectedMovie(movie as Movie);
     setShowDetailsDialog(true);
-  };
+  }, []);
 
-  const handleRecommendSimilar = async (movie: Movie) => {
-    setSearchQuery(movie.title);
-    setIsSearching(true);
+  const handleHeroDetails = useCallback(() => {
+    if (!heroMovie) return;
+    router.push(`/search?q=${encodeURIComponent(heroMovie.title)}`);
+  }, [heroMovie, router]);
 
-    try {
-      const results = await searchMovies({ q: movie.title, limit: 12 });
-      const similar = results.filter((m) => m.uri !== movie.uri);
-
-      setSearchResults(similar);
-      setHasSearched(true);
-
-      if (similar.length === 0) {
-        toast.info(`No se encontraron películas similares a "${movie.title}"`);
-      } else {
-        toast.success(`Encontradas ${similar.length} películas similares a "${movie.title}"`);
-      }
-
-      window.scrollTo({ top: 0, behavior: "smooth" });
-      loadHistory();
-    } catch (error) {
-      console.error("Error buscando películas similares:", error);
-      toast.error("Error al buscar películas similares");
-    } finally {
-      setIsSearching(false);
-    }
-  };
-
-  const handleRepeatSearch = (query: string) => {
-    setSearchQuery(query);
-    performSearch(query);
-  };
-
-  function navigateToSearch(title: string): void {
-    setSearchQuery(title);
-    performSearch(title);
-  }
+  // ── Render ────────────────────────────────────────────────────────────────
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-bg">
       <Navbar />
 
-      <SearchBar
-        searchQuery={searchQuery}
-        onSearchQueryChange={setSearchQuery}
-        onSearch={handleSearch}
-        onNavigateFavorites={() => router.push("/favorites")}
-        onOpenHistory={() => setShowHistoryDialog(true)}
-        onNavigateChat={() => router.push("/chat")}
-        isSearching={isSearching}
+      {/* Hero */}
+      <HeroSection
+        featuredMovie={heroMovie}
+        isLoading={heroLoading}
+        isFavorite={heroFavorite}
+        onToggleFavorite={() => heroMovie && handleToggleFavorite({ title: heroMovie.title })}
+        onViewDetails={handleHeroDetails}
       />
 
-      <main className="container mx-auto px-4 pb-8">
-        {hasSearched && (
-          <SearchResults
-            searchQuery={searchQuery}
-            searchResults={searchResults}
-            lastSparqlQuery={lastSparqlQuery}
-            onViewDetails={handleViewDetails}
-            onRecommendSimilar={handleRecommendSimilar}
-            isFavorite={isFavorite}
-            onToggleFavorite={handleToggleFavorite}
-          />
-        )}
+      {/* Carousels */}
+      <div className="max-w-7xl mx-auto px-6 pb-20 flex flex-col gap-12">
+        <RecommendationCarousel
+          title="Porque viste"
+          subtitle={heroMovie?.title ?? "…"}
+          movies={carousel1}
+          isLoading={carouselLoading}
+          viewAllHref="/search"
+          showLiveIndicator
+          isFavorite={isFavorite}
+          onToggleFavorite={handleToggleFavorite}
+          onViewDetails={handleViewDetails}
+        />
 
-        {!hasSearched && (
-          <>
-            <ContextRecommendation
-              userName={user?.name}
-              contextMovie={contextMovie}
-              isLoading={loadingContext}
-              onViewDetails={handleViewDetails}
-              onRecommendSimilar={handleRecommendSimilar}
-              isFavorite={isFavorite}
-              onToggleFavorite={handleToggleFavorite}
-            />
-            <DiscoverySection />
-            <FeaturedMoviesSection
-              onViewDetails={handleViewDetails}
-              onRecommendSimilar={(movie: Movie) => navigateToSearch(movie.title)}
-              isFavorite={isFavorite}
-              onToggleFavorite={handleToggleFavorite}
-            />
-          </>
-        )}
-      </main>
+        <RecommendationCarousel
+          title="Basado en tus favoritos"
+          movies={carousel2}
+          isLoading={carouselLoading}
+          viewAllHref="/favorites"
+          isFavorite={isFavorite}
+          onToggleFavorite={handleToggleFavorite}
+          onViewDetails={handleViewDetails}
+        />
 
+        <RecommendationCarousel
+          title="Explora algo diferente"
+          subtitle="Serendipity picks"
+          movies={carousel3}
+          isLoading={carouselLoading}
+          viewAllHref="/search"
+          showLiveIndicator
+          isFavorite={isFavorite}
+          onToggleFavorite={handleToggleFavorite}
+          onViewDetails={handleViewDetails}
+        />
+      </div>
+
+      {/* Movie details dialog (preserved from original) */}
       <MovieDetailsDialog
         movie={selectedMovie}
         open={showDetailsDialog}
         onOpenChange={setShowDetailsDialog}
-        onRecommendSimilar={handleRecommendSimilar}
+        onRecommendSimilar={(movie) =>
+          router.push(`/search?q=${encodeURIComponent(movie.title)}`)
+        }
       />
-
-      <HistoryDialog
-        open={showHistoryDialog}
-        onOpenChange={setShowHistoryDialog}
-        history={history}
-        isLoading={loadingHistory}
-        onRepeatSearch={handleRepeatSearch}
-        onRefresh={loadHistory}
-      />
-
-      <FloatingChatButton />
     </div>
   );
 }

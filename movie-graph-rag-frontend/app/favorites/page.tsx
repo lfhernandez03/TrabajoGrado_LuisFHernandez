@@ -1,119 +1,104 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Navbar } from "@/components/shared/Navbar";
+import { Heart } from "lucide-react";
+import { Navbar } from "@/components/organisms/Navbar";
+import { MovieGrid } from "@/components/organisms/MovieGrid";
+import { type MovieCardMovie } from "@/components/organisms/MovieCard";
 import { ProtectedRoute } from "@/components/shared/ProtectedRoute";
-import { Button } from "@/components/ui/button";
-import { MovieCard } from "@/components/recommendation/MovieCard";
 import { MovieDetailsDialog } from "@/components/home/MovieDetailsDialog";
 import { FavoriteMovie, getMyFavorites, removeMyFavorite } from "@/services/favorites.service";
 import { Movie } from "@/services/movies.service";
-import { ArrowLeft, Heart } from "lucide-react";
 import { toast } from "sonner";
+
+function toCardMovie(m: FavoriteMovie): MovieCardMovie {
+  return {
+    uri: m.uri,
+    title: m.title,
+    posterUrl: m.posterUrl,
+    year: m.year,
+    runtime: m.runtime,
+    genres: m.genres,
+    rating: m.rating,
+  };
+}
 
 export default function FavoritesPage() {
   const router = useRouter();
   const [favorites, setFavorites] = useState<FavoriteMovie[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [selectedMovie, setSelectedMovie] = useState<Movie | null>(null);
-  const [showDetailsDialog, setShowDetailsDialog] = useState(false);
+  const [showDetails, setShowDetails] = useState(false);
 
-  const loadFavorites = useCallback(async () => {
+  const load = useCallback(async () => {
     try {
       setIsLoading(true);
-      const list = await getMyFavorites();
-      setFavorites(list);
-    } catch (error) {
-      console.error("Error cargando favoritos:", error);
+      setFavorites(await getMyFavorites());
+    } catch {
       toast.error("No se pudieron cargar los favoritos");
     } finally {
       setIsLoading(false);
     }
   }, []);
 
-  const handleRemoveFavorite = useCallback(async (movie: Movie) => {
+  useEffect(() => { load(); }, [load]);
+
+  const handleRemove = useCallback(async (movie: MovieCardMovie) => {
+    if (!movie.uri) return;
     try {
-      const updatedFavorites = await removeMyFavorite(movie.uri);
-      setFavorites(updatedFavorites);
-      toast.success(`"${movie.title}" se eliminó de favoritos`);
-    } catch (error) {
-      console.error("Error eliminando favorito:", error);
-      toast.error("No se pudo eliminar de favoritos");
+      setFavorites(await removeMyFavorite(movie.uri));
+      toast.success(`"${movie.title}" eliminado de favoritos`);
+    } catch {
+      toast.error("No se pudo eliminar el favorito");
     }
   }, []);
 
-  const handleRecommendSimilar = useCallback(
-    (movie: Movie) => {
-      router.push(`/search?q=${encodeURIComponent(movie.title)}`);
-    },
-    [router],
-  );
-
-  const handleViewDetails = useCallback((movie: Movie) => {
-    setSelectedMovie(movie);
-    setShowDetailsDialog(true);
+  const handleViewDetails = useCallback((movie: MovieCardMovie) => {
+    setSelectedMovie(movie as Movie);
+    setShowDetails(true);
   }, []);
-
-  useEffect(() => {
-    loadFavorites();
-  }, [loadFavorites]);
 
   return (
     <ProtectedRoute>
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-bg">
         <Navbar />
 
-        <main className="container mx-auto px-4 py-6">
-          <div className="mb-6">
-            <Link href="/">
-              <Button variant="ghost" size="sm" className="mb-3 -ml-2">
-                <ArrowLeft className="h-4 w-4 mr-1" />
-                Volver al inicio
-              </Button>
-            </Link>
+        <main className="max-w-7xl mx-auto px-6 py-10">
 
-            <div className="flex items-center gap-3">
-              <Heart className="h-6 w-6 text-accent" />
-              <div>
-                <h1 className="text-2xl font-bold">Mis Favoritos</h1>
-                <p className="text-sm text-muted-foreground">
-                  {favorites.length} película(s) guardada(s)
+          {/* Header */}
+          <div className="flex items-center gap-3 mb-8">
+            <div className="w-10 h-10 rounded-full bg-accent/10 flex items-center justify-center">
+              <Heart className="w-5 h-5 text-accent" />
+            </div>
+            <div>
+              <h1 className="font-display text-4xl text-text">Mis Favoritos</h1>
+              {!isLoading && (
+                <p className="text-sm text-muted">
+                  {favorites.length} película{favorites.length !== 1 ? "s" : ""} guardada{favorites.length !== 1 ? "s" : ""}
                 </p>
-              </div>
+              )}
             </div>
           </div>
 
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {isLoading ? (
-              <div className="text-center py-8 text-muted-foreground md:col-span-2 xl:col-span-3">
-                Cargando favoritos...
-              </div>
-            ) : favorites.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground md:col-span-2 xl:col-span-3">
-                Aún no tienes películas favoritas
-              </div>
-            ) : (
-              favorites.map((movie) => (
-                <MovieCard
-                  key={movie.uri}
-                  movie={movie}
-                  onViewDetails={handleViewDetails}
-                  onRecommendSimilar={handleRecommendSimilar}
-                  isFavorite={true}
-                  onToggleFavorite={handleRemoveFavorite}
-                />
-              ))
-            )}
-          </div>
+          {/* Grid */}
+          <MovieGrid
+            movies={favorites.map(toCardMovie)}
+            isLoading={isLoading}
+            isFavorite={() => true}
+            onToggleFavorite={handleRemove}
+            onViewDetails={handleViewDetails}
+            emptyMessage="Aún no tienes películas favoritas. Explora el catálogo y guarda las que más te gusten."
+          />
         </main>
 
         <MovieDetailsDialog
           movie={selectedMovie}
-          open={showDetailsDialog}
-          onOpenChange={setShowDetailsDialog}
-          onRecommendSimilar={handleRecommendSimilar}
+          open={showDetails}
+          onOpenChange={setShowDetails}
+          onRecommendSimilar={(m) =>
+            router.push(`/search?q=${encodeURIComponent(m.title)}`)
+          }
         />
       </div>
     </ProtectedRoute>
