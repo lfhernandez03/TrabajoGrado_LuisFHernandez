@@ -58,17 +58,24 @@ export function ScoreBar({
   const backgroundColor = variantClasses[variant]
 
   return (
-    <div className={cn('flex flex-col gap-1', className)}>
+    <div className={cn('flex flex-col gap-1 animate-slide-up', className)}>
       {/* Label */}
       {label && <p className="text-xs font-medium text-muted">{label}</p>}
 
       {/* Bar container */}
       <div className="flex items-center gap-2">
         {/* Progress bar */}
-        <div className="flex-1 h-2 bg-surface2 rounded-full overflow-hidden border border-border">
+        <div
+          className="flex-1 h-1.5 bg-surface2 rounded-full overflow-hidden"
+          role="progressbar"
+          aria-valuenow={percentage}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-label={label ?? `Score ${percentage}%`}
+        >
           <div
             className={cn(
-              'h-full rounded-full transition-all duration-300',
+              'h-full rounded-full',
               backgroundColor,
               animated && 'animate-fill-bar'
             )}
@@ -80,15 +87,11 @@ export function ScoreBar({
         </div>
 
         {/* Score percentage */}
-        <span className="text-xs font-semibold text-accent min-w-fit">
+        <span className="text-xs font-semibold text-teal tabular-nums min-w-10 text-right">
           {percentage}%
         </span>
       </div>
 
-      {/* Optional: Raw score value */}
-      <p className="text-[10px] text-muted/70">
-        Score: {clampedScore.toFixed(2)}
-      </p>
     </div>
   )
 }

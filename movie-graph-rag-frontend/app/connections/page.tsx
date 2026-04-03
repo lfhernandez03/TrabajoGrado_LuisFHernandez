@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Navbar } from "@/components/shared/Navbar";
+import { Navbar } from "@/components/organisms/Navbar";
 import { ProtectedRoute } from "@/components/shared/ProtectedRoute";
 import { MovieSearchInput } from "@/components/recommendation/MovieSearchInput";
 import {
@@ -76,7 +76,7 @@ export default function ConnectionsPage() {
 
   return (
     <ProtectedRoute>
-      <div className="min-h-screen bg-background text-foreground">
+      <div className="min-h-screen bg-bg text-text">
         <Navbar />
 
         <main className="container mx-auto px-4 py-8 max-w-4xl">
