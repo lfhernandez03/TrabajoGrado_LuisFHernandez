@@ -7,3 +7,5 @@ export { HeroSection, type HeroMovie, type HeroSectionProps } from './HeroSectio
 export { RecommendationCarousel, type RecommendationCarouselProps } from './RecommendationCarousel'
 export { MovieGrid, type MovieGridProps } from './MovieGrid'
 export { FilterSidebar, type FilterValues, type FilterSidebarProps, DEFAULT_FILTERS } from './FilterSidebar'
+export { TopologicalProfile, TopologicalProfileSkeleton, type TopologicalProfileProps } from './TopologicalProfile'
+export { ClusterSection, ClusterSectionSkeleton, type ClusterSectionProps } from './ClusterSection'

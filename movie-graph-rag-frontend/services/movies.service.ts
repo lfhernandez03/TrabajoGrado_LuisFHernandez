@@ -112,3 +112,94 @@ export const findConnections = async (
   );
   return response.data;
 };
+
+// ===== Phase 5/6 — Connections v2 (neighborhood, centrality, path) =====
+
+export interface RecommendedMovie {
+  title: string;
+  posterUrl?: string | null;
+  runtime?: number | null;
+  genreName?: string | null;
+  genres?: string[];
+  director?: string | null;
+  year?: number | null;
+  releaseDate?: string | null;
+  averageRating?: number | null;
+  compatibilityScore?: number;
+  serendipityScore?: number;
+}
+
+export interface CentralityResponse {
+  genre: string | null;
+  movies: RecommendedMovie[];
+  total: number;
+}
+
+export interface NetworkNode {
+  uri: string;
+  title: string;
+  genre?: string | null;
+  rating?: number | null;
+  poster_url?: string | null;
+}
+
+export interface NetworkEdge {
+  source_uri: string;
+  target_uri: string;
+  relation: string; // "same_director" | "same_genre"
+}
+
+export interface NetworkGraphResponse {
+  center_title: string;
+  nodes: NetworkNode[];
+  edges: NetworkEdge[];
+  node_count: number;
+  edge_count: number;
+}
+
+export interface ConnectionHop {
+  from_title: string;
+  to_title: string;
+  relation: string; // "same_director" | "same_genre" | "same_mood_profile"
+}
+
+export interface ConnectionPathResponse {
+  source: string;
+  target: string;
+  found: boolean;
+  hops: ConnectionHop[];
+  length: number;
+}
+
+/** Movies ranked by graph centrality (most "connected" in the knowledge graph) */
+export const getMoviesByCentrality = async (
+  genre?: string,
+  limit = 12
+): Promise<CentralityResponse> => {
+  const response = await api.get<CentralityResponse>('/movies/connections/centrality', {
+    params: { ...(genre ? { genre } : {}), limit },
+  });
+  return response.data;
+};
+
+/** Neighbourhood graph around a movie (for GraphMinimap) */
+export const getMovieNeighborhood = async (
+  title: string,
+  depth = 1
+): Promise<NetworkGraphResponse> => {
+  const response = await api.get<NetworkGraphResponse>('/movies/connections/neighborhood', {
+    params: { title, depth },
+  });
+  return response.data;
+};
+
+/** Shortest semantic path between two movies */
+export const getConnectionPath = async (
+  source: string,
+  target: string
+): Promise<ConnectionPathResponse> => {
+  const response = await api.get<ConnectionPathResponse>('/movies/connections/path', {
+    params: { source, target },
+  });
+  return response.data;
+};

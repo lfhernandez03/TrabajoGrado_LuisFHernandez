@@ -6,7 +6,7 @@ import { HeroSection, type HeroMovie } from "@/components/organisms/HeroSection"
 import { RecommendationCarousel } from "@/components/organisms/RecommendationCarousel";
 import { type MovieCardMovie } from "@/components/organisms/MovieCard";
 import { MovieDetailsDialog } from "@/components/home/MovieDetailsDialog";
-import { Movie, searchMovies, getMovieExamples } from "@/services/movies.service";
+import { Movie, searchMovies, getMovieExamples, getMoviesByCentrality, getMovieNeighborhood, type RecommendedMovie } from "@/services/movies.service";
 import { getActivityRecommendation } from "@/services/chat.service";
 import {
   addMyFavorite,
@@ -29,6 +29,20 @@ function toCardMovie(movie: Movie | FavoriteMovie): MovieCardMovie {
     genres: movie.genres,
     rating: movie.rating,
     director: (movie as Movie).director,
+  };
+}
+
+function recToCardMovie(movie: RecommendedMovie): MovieCardMovie {
+  return {
+    uri: '',
+    title: movie.title,
+    posterUrl: movie.posterUrl ?? undefined,
+    year: movie.year ?? undefined,
+    runtime: movie.runtime ?? undefined,
+    genres: movie.genres ?? (movie.genreName ? [movie.genreName] : undefined),
+    rating: movie.averageRating ?? undefined,
+    compatibilityScore: movie.compatibilityScore,
+    serendipityScore: movie.serendipityScore,
   };
 }
 
@@ -63,7 +77,7 @@ export default function Home() {
     }
   }, []);
 
-  const loadHero = useCallback(async () => {
+  const loadHero = useCallback(async (): Promise<string | undefined> => {
     setHeroLoading(true);
     try {
       const rec = await getActivityRecommendation();
@@ -86,7 +100,7 @@ export default function Home() {
               compatibilityScore: best.compatibilityScore,
               explanation: rec.explanation,
             });
-            return;
+            return canonical.title;
           }
         } catch { /* ignore enrichment errors */ }
 
@@ -98,34 +112,53 @@ export default function Home() {
           compatibilityScore: best.compatibilityScore,
           explanation: rec.explanation,
         });
+        return best.title;
       } else {
         // Fallback to an example movie
         const examples = await getMovieExamples(1);
         if (examples[0]) {
           setHeroMovie({ title: examples[0].title, posterUrl: examples[0].posterUrl });
+          return examples[0].title;
         }
       }
     } catch {
       const examples = await getMovieExamples(1).catch(() => []);
-      if (examples[0]) setHeroMovie({ title: examples[0].title, posterUrl: examples[0].posterUrl });
+      if (examples[0]) {
+        setHeroMovie({ title: examples[0].title, posterUrl: examples[0].posterUrl });
+        return examples[0].title;
+      }
     } finally {
       setHeroLoading(false);
     }
   }, []);
 
-  const loadCarousels = useCallback(async () => {
+  const loadCarousels = useCallback(async (featuredTitle?: string) => {
     setCarouselLoading(true);
     try {
-      // All three carousels use getMovieExamples until neighborhood/centrality
-      // endpoints return data (Phase 5 backend dependency)
-      const [a, b, c] = await Promise.all([
-        getMovieExamples(12),
-        getMovieExamples(12),
-        getMovieExamples(12),
+      const [neighborhood, centrality, serendipity] = await Promise.allSettled([
+        // "Porque viste X" — neighborhood of the hero movie
+        featuredTitle
+          ? getMovieNeighborhood(featuredTitle, 1).then((r) => r.nodes.map((n) => ({
+              uri: n.uri, title: n.title, posterUrl: n.poster_url ?? undefined,
+              genres: n.genre ? [n.genre] : undefined, rating: n.rating ?? undefined,
+            } as MovieCardMovie)))
+          : getMovieExamples(12).then((arr) => arr.map(toCardMovie)),
+        // "Basado en favoritos" — highest centrality (most connected)
+        getMoviesByCentrality(undefined, 12).then((r) => r.movies.map(recToCardMovie)),
+        // "Explora algo diferente" — centrality sorted by serendipity desc
+        getMoviesByCentrality(undefined, 20).then((r) =>
+          [...r.movies]
+            .sort((a, b) => (b.serendipityScore ?? 0) - (a.serendipityScore ?? 0))
+            .slice(0, 12)
+            .map(recToCardMovie)
+        ),
       ]);
-      setCarousel1(a.map(toCardMovie));
-      setCarousel2(b.map(toCardMovie));
-      setCarousel3(c.map(toCardMovie));
+
+      const fallback = () => getMovieExamples(12).then((arr) => arr.map(toCardMovie));
+
+      setCarousel1(neighborhood.status === 'fulfilled' ? neighborhood.value : await fallback());
+      setCarousel2(centrality.status === 'fulfilled' ? centrality.value : await fallback());
+      setCarousel3(serendipity.status === 'fulfilled' ? serendipity.value : await fallback());
     } catch {
       toast.error("No se pudieron cargar las recomendaciones");
     } finally {
@@ -135,8 +168,7 @@ export default function Home() {
 
   useEffect(() => {
     loadFavorites();
-    loadHero();
-    loadCarousels();
+    loadHero().then((title) => loadCarousels(title));
   }, [loadFavorites, loadHero, loadCarousels]);
 
   // ── Favorites helpers ─────────────────────────────────────────────────────
