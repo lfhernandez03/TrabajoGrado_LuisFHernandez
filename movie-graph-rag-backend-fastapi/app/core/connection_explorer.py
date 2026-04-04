@@ -51,6 +51,7 @@ class NetworkNode:
     genre: str | None = None
     rating: float | None = None
     poster_url: str | None = None
+    description: str | None = None
 
 
 @dataclass
@@ -102,13 +103,14 @@ def _movies_by_genre(genre: str, exclude_uris: set[str], limit: int = 30) -> lis
     excl_filter = f"  FILTER(?movie NOT IN ({excl}))\n" if excl else ""
     query = (
         _PREFIXES
-        + "SELECT DISTINCT ?movie ?title ?genreName ?rating ?posterUrl\n"
+        + "SELECT DISTINCT ?movie ?title ?genreName ?rating ?posterUrl ?description\n"
         + "WHERE {\n"
         + "  ?movie rdf:type movie:FeatureFilm ; movie:hasTitle ?title .\n"
         + f'  ?movie movie:hasMainGenre/movie:genreName "{_esc(genre)}" .\n'
         + "  OPTIONAL { ?movie movie:hasMainGenre/movie:genreName ?genreName }\n"
         + "  OPTIONAL { ?movie movie:hasRating ?rating }\n"
         + "  OPTIONAL { ?movie schema1:image ?posterUrl }\n"
+        + "  OPTIONAL { ?movie movie:hasPlotSummary ?description }\n"
         + excl_filter
         + "}\n"
         + f"LIMIT {limit}"
@@ -126,13 +128,14 @@ def _movies_by_director(director_uri: str, exclude_uris: set[str], limit: int = 
     excl_filter = f"  FILTER(?movie NOT IN ({excl}))\n" if excl else ""
     query = (
         _PREFIXES
-        + "SELECT DISTINCT ?movie ?title ?genreName ?rating ?posterUrl\n"
+        + "SELECT DISTINCT ?movie ?title ?genreName ?rating ?posterUrl ?description\n"
         + "WHERE {\n"
         + "  ?movie rdf:type movie:FeatureFilm ; movie:hasTitle ?title .\n"
         + f"  ?movie movie:hasDirector <{director_uri}> .\n"
         + "  OPTIONAL { ?movie movie:hasMainGenre/movie:genreName ?genreName }\n"
         + "  OPTIONAL { ?movie movie:hasRating ?rating }\n"
         + "  OPTIONAL { ?movie schema1:image ?posterUrl }\n"
+        + "  OPTIONAL { ?movie movie:hasPlotSummary ?description }\n"
         + excl_filter
         + "}\n"
         + f"LIMIT {limit}"
@@ -150,13 +153,14 @@ def _movies_by_mood_profile(mood: str, exclude_uris: set[str], limit: int = 20) 
     excl_filter = f"  FILTER(?movie NOT IN ({excl}))\n" if excl else ""
     query = (
         _PREFIXES
-        + "SELECT DISTINCT ?movie ?title ?genreName ?rating ?posterUrl\n"
+        + "SELECT DISTINCT ?movie ?title ?genreName ?rating ?posterUrl ?description\n"
         + "WHERE {\n"
         + "  ?movie rdf:type movie:FeatureFilm ; movie:hasTitle ?title .\n"
         + f'  ?movie bridge:compatibleMood "{_esc(mood)}" .\n'
         + "  OPTIONAL { ?movie movie:hasMainGenre/movie:genreName ?genreName }\n"
         + "  OPTIONAL { ?movie movie:hasRating ?rating }\n"
         + "  OPTIONAL { ?movie schema1:image ?posterUrl }\n"
+        + "  OPTIONAL { ?movie movie:hasPlotSummary ?description }\n"
         + excl_filter
         + "}\n"
         + f"LIMIT {limit}"
@@ -318,6 +322,7 @@ class ConnectionExplorer:
                         genre=row.get("genreName"),
                         rating=rating,
                         poster_url=row.get("posterUrl"),
+                        description=row.get("description"),
                     )
                     graph.nodes.append(node)
                     rel = "same_genre" if genre and row.get("genreName") == genre else "same_director"
@@ -359,7 +364,7 @@ class ConnectionExplorer:
             "PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>\n"
             "SELECT DISTINCT ?movie ?title ?genreName ?runtime ?rating ?posterUrl\n"
             "                ?releaseDate ?compatibilityScore ?moodMatchScore ?socialMatchScore\n"
-            "                ?energyMatchScore ?timeMatchScore ?kidFriendly\n"
+            "                ?energyMatchScore ?timeMatchScore ?kidFriendly ?description\n"
             "WHERE {\n"
             "  ?movie rdf:type movie:FeatureFilm ; movie:hasTitle ?title .\n"
             "  ?movie movie:hasMainGenre/movie:genreName ?genreName .\n"
@@ -374,6 +379,7 @@ class ConnectionExplorer:
             "  OPTIONAL { ?movie bridge:energyMatchScore ?energyMatchScore }\n"
             "  OPTIONAL { ?movie bridge:timeMatchScore ?timeMatchScore }\n"
             "  OPTIONAL { ?movie bridge:isKidFriendly ?kidFriendly }\n"
+            "  OPTIONAL { ?movie movie:hasPlotSummary ?description }\n"
             "}\n"
             "ORDER BY DESC(?rating) DESC(?compatibilityScore)\n"
             f"LIMIT {safe_limit}"

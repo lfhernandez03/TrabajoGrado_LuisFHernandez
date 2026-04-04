@@ -53,6 +53,7 @@ def _movie_to_response(movie: Movie) -> RecommendedMovieResponse:
         timeMatchScore=movie.time_match_score,
         kidFriendly=movie.kid_friendly,
         serendipityScore=movie.serendipity_score,
+        description=movie.description,
     )
 
 
@@ -119,6 +120,7 @@ def get_neighborhood(
             genre=n.genre,
             rating=n.rating,
             poster_url=n.poster_url,
+            description=n.description,
         )
         for n in graph.nodes
     ]

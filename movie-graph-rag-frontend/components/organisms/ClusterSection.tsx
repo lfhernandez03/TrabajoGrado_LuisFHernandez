@@ -22,7 +22,7 @@ function ClusterMovieMini({ movie }: { movie: ClusterMovie }) {
   return (
     <div className="flex items-center gap-3 py-2 group">
       {/* Poster */}
-      <div className="relative w-9 h-[52px] rounded overflow-hidden shrink-0 bg-surface2">
+      <div className="relative w-9 h-13 rounded overflow-hidden shrink-0 bg-surface2">
         {movie.posterUrl ? (
           <Image
             src={movie.posterUrl}
@@ -67,7 +67,7 @@ export function ClusterSectionSkeleton({ className }: { className?: string }) {
       <div className="space-y-2">
         {Array.from({ length: 5 }).map((_, i) => (
           <div key={i} className="flex gap-3 items-center py-1">
-            <SkeletonBox className="w-9 h-[52px] rounded" />
+            <SkeletonBox className="w-9 h-13 rounded" />
             <div className="flex-1 space-y-1.5">
               <SkeletonText className="w-3/4" />
               <SkeletonText className="w-1/3" />

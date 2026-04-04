@@ -8,11 +8,11 @@ import { cn } from '@/lib/utils'
 export interface MovieGridProps {
   movies: MovieCardMovie[]
   isLoading?: boolean
-  /** Number of skeleton cards to show while loading */
   skeletonCount?: number
   isFavorite?: (uri: string) => boolean
   onToggleFavorite?: (movie: MovieCardMovie) => void
   onViewDetails?: (movie: MovieCardMovie) => void
+  onFindSimilar?: (movie: MovieCardMovie) => void
   emptyMessage?: string
   className?: string
 }
@@ -20,21 +20,19 @@ export interface MovieGridProps {
 export function MovieGrid({
   movies,
   isLoading = false,
-  skeletonCount = 12,
+  skeletonCount = 6,
   isFavorite,
   onToggleFavorite,
   onViewDetails,
+  onFindSimilar,
   emptyMessage = 'No se encontraron películas con esos filtros.',
   className,
 }: MovieGridProps) {
+  const gridClass = cn('grid gap-4 grid-cols-1 sm:grid-cols-2 xl:grid-cols-3', className)
 
   if (isLoading) {
     return (
-      <div className={cn(
-        'grid gap-4',
-        'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5',
-        className
-      )}>
+      <div className={gridClass}>
         {Array.from({ length: skeletonCount }).map((_, i) => (
           <SkeletonMovieCard key={i} />
         ))}
@@ -44,10 +42,7 @@ export function MovieGrid({
 
   if (movies.length === 0) {
     return (
-      <div className={cn(
-        'flex flex-col items-center justify-center gap-3 py-24 text-center',
-        className
-      )}>
+      <div className={cn('flex flex-col items-center justify-center gap-3 py-24 text-center', className)}>
         <Film className="w-12 h-12 text-muted/30" />
         <p className="text-muted text-sm max-w-xs">{emptyMessage}</p>
       </div>
@@ -55,19 +50,15 @@ export function MovieGrid({
   }
 
   return (
-    <div className={cn(
-      'grid gap-4',
-      'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5',
-      className
-    )}>
-      {movies.map((movie) => (
+    <div className={gridClass}>
+      {movies.map((movie, i) => (
         <MovieCard
-          key={movie.uri ?? movie.title}
+          key={movie.uri ?? movie.title ?? `movie-${i}`}
           movie={movie}
-          size="grid"
           isFavorite={isFavorite?.(movie.uri ?? '') ?? false}
           onToggleFavorite={onToggleFavorite}
           onViewDetails={onViewDetails}
+          onFindSimilar={onFindSimilar}
         />
       ))}
     </div>

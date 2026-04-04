@@ -346,58 +346,73 @@ def generate_cluster_labels(
         log("  [WARN] GROQ_API_KEY not set — using fallback labels.")
         return _fallback_labels()
 
+    log(f"  Using GROQ_API_KEY (first 10 chars): {GROQ_API_KEY[:10]}...")
     try:
         from groq import Groq  # type: ignore  # noqa: PLC0415
 
         client = Groq(api_key=GROQ_API_KEY)
+        log(f"  ✅ Groq client initialized with model: {GROQ_MODEL}")
     except Exception as exc:  # noqa: BLE001
         log(f"  [WARN] Could not initialise Groq client: {exc}. Using fallback labels.")
         return _fallback_labels()
 
-    log(f"  Generating labels for {len(cluster_ids)} clusters in one batch ...")
+    log(f"  Generating labels for {len(cluster_ids)} clusters in batches ...")
 
-    # Build the cluster summary for the prompt (top-5 genres per cluster)
-    cluster_summaries = []
-    for cid in cluster_ids:
-        top_genres = [g for g, _ in cluster_genres[cid].most_common(5)]
-        genres_str = ", ".join(top_genres) if top_genres else "desconocido"
-        cluster_summaries.append(f'  {{"id": {cid}, "genres": "{genres_str}"}}')
-
-    clusters_json = "[\n" + ",\n".join(cluster_summaries) + "\n]"
-
-    prompt = (
-        "Eres un experto en cine. Se te da una lista de clusters de películas "
-        "con sus géneros dominantes. Devuelve SOLO un objeto JSON válido donde "
-        "las claves son los IDs de cluster (como strings) y los valores son "
-        "nombres descriptivos en español de máximo 5 palabras. "
-        "No incluyas explicaciones ni texto adicional fuera del JSON.\n\n"
-        f"Clusters:\n{clusters_json}\n\n"
-        "Ejemplo de respuesta esperada:\n"
-        '{"0": "Ciencia Ficción Épica", "1": "Thriller Psicológico", "2": "Comedia Romántica"}'
-    )
-
+    # Process clusters in batches of 100 to avoid token limits
+    batch_size = 100
     labels: dict[int, str] = {}
-    try:
-        response = client.chat.completions.create(
-            model=GROQ_MODEL,
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0.3,
-            max_tokens=len(cluster_ids) * 20 + 100,
+    
+    for batch_start in range(0, len(cluster_ids), batch_size):
+        batch_end = min(batch_start + batch_size, len(cluster_ids))
+        batch_ids = cluster_ids[batch_start:batch_end]
+        
+        log(f"  Processing batch {batch_start // batch_size + 1} ({batch_start}-{batch_end} of {len(cluster_ids)}) ...")
+
+        # Build the cluster summary for the prompt (top-5 genres per cluster)
+        cluster_summaries = []
+        for cid in batch_ids:
+            top_genres = [g for g, _ in cluster_genres[cid].most_common(5)]
+            genres_str = ", ".join(top_genres) if top_genres else "desconocido"
+            cluster_summaries.append(f'  {{"id": {cid}, "genres": "{genres_str}"}}')
+
+        clusters_json = "[\n" + ",\n".join(cluster_summaries) + "\n]"
+
+        prompt = (
+            "Eres un experto en cine. Se te da una lista de clusters de películas "
+            "con sus géneros dominantes. Devuelve SOLO un objeto JSON válido donde "
+            "las claves son los IDs de cluster (como strings) y los valores son "
+            "nombres descriptivos en español de máximo 5 palabras. "
+            "No incluyas explicaciones ni texto adicional fuera del JSON.\n\n"
+            f"Clusters:\n{clusters_json}\n\n"
+            "Ejemplo de respuesta esperada:\n"
+            '{"0": "Ciencia Ficción Épica", "1": "Thriller Psicológico", "2": "Comedia Romántica"}'
         )
-        raw = response.choices[0].message.content or ""
-        # Extract the JSON object from the response (strip any surrounding text)
-        start = raw.find("{")
-        end = raw.rfind("}") + 1
-        if start == -1 or end == 0:
-            raise ValueError(f"No JSON object found in Groq response: {raw[:200]}")
-        parsed: dict[str, str] = json.loads(raw[start:end])
-        for cid in cluster_ids:
-            label = str(parsed.get(str(cid), "")).strip().strip('"').strip("'")
-            labels[cid] = label if label else f"Cluster {cid}"
-        log(f"  Cluster labels generated: {len(labels)}")
-    except Exception as exc:  # noqa: BLE001
-        log(f"  [WARN] Groq batch labelling failed: {exc}. Falling back to per-cluster calls ...")
-        labels = _groq_label_per_cluster(client, cluster_ids, cluster_genres)
+
+        try:
+            log(f"    Sending batch request to Groq ({GROQ_MODEL}) with {len(batch_ids)} clusters ...")
+            response = client.chat.completions.create(
+                model=GROQ_MODEL,
+                messages=[{"role": "user", "content": prompt}],
+                temperature=0.3,
+                max_tokens=len(batch_ids) * 20 + 100,
+            )
+            raw = response.choices[0].message.content or ""
+            log(f"    ✅ Groq response received ({len(raw)} chars)")
+            # Extract the JSON object from the response (strip any surrounding text)
+            start = raw.find("{")
+            end = raw.rfind("}") + 1
+            if start == -1 or end == 0:
+                raise ValueError(f"No JSON object found in Groq response: {raw[:200]}")
+            parsed: dict[str, str] = json.loads(raw[start:end])
+            for cid in batch_ids:
+                label = str(parsed.get(str(cid), "")).strip().strip('"').strip("'")
+                labels[cid] = label if label else f"Cluster {cid}"
+        except Exception as exc:  # noqa: BLE001
+            log(f"    [WARN] Batch failed: {exc}. Using fallback for this batch...")
+            for cid in batch_ids:
+                labels[cid] = f"Cluster {cid}"
+    
+    log(f"  ✅ All batches processed. Total labels generated: {len(labels)}")
 
     return labels
 

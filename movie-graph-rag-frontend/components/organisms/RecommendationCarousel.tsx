@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef } from 'react'
+import { useState } from 'react'
 import Link from 'next/link'
 import { ChevronLeft, ChevronRight, ArrowRight } from 'lucide-react'
 import { MovieCard, type MovieCardMovie } from './MovieCard'
@@ -9,21 +9,19 @@ import { cn } from '@/lib/utils'
 
 export interface RecommendationCarouselProps {
   title: string
-  /** Subtitle shown in muted text next to the title */
   subtitle?: string
   movies: MovieCardMovie[]
   isLoading?: boolean
-  /** Link for "Ver todo" button */
   viewAllHref?: string
   isFavorite?: (uri: string) => boolean
   onToggleFavorite?: (movie: MovieCardMovie) => void
   onViewDetails?: (movie: MovieCardMovie) => void
-  /** Teal dot indicator before title */
+  onFindSimilar?: (movie: MovieCardMovie) => void
   showLiveIndicator?: boolean
   className?: string
 }
 
-const SKELETON_COUNT = 6
+const PAGE_SIZE = 3
 
 export function RecommendationCarousel({
   title,
@@ -34,16 +32,18 @@ export function RecommendationCarousel({
   isFavorite,
   onToggleFavorite,
   onViewDetails,
+  onFindSimilar,
   showLiveIndicator = false,
   className,
 }: RecommendationCarouselProps) {
-  const scrollRef = useRef<HTMLDivElement>(null)
+  const [page, setPage] = useState(0)
 
-  const scroll = (dir: 'left' | 'right') => {
-    if (!scrollRef.current) return
-    const amount = 400
-    scrollRef.current.scrollBy({ left: dir === 'right' ? amount : -amount, behavior: 'smooth' })
-  }
+  const totalPages = Math.max(1, Math.ceil(movies.length / PAGE_SIZE))
+  const start = page * PAGE_SIZE
+  const visible = movies.slice(start, start + PAGE_SIZE)
+
+  const prev = () => setPage((p) => Math.max(0, p - 1))
+  const next = () => setPage((p) => Math.min(totalPages - 1, p + 1))
 
   return (
     <section className={cn('flex flex-col gap-4', className)}>
@@ -61,25 +61,25 @@ export function RecommendationCarousel({
         </div>
 
         <div className="flex items-center gap-1">
-          {/* Scroll arrows */}
           <button
             type="button"
-            onClick={() => scroll('left')}
+            onClick={prev}
+            disabled={page === 0}
             aria-label="Anterior"
-            className="w-8 h-8 rounded-full flex items-center justify-center bg-surface2 border border-border text-muted hover:text-text hover:border-border2 transition-all"
+            className="w-8 h-8 rounded-full flex items-center justify-center bg-surface2 border border-border text-muted hover:text-text hover:border-border2 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <ChevronLeft className="w-4 h-4" />
           </button>
           <button
             type="button"
-            onClick={() => scroll('right')}
+            onClick={next}
+            disabled={page >= totalPages - 1}
             aria-label="Siguiente"
-            className="w-8 h-8 rounded-full flex items-center justify-center bg-surface2 border border-border text-muted hover:text-text hover:border-border2 transition-all"
+            className="w-8 h-8 rounded-full flex items-center justify-center bg-surface2 border border-border text-muted hover:text-text hover:border-border2 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <ChevronRight className="w-4 h-4" />
           </button>
 
-          {/* Ver todo */}
           {viewAllHref && (
             <Link
               href={viewAllHref}
@@ -92,30 +92,41 @@ export function RecommendationCarousel({
         </div>
       </div>
 
-      {/* Scrollable row */}
-      <div
-        ref={scrollRef}
-        className="flex gap-3 overflow-x-auto pb-2 scroll-smooth"
-        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-      >
+      {/* Grid — same layout as MovieGrid */}
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 xl:grid-cols-3">
         {isLoading
-          ? Array.from({ length: SKELETON_COUNT }).map((_, i) => (
-              <div key={i} className="w-44 shrink-0">
-                <SkeletonMovieCard />
-              </div>
-            ))
-          : movies.map((movie) => (
-              <div key={movie.uri ?? movie.title} className="shrink-0 w-44">
-                <MovieCard
-                  movie={movie}
-                  size="carousel"
-                  isFavorite={isFavorite?.(movie.uri ?? '') ?? false}
-                  onToggleFavorite={onToggleFavorite}
-                  onViewDetails={onViewDetails}
-                />
-              </div>
+          ? Array.from({ length: PAGE_SIZE }).map((_, i) => <SkeletonMovieCard key={i} />)
+          : visible.map((movie, i) => (
+              <MovieCard
+                key={movie.uri ?? movie.title ?? `movie-${i}`}
+                movie={movie}
+                isFavorite={isFavorite?.(movie.uri ?? '') ?? false}
+                onToggleFavorite={onToggleFavorite}
+                onViewDetails={onViewDetails}
+                onFindSimilar={onFindSimilar}
+              />
             ))}
       </div>
+
+      {/* Page dots */}
+      {!isLoading && totalPages > 1 && (
+        <div className="flex items-center justify-center gap-1.5 pt-1">
+          {Array.from({ length: totalPages }).map((_, i) => (
+            <button
+              key={i}
+              type="button"
+              onClick={() => setPage(i)}
+              aria-label={`Página ${i + 1}`}
+              className={cn(
+                'rounded-full transition-all duration-200',
+                i === page
+                  ? 'w-4 h-1.5 bg-teal'
+                  : 'w-1.5 h-1.5 bg-muted/30 hover:bg-muted/60'
+              )}
+            />
+          ))}
+        </div>
+      )}
     </section>
   )
 }

@@ -21,6 +21,8 @@ function toCardMovie(m: FavoriteMovie): MovieCardMovie {
     runtime: m.runtime,
     genres: m.genres,
     rating: m.rating,
+    certification: m.certification,
+    description: m.description,
   };
 }
 

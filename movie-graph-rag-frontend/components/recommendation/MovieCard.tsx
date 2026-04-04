@@ -2,9 +2,9 @@
 
 import Image from "next/image";
 import { useState } from "react";
-import { Card, CardContent } from "@/components/ui/card";
 import { Movie } from "@/services/movies.service";
 import { CircleAlert, Sparkles, Star, Heart, Film } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface MovieCardProps {
   movie: Movie;
@@ -22,14 +22,16 @@ export function MovieCard({
   onToggleFavorite,
 }: MovieCardProps) {
   const [imageError, setImageError] = useState(false);
+
   const normalizedPosterUrl = movie.posterUrl?.startsWith("/")
     ? `https://image.tmdb.org/t/p/w500${movie.posterUrl}`
     : movie.posterUrl;
   const hasPoster = Boolean(normalizedPosterUrl && !imageError);
+
   const formattedRuntime = movie.runtime
     ? `${Math.floor(movie.runtime / 60)}h ${movie.runtime % 60}m`
-    : "—";
-  const classification = movie.certification;
+    : null;
+
   const hasRating = typeof movie.rating === "number";
   const primaryGenre = movie.genres?.[0];
   const descriptionText =
@@ -38,126 +40,168 @@ export function MovieCard({
     "Recomendación personalizada basada en tu actividad reciente.";
 
   return (
-    <Card className="relative overflow-hidden rounded-xl border-border bg-card hover:border-accent/60 transition-all">
-      <CardContent className="relative p-0">
-        {hasPoster ? (
-          <div className="absolute inset-0 pointer-events-none">
+    <div
+      className={cn(
+        "group relative overflow-hidden rounded-xl",
+        "border border-white/10",
+        "transition-all duration-300",
+        "hover:scale-[1.015] hover:-translate-y-0.5",
+        "hover:border-white/20 hover:shadow-2xl hover:shadow-black/60"
+      )}
+    >
+      {/* Background: dark base + blurred poster on top */}
+      <div className="absolute inset-0 bg-surface pointer-events-none" />
+      {hasPoster && (
+        <div className="absolute inset-0 pointer-events-none">
+          <Image
+            src={normalizedPosterUrl as string}
+            alt=""
+            aria-hidden="true"
+            fill
+            sizes="100vw"
+            className="object-cover scale-110 blur-xl opacity-30"
+          />
+        </div>
+      )}
+
+      {/* ── Card content — glass panel ── */}
+      <div className="relative flex gap-4 min-h-52 p-4 bg-bg/30 backdrop-blur-[1px]">
+
+        {/* LEFT: Poster thumbnail */}
+        <div className="relative w-32 shrink-0 rounded-lg shadow-xl overflow-hidden ring-1 ring-white/10">
+          {hasPoster ? (
             <Image
               src={normalizedPosterUrl as string}
-              alt=""
-              aria-hidden="true"
+              alt={`Póster de ${movie.title}`}
               fill
-              sizes="100vw"
-              className="h-full w-full object-cover blur-3xl scale-125 opacity-25"
+              sizes="128px"
+              className="object-cover"
+              onError={() => setImageError(true)}
             />
-          </div>
-        ) : (
-          <div className="absolute inset-0 bg-linear-to-br from-muted/50 via-background to-muted/30 pointer-events-none" />
-        )}
-
-        <div className="relative flex gap-4 min-h-52 p-4">
-          <div className="relative w-36 shrink-0 rounded-xl shadow-lg overflow-hidden">
-            {hasPoster ? (
-              <Image
-                src={normalizedPosterUrl as string}
-                alt={`Póster de ${movie.title}`}
-                fill
-                sizes="(max-width: 768px) 144px, 144px"
-                className="h-full w-full object-cover"
-                onError={() => setImageError(true)}
-              />
-            ) : (
-              <div className="h-full min-h-52 flex items-center justify-center bg-muted/20">
-                <Film className="h-10 w-10 text-muted-foreground/60" />
-              </div>
-            )}
-          </div>
-
-          <div className="flex-1 min-w-0 flex flex-col justify-between">
-            <div>
-              <div className="flex items-start justify-between gap-3 mb-3">
-                <h3 className="font-semibold text-xl leading-tight line-clamp-2 pr-2">
-                  {movie.title}
-                </h3>
-
-                <div className="shrink-0 flex items-center gap-2 text-muted-foreground">
-                  {onViewDetails && (
-                    <button
-                      type="button"
-                      aria-label={`Ver detalles de ${movie.title}`}
-                      className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-background/45 backdrop-blur-md hover:text-foreground hover:bg-background/65 transition-colors"
-                      onClick={() => onViewDetails(movie)}
-                    >
-                      <CircleAlert className="h-4 w-4" />
-                    </button>
-                  )}
-                  {onRecommendSimilar && (
-                    <button
-                      type="button"
-                      aria-label={`Ver similares de ${movie.title}`}
-                      className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-background/45 backdrop-blur-md hover:text-accent hover:bg-background/65 transition-colors"
-                      onClick={() => onRecommendSimilar(movie)}
-                    >
-                      <Sparkles className="h-4 w-4" />
-                    </button>
-                  )}
-                  <button
-                    type="button"
-                    aria-label={
-                      isFavorite
-                        ? `Quitar ${movie.title} de favoritos`
-                        : `Marcar ${movie.title} como favorito`
-                    }
-                    className={`inline-flex h-8 w-8 items-center justify-center rounded-full bg-background/45 backdrop-blur-md hover:bg-background/65 transition-colors ${
-                      isFavorite ? "text-accent" : "hover:text-accent"
-                    }`}
-                    onClick={() => onToggleFavorite?.(movie)}
-                  >
-                    <Heart className={`h-4 w-4 ${isFavorite ? "fill-current" : ""}`} />
-                  </button>
-                </div>
-              </div>
-
-              <div className="text-sm text-muted-foreground mb-3">
-                <span>{movie.year ?? "—"}</span>
-                {movie.runtime ? <span>{` · ${formattedRuntime}`}</span> : null}
-              </div>
-
-              <div className="flex items-center gap-2 mb-4 text-sm text-foreground">
-                <Star className="h-4 w-4 text-accent" />
-                {hasRating && (
-                  <span className="font-medium">
-                    {movie.rating ? movie.rating.toFixed(1) : "N/A"}
-                  </span>
-                )}
-                <span className="text-muted-foreground">Calificación</span>
-                {classification && (
-                  <>
-                    <span className="text-muted-foreground">·</span>
-                    <span className="text-muted-foreground">{classification}</span>
-                  </>
-                )}
-                {primaryGenre && (
-                  <>
-                    <span className="text-muted-foreground">·</span>
-                    <span className="text-muted-foreground">{primaryGenre}</span>
-                  </>
-                )}
-              </div>
-
-              <p className="text-base leading-6 text-muted-foreground line-clamp-4">
-                {descriptionText}
-              </p>
+          ) : (
+            <div className="h-full min-h-52 flex items-center justify-center bg-surface2">
+              <Film className="h-10 w-10 text-muted/40" />
             </div>
+          )}
+        </div>
 
-            {movie.director && (
-              <p className="mt-4 text-xs text-muted-foreground">
-                Dirigida por <span className="text-foreground">{movie.director}</span>
-              </p>
+        {/* RIGHT: Info */}
+        <div className="flex-1 min-w-0 flex flex-col justify-between">
+
+          {/* Title row + action buttons */}
+          <div className="flex items-start justify-between gap-3 mb-2">
+            <h3 className="font-semibold text-lg leading-snug line-clamp-2 text-text pr-1">
+              {movie.title}
+            </h3>
+
+            <div className="shrink-0 flex items-center gap-1.5">
+              {onViewDetails && (
+                <ActionButton
+                  onClick={() => onViewDetails(movie)}
+                  aria-label={`Ver detalles de ${movie.title}`}
+                  colorClass="hover:bg-accent2/15 hover:text-accent2 hover:border-accent2/40"
+                >
+                  <CircleAlert className="h-3.5 w-3.5" />
+                </ActionButton>
+              )}
+              {onRecommendSimilar && (
+                <ActionButton
+                  onClick={() => onRecommendSimilar(movie)}
+                  aria-label={`Ver similares de ${movie.title}`}
+                  colorClass="hover:bg-teal/15 hover:text-teal hover:border-teal/40"
+                >
+                  <Sparkles className="h-3.5 w-3.5" />
+                </ActionButton>
+              )}
+              <ActionButton
+                onClick={() => onToggleFavorite?.(movie)}
+                aria-label={
+                  isFavorite
+                    ? `Quitar ${movie.title} de favoritos`
+                    : `Marcar ${movie.title} como favorito`
+                }
+                colorClass={
+                  isFavorite
+                    ? "bg-accent2/15 text-accent2 border-accent2/40"
+                    : "hover:bg-accent2/15 hover:text-accent2 hover:border-accent2/40"
+                }
+              >
+                <Heart className={cn("h-3.5 w-3.5", isFavorite && "fill-current")} />
+              </ActionButton>
+            </div>
+          </div>
+
+          {/* Year · Runtime */}
+          <p className="text-xs text-muted mb-2">
+            {movie.year ?? "—"}
+            {formattedRuntime && <span> · {formattedRuntime}</span>}
+          </p>
+
+          {/* Rating · Certification · Genre */}
+          <div className="flex items-center gap-1.5 mb-3 flex-wrap">
+            {hasRating && (
+              <>
+                <Star className="h-3.5 w-3.5 text-accent fill-accent shrink-0" />
+                <span className="text-sm font-semibold text-text">
+                  {movie.rating!.toFixed(1)}
+                </span>
+                <span className="text-xs text-muted">Calificación</span>
+              </>
+            )}
+            {movie.certification && (
+              <>
+                <span className="text-muted/50">·</span>
+                <span className="text-xs text-muted">{movie.certification}</span>
+              </>
+            )}
+            {primaryGenre && (
+              <>
+                <span className="text-muted/50">·</span>
+                <span className="text-xs text-muted">{primaryGenre}</span>
+              </>
             )}
           </div>
+
+          {/* Description */}
+          <p className="text-sm leading-relaxed text-muted/85 line-clamp-3">
+            {descriptionText}
+          </p>
+
+          {/* Director */}
+          {movie.director && (
+            <p className="mt-3 text-xs text-muted/60">
+              Dir. <span className="text-muted">{movie.director}</span>
+            </p>
+          )}
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
+  );
+}
+
+// ── Small circular icon button ──────────────────────────────────────────────
+
+interface ActionButtonProps {
+  onClick: () => void;
+  "aria-label": string;
+  colorClass: string;
+  children: React.ReactNode;
+}
+
+function ActionButton({ onClick, "aria-label": ariaLabel, colorClass, children }: ActionButtonProps) {
+  return (
+    <button
+      type="button"
+      aria-label={ariaLabel}
+      onClick={(e) => { e.stopPropagation(); onClick(); }}
+      className={cn(
+        "inline-flex h-8 w-8 items-center justify-center rounded-full",
+        "bg-bg/50 backdrop-blur-sm border border-white/10",
+        "text-muted transition-all duration-200",
+        colorClass
+      )}
+    >
+      {children}
+    </button>
   );
 }

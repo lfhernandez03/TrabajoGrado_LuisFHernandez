@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Navbar } from "@/components/organisms/Navbar";
 import { HeroSection, type HeroMovie } from "@/components/organisms/HeroSection";
+import { RecommendationHeader } from "@/components/organisms/RecommendationHeader";
 import { RecommendationCarousel } from "@/components/organisms/RecommendationCarousel";
 import { type MovieCardMovie } from "@/components/organisms/MovieCard";
 import { MovieDetailsDialog } from "@/components/home/MovieDetailsDialog";
@@ -29,6 +30,8 @@ function toCardMovie(movie: Movie | FavoriteMovie): MovieCardMovie {
     genres: movie.genres,
     rating: movie.rating,
     director: (movie as Movie).director,
+    certification: (movie as Movie).certification,
+    description: (movie as Movie).description,
   };
 }
 
@@ -43,6 +46,7 @@ function recToCardMovie(movie: RecommendedMovie): MovieCardMovie {
     rating: movie.averageRating ?? undefined,
     compatibilityScore: movie.compatibilityScore,
     serendipityScore: movie.serendipityScore,
+    description: movie.description ?? undefined,
   };
 }
 
@@ -98,6 +102,7 @@ export default function Home() {
               director: canonical.director,
               runtime: canonical.runtime ?? best.runtime,
               compatibilityScore: best.compatibilityScore,
+              description: canonical.description ?? best.description,
               explanation: rec.explanation,
             });
             return canonical.title;
@@ -110,6 +115,7 @@ export default function Home() {
           genreName: best.genreName,
           runtime: best.runtime,
           compatibilityScore: best.compatibilityScore,
+          description: best.description,
           explanation: rec.explanation,
         });
         return best.title;
@@ -117,14 +123,22 @@ export default function Home() {
         // Fallback to an example movie
         const examples = await getMovieExamples(1);
         if (examples[0]) {
-          setHeroMovie({ title: examples[0].title, posterUrl: examples[0].posterUrl });
+          setHeroMovie({ 
+            title: examples[0].title, 
+            posterUrl: examples[0].posterUrl,
+            description: examples[0].description,
+          });
           return examples[0].title;
         }
       }
     } catch {
       const examples = await getMovieExamples(1).catch(() => []);
       if (examples[0]) {
-        setHeroMovie({ title: examples[0].title, posterUrl: examples[0].posterUrl });
+        setHeroMovie({ 
+          title: examples[0].title, 
+          posterUrl: examples[0].posterUrl,
+          description: examples[0].description,
+        });
         return examples[0].title;
       }
     } finally {
@@ -141,6 +155,7 @@ export default function Home() {
           ? getMovieNeighborhood(featuredTitle, 1).then((r) => r.nodes.map((n) => ({
               uri: n.uri, title: n.title, posterUrl: n.poster_url ?? undefined,
               genres: n.genre ? [n.genre] : undefined, rating: n.rating ?? undefined,
+              description: n.description ?? undefined,
             } as MovieCardMovie)))
           : getMovieExamples(12).then((arr) => arr.map(toCardMovie)),
         // "Basado en favoritos" — highest centrality (most connected)
@@ -202,6 +217,10 @@ export default function Home() {
     setShowDetailsDialog(true);
   }, []);
 
+  const handleFindSimilar = useCallback((movie: MovieCardMovie) => {
+    router.push(`/search?q=${encodeURIComponent(movie.title)}`);
+  }, [router]);
+
   const handleHeroDetails = useCallback(() => {
     if (!heroMovie) return;
     router.push(`/search?q=${encodeURIComponent(heroMovie.title)}`);
@@ -222,6 +241,9 @@ export default function Home() {
         onViewDetails={handleHeroDetails}
       />
 
+      {/* Recommendation Header */}
+      <RecommendationHeader />
+
       {/* Carousels */}
       <div className="max-w-7xl mx-auto px-6 pb-20 flex flex-col gap-12">
         <RecommendationCarousel
@@ -234,6 +256,7 @@ export default function Home() {
           isFavorite={isFavorite}
           onToggleFavorite={handleToggleFavorite}
           onViewDetails={handleViewDetails}
+          onFindSimilar={handleFindSimilar}
         />
 
         <RecommendationCarousel
@@ -244,6 +267,7 @@ export default function Home() {
           isFavorite={isFavorite}
           onToggleFavorite={handleToggleFavorite}
           onViewDetails={handleViewDetails}
+          onFindSimilar={handleFindSimilar}
         />
 
         <RecommendationCarousel
@@ -256,6 +280,7 @@ export default function Home() {
           isFavorite={isFavorite}
           onToggleFavorite={handleToggleFavorite}
           onViewDetails={handleViewDetails}
+          onFindSimilar={handleFindSimilar}
         />
       </div>
 

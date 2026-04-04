@@ -7,13 +7,6 @@ import { SkeletonBox, SkeletonText } from '@/components/atoms'
 import type { TopologicalProfileResponse } from '@/services/topology.service'
 import { cn } from '@/lib/utils'
 
-// ── Types ────────────────────────────────────────────────────────────────────
-
-export interface TopologicalProfileProps {
-  profile: TopologicalProfileResponse
-  className?: string
-}
-
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 const USER_TYPE_CONFIG = {
@@ -80,122 +73,116 @@ export function TopologicalProfileSkeleton({ className }: { className?: string }
   )
 }
 
-// ── Main Component ────────────────────────────────────────────────────────────
+// ── Types ────────────────────────────────────────────────────────────────────
 
-export function TopologicalProfile({ profile, className }: TopologicalProfileProps) {
-  const typeConfig = USER_TYPE_CONFIG[profile.userType]
-  const trendConfig = TREND_CONFIG[profile.temporalTrend]
-  const TrendIcon = trendConfig.icon
+export interface TopologicalProfileProps {
+  profile: TopologicalProfileResponse
+  orientation?: 'vertical' | 'horizontal'
+  className?: string
+}
+
+// ── Shared sub-sections ───────────────────────────────────────────────────────
+
+function UserTypeHeader({ profile, typeConfig }: { profile: TopologicalProfileResponse; typeConfig: typeof USER_TYPE_CONFIG[keyof typeof USER_TYPE_CONFIG] }) {
   const TypeIcon = typeConfig.icon
-
-  const clusteredPct =
-    profile.totalFavorites > 0
-      ? Math.round((profile.clusteredFavorites / profile.totalFavorites) * 100)
-      : 0
-
   return (
-    <div className={cn('space-y-6', className)}>
-
-      {/* User type header */}
-      <div className="flex items-start gap-4">
-        <div className={cn('p-3 rounded-xl border shrink-0', typeConfig.color)}>
-          <TypeIcon className="h-6 w-6" />
-        </div>
-        <div className="min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            <h3 className="text-lg font-bold font-display tracking-wide">
-              {typeConfig.label}
-            </h3>
-            <span className={cn('text-xs px-2 py-0.5 rounded-full border font-medium', typeConfig.color)}>
-              {profile.userType}
-            </span>
-          </div>
-          <p className="text-sm text-muted mt-0.5">{typeConfig.description}</p>
-        </div>
+    <div className="flex items-start gap-4">
+      <div className={cn('p-3 rounded-xl border shrink-0', typeConfig.color)}>
+        <TypeIcon className="h-6 w-6" />
       </div>
-
-      {/* Exploration index */}
-      <div className="bg-surface2 rounded-xl p-4 space-y-3 border border-border">
-        <div className="flex items-center justify-between">
-          <p className="text-xs font-medium text-muted uppercase tracking-wider">
-            Índice de exploración
-          </p>
-          <span className="text-xs text-muted">Especialista → Explorador</span>
+      <div className="min-w-0">
+        <div className="flex items-center gap-2 flex-wrap">
+          <h3 className="text-lg font-bold font-display tracking-wide">{typeConfig.label}</h3>
+          <span className={cn('text-xs px-2 py-0.5 rounded-full border font-medium', typeConfig.color)}>
+            {profile.userType}
+          </span>
         </div>
-        <ScoreBar
-          score={profile.explorationIndex}
-          label=""
-          animated
-          variant={profile.explorationIndex > 0.6 ? 'teal' : profile.explorationIndex > 0.3 ? 'gradient' : 'accent'}
-        />
-        <div className="flex justify-between text-xs text-muted">
-          <span>Enfocado</span>
-          <span>Diverso</span>
-        </div>
+        <p className="text-sm text-muted mt-0.5">{typeConfig.description}</p>
       </div>
+    </div>
+  )
+}
 
-      {/* Dominant clusters */}
-      {profile.dominantClusters.length > 0 && (
-        <div className="space-y-3">
-          <p className="text-xs font-medium text-muted uppercase tracking-wider">
-            Comunidades dominantes
-          </p>
-          <div className="space-y-2.5">
-            {profile.dominantClusters.slice(0, 5).map((cluster, i) => {
-              const pct = Math.round(cluster.weight * 100)
-              const isTop = i === 0
-              return (
-                <div key={cluster.clusterId} className="space-y-1">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className={cn('truncate', isTop ? 'text-text font-medium' : 'text-muted')}>
-                      {isTop && <span className="text-accent mr-1.5">●</span>}
-                      {cluster.label}
-                    </span>
-                    <div className="flex items-center gap-2 shrink-0 ml-2">
-                      <span className="text-xs text-muted">{cluster.moviesSeen} vistas</span>
-                      <span className={cn('text-xs font-semibold tabular-nums', isTop ? 'text-teal' : 'text-muted')}>
-                        {pct}%
-                      </span>
-                    </div>
-                  </div>
-                  <div className="h-1.5 bg-surface2 rounded-full overflow-hidden">
-                    <div
-                      className={cn(
-                        'h-full rounded-full transition-all duration-700',
-                        isTop ? 'bg-gradient-to-r from-teal to-accent' : 'bg-border2'
-                      )}
-                      style={{ width: `${pct}%` }}
-                    />
-                  </div>
+function ExplorationIndex({ profile }: { profile: TopologicalProfileResponse }) {
+  return (
+    <div className="bg-surface2 rounded-xl p-4 space-y-3 border border-border">
+      <div className="flex items-center justify-between">
+        <p className="text-xs font-medium text-muted uppercase tracking-wider">Índice de exploración</p>
+        <span className="text-xs text-muted">Especialista → Explorador</span>
+      </div>
+      <ScoreBar
+        score={profile.explorationIndex}
+        label=""
+        animated
+        variant={profile.explorationIndex > 0.6 ? 'teal' : profile.explorationIndex > 0.3 ? 'gradient' : 'accent'}
+      />
+      <div className="flex justify-between text-xs text-muted">
+        <span>Enfocado</span>
+        <span>Diverso</span>
+      </div>
+    </div>
+  )
+}
+
+function DominantClusters({ profile }: { profile: TopologicalProfileResponse }) {
+  if (profile.dominantClusters.length === 0) return null
+  return (
+    <div className="space-y-3">
+      <p className="text-xs font-medium text-muted uppercase tracking-wider">Comunidades dominantes</p>
+      <div className="space-y-2.5">
+        {profile.dominantClusters.slice(0, 5).map((cluster, i) => {
+          const pct = Math.round(cluster.weight * 100)
+          const isTop = i === 0
+          return (
+            <div key={cluster.clusterId} className="space-y-1">
+              <div className="flex items-center justify-between text-sm">
+                <span className={cn('truncate', isTop ? 'text-text font-medium' : 'text-muted')}>
+                  {isTop && <span className="text-accent mr-1.5">●</span>}
+                  {cluster.label}
+                </span>
+                <div className="flex items-center gap-2 shrink-0 ml-2">
+                  <span className="text-xs text-muted">{cluster.moviesSeen} vistas</span>
+                  <span className={cn('text-xs font-semibold tabular-nums', isTop ? 'text-teal' : 'text-muted')}>
+                    {pct}%
+                  </span>
                 </div>
-              )
-            })}
-          </div>
-        </div>
-      )}
+              </div>
+              <div className="h-1.5 bg-surface2 rounded-full overflow-hidden">
+                <div
+                  className={cn('h-full rounded-full transition-all duration-700', isTop ? 'bg-linear-to-r from-teal to-accent' : 'bg-border2')}
+                  style={{ width: `${pct}%` }}
+                />
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
 
-      {/* Unexplored adjacent */}
-      {profile.unexploredAdjacent.length > 0 && (
-        <div className="space-y-3">
-          <p className="text-xs font-medium text-muted uppercase tracking-wider">
-            Comunidades sin explorar (adyacentes)
-          </p>
-          <div className="flex flex-wrap gap-2">
-            {profile.unexploredAdjacent.map((cluster) => (
-              <Tag
-                key={cluster.clusterId}
-                label={cluster.label}
-                variant="static"
-              />
-            ))}
-          </div>
-          <p className="text-xs text-muted">
-            Estas comunidades están conectadas a tus favoritos pero aún no las has explorado.
-          </p>
-        </div>
-      )}
+function UnexploredAdjacent({ profile }: { profile: TopologicalProfileResponse }) {
+  if (profile.unexploredAdjacent.length === 0) return null
+  return (
+    <div className="space-y-2">
+      <p className="text-xs font-medium text-muted uppercase tracking-wider">Comunidades adyacentes sin explorar</p>
+      <div className="flex flex-wrap gap-2">
+        {profile.unexploredAdjacent.map((cluster) => (
+          <Tag key={cluster.clusterId} label={cluster.label} variant="static" />
+        ))}
+      </div>
+    </div>
+  )
+}
 
-      {/* Temporal trend */}
+function TrendAndStats({ profile, trendConfig, clusteredPct }: {
+  profile: TopologicalProfileResponse
+  trendConfig: typeof TREND_CONFIG[keyof typeof TREND_CONFIG]
+  clusteredPct: number
+}) {
+  const TrendIcon = trendConfig.icon
+  return (
+    <div className="space-y-3">
       <div className="flex items-center gap-3 p-3 rounded-lg bg-surface2 border border-border">
         <TrendIcon className={cn('h-5 w-5 shrink-0', trendConfig.color)} />
         <div className="min-w-0">
@@ -203,8 +190,6 @@ export function TopologicalProfile({ profile, className }: TopologicalProfilePro
           <p className="text-xs text-muted mt-0.5 truncate">{profile.trendExplanation}</p>
         </div>
       </div>
-
-      {/* Stats footer */}
       <div className="grid grid-cols-2 gap-3">
         <div className="bg-surface2 rounded-lg p-3 text-center border border-border">
           <p className="text-2xl font-bold font-display text-text">{profile.totalFavorites}</p>
@@ -215,7 +200,53 @@ export function TopologicalProfile({ profile, className }: TopologicalProfilePro
           <p className="text-xs text-muted mt-0.5">En comunidades</p>
         </div>
       </div>
+    </div>
+  )
+}
 
+// ── Main Component ────────────────────────────────────────────────────────────
+
+export function TopologicalProfile({ profile, orientation = 'vertical', className }: TopologicalProfileProps) {
+  const typeConfig = USER_TYPE_CONFIG[profile.userType]
+  const trendConfig = TREND_CONFIG[profile.temporalTrend]
+
+  const clusteredPct =
+    profile.totalFavorites > 0
+      ? Math.round((profile.clusteredFavorites / profile.totalFavorites) * 100)
+      : 0
+
+  if (orientation === 'horizontal') {
+    return (
+      <div className={cn('space-y-5', className)}>
+        {/* Row 1: 3 columns */}
+        <div className="grid grid-cols-1 md:grid-cols-[220px_1fr_200px] gap-6 items-start">
+          {/* Col 1 — User type */}
+          <UserTypeHeader profile={profile} typeConfig={typeConfig} />
+
+          {/* Col 2 — Exploration + clusters */}
+          <div className="space-y-4">
+            <ExplorationIndex profile={profile} />
+            <DominantClusters profile={profile} />
+          </div>
+
+          {/* Col 3 — Trend + stats */}
+          <TrendAndStats profile={profile} trendConfig={trendConfig} clusteredPct={clusteredPct} />
+        </div>
+
+        {/* Row 2 — Unexplored (full width, compact) */}
+        <UnexploredAdjacent profile={profile} />
+      </div>
+    )
+  }
+
+  // Vertical (sidebar) layout — unchanged behaviour
+  return (
+    <div className={cn('space-y-6', className)}>
+      <UserTypeHeader profile={profile} typeConfig={typeConfig} />
+      <ExplorationIndex profile={profile} />
+      <DominantClusters profile={profile} />
+      <UnexploredAdjacent profile={profile} />
+      <TrendAndStats profile={profile} trendConfig={trendConfig} clusteredPct={clusteredPct} />
     </div>
   )
 }

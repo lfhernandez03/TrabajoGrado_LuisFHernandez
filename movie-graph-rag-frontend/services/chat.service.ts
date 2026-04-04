@@ -1,4 +1,5 @@
 import api from '@/lib/api';
+import { withCache, TTL } from '@/lib/cache';
 
 export interface ChatRecommendationResponse {
   query: string;
@@ -62,9 +63,8 @@ export const sendChatMessage = async (query: string): Promise<ChatRecommendation
 /**
  * Obtiene recomendación personalizada basada en actividad del usuario
  */
-export const getActivityRecommendation = async (): Promise<ChatRecommendationResponse> => {
-  const response = await api.get<ChatRecommendationResponse>('/recommendation/activity', {
-    timeout: 180000,
-  });
-  return response.data;
-};
+export const getActivityRecommendation = (): Promise<ChatRecommendationResponse> =>
+  withCache('activity-recommendation', TTL.SHORT, () =>
+    api.get<ChatRecommendationResponse>('/recommendation/activity', { timeout: 180000 })
+      .then(r => r.data)
+  );

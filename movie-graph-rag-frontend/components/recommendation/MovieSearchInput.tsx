@@ -153,7 +153,7 @@ export function MovieSearchInput({
 
       {/* Dropdown de sugerencias */}
       {isOpen && suggestions.length > 0 && (
-        <div className="absolute z-50 top-full mt-1 w-full bg-popover border border-border rounded-lg shadow-lg overflow-hidden">
+        <div className="absolute z-50 top-full mt-1 w-full bg-surface border border-border rounded-lg shadow-lg overflow-hidden">
           {suggestions.map((movie, index) => (
             <button
               key={movie.uri}

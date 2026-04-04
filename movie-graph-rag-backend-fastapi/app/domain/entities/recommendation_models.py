@@ -71,6 +71,7 @@ class Movie:
     semantic_scores: dict[str, float] = field(default_factory=dict)
     kid_friendly: bool | None = None
     serendipity_score: float = 0.0
+    description: str | None = None
 
     @classmethod
     def from_fuseki_row(cls, row: dict) -> Movie:
@@ -165,6 +166,7 @@ class Movie:
             time_match_score=time_match_score,
             semantic_scores=semantic_scores,
             kid_friendly=kid_friendly,
+            description=row.get("description"),
         )
 
     def to_response_dict(self) -> dict:
@@ -183,6 +185,7 @@ class Movie:
             "semanticScores": self.semantic_scores,
             "kidFriendly": self.kid_friendly,
             "serendipityScore": self.serendipity_score,
+            "description": self.description,
         }
 
 

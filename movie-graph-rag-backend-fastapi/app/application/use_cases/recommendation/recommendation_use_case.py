@@ -3,7 +3,6 @@ from __future__ import annotations
 import logging
 from time import perf_counter
 
-from app.core.connection_explorer import ConnectionExplorer
 from app.core.fuseki_client import execute_select_query
 from app.core.metrics import ListMetrics, compute_metrics
 from app.core.profile_service import ProfileService
@@ -83,6 +82,39 @@ class RecommendationUseCase:
     def get_recommendation(self, query: str, user_id: str) -> dict:
         return self._run(query, user_id).to_api_dict()
 
+    def get_activity_recommendation(self, user_id: str) -> dict:
+        """Deprecated: use endpoint's intelligent query building instead.
+        
+        This fallback is kept for backward compatibility.
+        The /recommendation/activity endpoint now builds much smarter queries
+        that use favorites, topological profile, and exploration metrics.
+        """
+        from datetime import datetime
+
+        # Get user's profile for basic fallback personalization
+        profile = self._profile_svc.get(user_id)
+        
+        # Base time-of-day query
+        hour = datetime.now().hour
+        if 6 <= hour < 12:
+            time_query = "ver en la mañana"
+        elif 12 <= hour < 18:
+            time_query = "ver en la tarde"
+        else:
+            time_query = "ver en la noche"
+
+        # Enrich query with user's preferred genres
+        enrichment = ""
+        if profile and profile.genre_weights and not profile.is_cold_start:
+            # Get top 2 genres by weight
+            top_genres = sorted(profile.genre_weights.items(), key=lambda x: x[1], reverse=True)[:2]
+            if top_genres:
+                genre_names = [g[0] for g in top_genres]
+                enrichment = f" que sea de {' o '.join(genre_names)}"
+        
+        query = f"Recomiéndame una película para {time_query}{enrichment}"
+        return self._run(query, user_id).to_api_dict()
+
     def get_recommendation_debug(self, query: str, user_id: str) -> dict:
         result = self._run(query, user_id)
         d = result.to_api_dict()
@@ -100,8 +132,7 @@ class RecommendationUseCase:
         attempts = build_strategy(ctx, profile)
         candidates, strategy = _run_strategy(attempts)
         movies = score_and_select(candidates, ctx, profile, n=5)
-        explorer = ConnectionExplorer()
-        metrics = compute_metrics(movies, profile, explorer=explorer)
+        metrics = compute_metrics(movies, profile)
 
         query_type = _query_type(ctx, profile.is_cold_start)
         explanation = self._explain(query, ctx, movies, query_type)

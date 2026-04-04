@@ -5,7 +5,6 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { Search, Code2, ChevronDown, ChevronUp, Clock } from "lucide-react";
 import { Navbar } from "@/components/organisms/Navbar";
 import { MovieGrid } from "@/components/organisms/MovieGrid";
-import { FilterSidebar, FilterValues, DEFAULT_FILTERS } from "@/components/organisms/FilterSidebar";
 import { type MovieCardMovie } from "@/components/organisms/MovieCard";
 import { Button } from "@/components/ui/button";
 import { ProtectedRoute } from "@/components/shared/ProtectedRoute";
@@ -25,6 +24,7 @@ function toCardMovie(m: Movie): MovieCardMovie {
     genres: m.genres,
     rating: m.rating,
     director: m.director,
+    description: m.description,
   };
 }
 
@@ -40,7 +40,6 @@ function ExploreContent() {
   const [executionTime, setExecutionTime] = useState(0);
   const [lastSparql, setLastSparql] = useState("");
   const [showSparql, setShowSparql] = useState(false);
-  const [filters, setFilters] = useState<FilterValues>(DEFAULT_FILTERS);
   const [favorites, setFavorites] = useState<FavoriteMovie[]>([]);
 
   const loadFavorites = useCallback(async () => {
@@ -90,28 +89,6 @@ function ExploreContent() {
     router.push(`/search?q=${encodeURIComponent(movie.title)}`);
   };
 
-  const handleApplyFilters = () => executeSearch(query);
-
-  const handleResetFilters = () => {
-    setFilters(DEFAULT_FILTERS);
-    if (query) executeSearch(query);
-  };
-
-  // Client-side filter application
-  const filtered = results.filter((m) => {
-    if (filters.genres.length > 0 && !m.genres?.some((g) => filters.genres.includes(g))) return false;
-    if (filters.director && !m.director?.toLowerCase().includes(filters.director.toLowerCase())) return false;
-    if (filters.yearFrom && m.year && m.year < Number(filters.yearFrom)) return false;
-    if (filters.yearTo && m.year && m.year > Number(filters.yearTo)) return false;
-    if (filters.runtimeMax && m.runtime && m.runtime > Number(filters.runtimeMax)) return false;
-    return true;
-  }).sort((a, b) => {
-    if (filters.sort === "year_desc") return (b.year ?? 0) - (a.year ?? 0);
-    if (filters.sort === "year_asc") return (a.year ?? 0) - (b.year ?? 0);
-    if (filters.sort === "title") return a.title.localeCompare(b.title);
-    return (b.rating ?? 0) - (a.rating ?? 0); // default: rating
-  });
-
   return (
     <ProtectedRoute>
       <div className="min-h-screen bg-bg">
@@ -144,12 +121,12 @@ function ExploreContent() {
           {/* Results header */}
           {hasSearched && (
             <div className="flex items-center justify-between mb-6 flex-wrap gap-2">
-              <div>
+            <div>
                 <h1 className="font-display text-3xl text-text">
                   {queryParam && `"${queryParam}"`}
                 </h1>
                 <p className="text-sm text-muted flex items-center gap-3 mt-1">
-                  <span>{filtered.length} resultado{filtered.length !== 1 ? "s" : ""}</span>
+                  <span>{results.length} resultado{results.length !== 1 ? "s" : ""}</span>
                   <span className="flex items-center gap-1">
                     <Clock className="w-3 h-3" />{executionTime}ms
                   </span>
@@ -183,40 +160,29 @@ function ExploreContent() {
             </div>
           )}
 
-          {/* Main layout: sidebar + grid */}
-          <div className="flex gap-8">
-            {hasSearched && (
-              <FilterSidebar
-                filters={filters}
-                onChange={setFilters}
-                onApply={handleApplyFilters}
-                onReset={handleResetFilters}
-              />
+          {/* Main grid */}
+          <div className="w-full">
+            <MovieGrid
+              movies={results.map(toCardMovie)}
+              isLoading={isSearching}
+              isFavorite={isFavorite}
+              onToggleFavorite={handleToggleFavorite}
+              emptyMessage={
+                hasSearched
+                  ? "No se encontraron películas con esos criterios."
+                  : "Usa el buscador para encontrar películas."
+              }
+            />
+
+            {/* Empty initial state */}
+            {!hasSearched && !isSearching && (
+              <div className="flex flex-col items-center justify-center py-32 text-center">
+                <Search className="w-14 h-14 text-muted/20 mb-4" />
+                <p className="text-muted text-sm max-w-xs">
+                  Busca por título, director o género para explorar el catálogo.
+                </p>
+              </div>
             )}
-
-            <div className="flex-1 min-w-0">
-              <MovieGrid
-                movies={filtered.map(toCardMovie)}
-                isLoading={isSearching}
-                isFavorite={isFavorite}
-                onToggleFavorite={handleToggleFavorite}
-                emptyMessage={
-                  hasSearched
-                    ? "No se encontraron películas con esos criterios."
-                    : "Usa el buscador para encontrar películas."
-                }
-              />
-
-              {/* Empty initial state */}
-              {!hasSearched && !isSearching && (
-                <div className="flex flex-col items-center justify-center py-32 text-center">
-                  <Search className="w-14 h-14 text-muted/20 mb-4" />
-                  <p className="text-muted text-sm max-w-xs">
-                    Busca por título, director o género para explorar el catálogo.
-                  </p>
-                </div>
-              )}
-            </div>
           </div>
         </main>
       </div>

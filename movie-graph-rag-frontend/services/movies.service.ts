@@ -1,4 +1,5 @@
 import api from '@/lib/api';
+import { withCache, TTL } from '@/lib/cache';
 
 export interface Movie {
   uri: string;
@@ -69,12 +70,10 @@ export interface MovieSuggestion {
 /**
  * Obtiene películas de ejemplo para mostrar en la página principal
  */
-export const getMovieExamples = async (limit: number = 3): Promise<Movie[]> => {
-  const response = await api.get<Movie[]>('/movies/examples', {
-    params: { limit },
-  });
-  return response.data;
-};
+export const getMovieExamples = (limit: number = 3): Promise<Movie[]> =>
+  withCache(`examples:${limit}`, TTL.LONG, () =>
+    api.get<Movie[]>('/movies/examples', { params: { limit } }).then(r => r.data)
+  );
 
 /**
  * Autocompletado de títulos de películas
@@ -127,6 +126,7 @@ export interface RecommendedMovie {
   averageRating?: number | null;
   compatibilityScore?: number;
   serendipityScore?: number;
+  description?: string | null;
 }
 
 export interface CentralityResponse {
@@ -141,6 +141,7 @@ export interface NetworkNode {
   genre?: string | null;
   rating?: number | null;
   poster_url?: string | null;
+  description?: string | null;
 }
 
 export interface NetworkEdge {
@@ -172,26 +173,26 @@ export interface ConnectionPathResponse {
 }
 
 /** Movies ranked by graph centrality (most "connected" in the knowledge graph) */
-export const getMoviesByCentrality = async (
+export const getMoviesByCentrality = (
   genre?: string,
   limit = 12
-): Promise<CentralityResponse> => {
-  const response = await api.get<CentralityResponse>('/movies/connections/centrality', {
-    params: { ...(genre ? { genre } : {}), limit },
-  });
-  return response.data;
-};
+): Promise<CentralityResponse> =>
+  withCache(`centrality:${genre ?? ''}:${limit}`, TTL.MED, () =>
+    api.get<CentralityResponse>('/movies/connections/centrality', {
+      params: { ...(genre ? { genre } : {}), limit },
+    }).then(r => r.data)
+  );
 
 /** Neighbourhood graph around a movie (for GraphMinimap) */
-export const getMovieNeighborhood = async (
+export const getMovieNeighborhood = (
   title: string,
   depth = 1
-): Promise<NetworkGraphResponse> => {
-  const response = await api.get<NetworkGraphResponse>('/movies/connections/neighborhood', {
-    params: { title, depth },
-  });
-  return response.data;
-};
+): Promise<NetworkGraphResponse> =>
+  withCache(`neighborhood:${title}:${depth}`, TTL.MED, () =>
+    api.get<NetworkGraphResponse>('/movies/connections/neighborhood', {
+      params: { title, depth },
+    }).then(r => r.data)
+  );
 
 /** Shortest semantic path between two movies */
 export const getConnectionPath = async (

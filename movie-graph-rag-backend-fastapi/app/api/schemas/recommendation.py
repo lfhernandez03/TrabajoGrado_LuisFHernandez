@@ -40,6 +40,7 @@ class RecommendedMovieResponse(BaseModel):
     kidFriendly: bool | None = None
     serendipityScore: float = 0.0
     """Topological serendipity: compatibility x (1-clustering) x betweenness x (1-degree), scaled [0,1]."""
+    description: str | None = None
 
 
 # Alias so both endpoints share the same model class

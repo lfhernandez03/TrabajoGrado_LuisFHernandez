@@ -20,7 +20,6 @@ const NAV_LINKS = [
   { href: '/', label: 'Inicio', icon: Home },
   { href: '/search', label: 'Explorar', icon: Compass },
   { href: '/chat', label: 'Chat IA', icon: MessageSquare },
-  { href: '/connections', label: 'Conexiones', icon: Network },
   { href: '/favorites', label: 'Favoritos', icon: Heart },
 ]
 
