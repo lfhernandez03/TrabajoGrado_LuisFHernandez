@@ -2,10 +2,6 @@
   "buildCommand": "npm run build",
   "outputDirectory": ".next",
   "installCommand": "npm install",
-  "env": {
-    "NEXT_PUBLIC_API_URL": "@movie_rag_api_url",
-    "NEXT_PUBLIC_API_PREFIX": "/api/v1"
-  },
   "headers": [
     {
       "source": "/(.*)",
@@ -32,12 +28,6 @@
           "value": "no-cache, no-store, must-revalidate"
         }
       ]
-    }
-  ],
-  "rewrites": [
-    {
-      "source": "/api/v1/:path*",
-      "destination": "${NEXT_PUBLIC_API_URL}/api/v1/:path*"
     }
   ],
   "redirects": [],
