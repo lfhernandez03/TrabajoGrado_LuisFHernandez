@@ -1,47 +1,76 @@
+# ============================================================
+# Stage 1: Pre-load movie ontology data into TDB2 format.
+# Build context must be the repository root so we can access
+# both the backend and the ontologies directories.
+# ============================================================
+FROM stain/jena-fuseki:latest AS data-builder
+
+# Copy ontology TTL files
+COPY movie-graph-rag-ontologies/data/ontologies/base/movie-ontology.ttl    /ontologies/
+COPY movie-graph-rag-ontologies/data/ontologies/base/context-ontology.ttl  /ontologies/
+COPY movie-graph-rag-ontologies/data/ontologies/bridge/bridge-ontology.ttl /ontologies/
+COPY movie-graph-rag-ontologies/data/ontologies/instances/movies_data.ttl  /ontologies/
+COPY movie-graph-rag-ontologies/data/ontologies/instances/bridge_data.ttl  /ontologies/
+
+# Load all TTL files into a TDB2 database at build time.
+# Jena tools live at /jena/bin/ inside the stain/jena-fuseki image.
+RUN mkdir -p /tdb2-data && \
+    /jena/bin/tdb2.tdbloader \
+        --loc /tdb2-data \
+        /ontologies/movie-ontology.ttl \
+        /ontologies/context-ontology.ttl \
+        /ontologies/bridge-ontology.ttl \
+        /ontologies/movies_data.ttl \
+        /ontologies/bridge_data.ttl
+
+# ============================================================
+# Stage 2: Runtime — Python 3.11 + JRE + Fuseki + FastAPI
+# ============================================================
 FROM python:3.11-slim
 
-# Set working directory
 WORKDIR /app
 
-# Set environment variables
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PIP_NO_CACHE_DIR=1
 
-# Install system dependencies (for entrypoint: wget, netcat; for build: gcc)
+# OpenJDK 17 (headless) to run Fuseki; build tools for Python packages
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    gcc \
+    default-jre-headless \
     curl \
     wget \
     netcat-traditional \
+    gcc \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy entire monorepo first (everything from root)
-COPY . /tmp/repo
+# Copy Fuseki server JAR and helper scripts from the builder stage
+COPY --from=data-builder /jena-fuseki /jena-fuseki
 
-# Copy backend-specific files to /app
-RUN cp /tmp/repo/movie-graph-rag-backend-fastapi/pyproject.toml /app/ && \
-    cp -r /tmp/repo/movie-graph-rag-backend-fastapi/app /app/ && \
-    ([ -d /tmp/repo/movie-graph-rag-backend-fastapi/tests ] && cp -r /tmp/repo/movie-graph-rag-backend-fastapi/tests /app/ || true) && \
-    ([ -d /tmp/repo/movie-graph-rag-backend-fastapi/scripts ] && cp -r /tmp/repo/movie-graph-rag-backend-fastapi/scripts /app/ || true) && \
-    ([ -d /tmp/repo/movie-graph-rag-backend-fastapi/fuseki-init ] && cp -r /tmp/repo/movie-graph-rag-backend-fastapi/fuseki-init /app/ || true) && \
-    ([ -d /tmp/repo/movie-graph-rag-ontologies/data ] && cp -r /tmp/repo/movie-graph-rag-ontologies/data /app/ || true) && \
-    cp /tmp/repo/movie-graph-rag-backend-fastapi/entrypoint.sh /app/ 2>/dev/null || true && \
-    rm -rf /tmp/repo
+# Copy the pre-loaded TDB2 database baked at build time
+COPY --from=data-builder /tdb2-data /fuseki/databases/movies
 
-# Make entrypoint executable
-RUN chmod +x /app/entrypoint.sh 2>/dev/null || true
+# Create the Fuseki directory structure expected at runtime
+RUN mkdir -p /fuseki/configuration /fuseki/logs /fuseki/system /fuseki/system_files
 
-# Install dependencies
+# Install the dataset assembler configuration for Fuseki
+COPY movie-graph-rag-backend-fastapi/fuseki-init/movies-config.ttl /fuseki/configuration/movies.ttl
+
+# Copy backend application
+COPY movie-graph-rag-backend-fastapi/pyproject.toml /app/
+COPY movie-graph-rag-backend-fastapi/app /app/app/
+COPY movie-graph-rag-backend-fastapi/entrypoint.sh /app/entrypoint.sh
+
+RUN chmod +x /app/entrypoint.sh
+
+# Install Python dependencies
 RUN pip install --upgrade pip setuptools wheel && \
     pip install -e .
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+# Health check against FastAPI
+HEALTHCHECK --interval=30s --timeout=10s --start-period=120s --retries=3 \
     CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')" || exit 1
 
-# Expose port
+# Render detects this port to mark the service as live
 EXPOSE 8000
 
-# Run entrypoint (waits for Fuseki/MongoDB before starting FastAPI)
-CMD ["/bin/bash", "./entrypoint.sh"]
+CMD ["/bin/bash", "/app/entrypoint.sh"]
