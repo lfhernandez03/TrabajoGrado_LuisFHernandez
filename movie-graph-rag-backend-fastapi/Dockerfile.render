@@ -6,9 +6,6 @@
 # ============================================================
 FROM stain/jena-fuseki:latest AS data-builder
 
-# curl is needed for the HTTP uploads during build (Alpine-based image)
-RUN apk add --no-cache curl
-
 # Copy ontology TTL files
 COPY movie-graph-rag-ontologies/data/ontologies/base/movie-ontology.ttl    /ontologies/
 COPY movie-graph-rag-ontologies/data/ontologies/base/context-ontology.ttl  /ontologies/
@@ -44,9 +41,10 @@ RUN set -e; \
         /ontologies/bridge_data.ttl; \
     do \
         echo "Loading $f ..."; \
-        curl -sf -X POST "http://localhost:3030/movies/data" \
-             -H "Content-Type: text/turtle" \
-             --data-binary "@$f" \
+        wget -q -O /dev/null \
+             --header="Content-Type: text/turtle" \
+             --post-file="$f" \
+             "http://localhost:3030/movies/data" \
         || (echo "Failed to upload $f" && cat /tmp/fuseki-build.log && exit 1); \
     done; \
     kill $FPID && sleep 5 && echo "TDB2 data loaded successfully."
