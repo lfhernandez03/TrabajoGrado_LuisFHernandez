@@ -4,9 +4,12 @@ import { cn } from "@/lib/utils";
 
 interface RecommendationHeaderProps {
   className?: string;
+  movieTitle?: string;
+  genres?: string[];
 }
 
-export function RecommendationHeader({ className }: RecommendationHeaderProps) {
+export function RecommendationHeader({ className, movieTitle, genres }: RecommendationHeaderProps) {
+  const genreText = genres && genres.length > 0 ? genres.slice(0, 2).join(" y ") : "películas de calidad";
 
   return (
     <section className={cn("py-12 md:py-16", className)}>
@@ -29,13 +32,14 @@ export function RecommendationHeader({ className }: RecommendationHeaderProps) {
                 </span>
               </h2>
 
-              {/* Subtitle with orange highlights */}
+              {/* Subtitle with dynamic genre highlights */}
               <p className="text-sm md:text-base text-muted max-w-xl leading-relaxed">
                 Basado en tu interés en{" "}
-                <span className="text-accent2 font-semibold">
-                  thrillers psicológicos y ciencia ficción
+                <span className="font-semibold" style={{ color: 'var(--color-purple)' }}>
+                  {genreText}
                 </span>{" "}
-                — y lo que el grafo de conexiones dice sobre tu siguiente paso.
+                {movieTitle && `— y lo que viste en ${movieTitle} `} 
+                dice sobre tu siguiente paso.
               </p>
             </div>
           </div>

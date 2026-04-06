@@ -36,6 +36,7 @@ class NetworkNodeResponse(BaseModel):
     rating: float | None = None
     poster_url: str | None = None
     description: str | None = None
+    runtime: int | None = None
 
 
 class NetworkEdgeResponse(BaseModel):

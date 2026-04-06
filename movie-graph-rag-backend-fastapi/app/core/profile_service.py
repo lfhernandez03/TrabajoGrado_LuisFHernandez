@@ -45,6 +45,16 @@ def _build_archive_sparql(snapshot_id: str, ctx: UserContext, user_id: str, now:
     iso_ts = now.replace(microsecond=0).isoformat()
     day_name = now.strftime("%A")
     graph_uri = f"http://users/{_esc(user_id)}/history"
+    
+    logger.debug(
+        "_build_archive_sparql: snapshot_id=%s, user_id=%s, iso_ts=%s, has_mood=%s, has_companion=%s, has_runtime=%s",
+        snapshot_id,
+        user_id,
+        iso_ts,
+        bool(ctx.mood),
+        bool(ctx.companion),
+        ctx.runtime_max,
+    )
 
     lines: list[str] = [
         f"PREFIX context: <{_CONTEXT_NS}>",
@@ -131,23 +141,35 @@ class ProfileService:
         """Write a UserContext snapshot to the user's permanent Fuseki history
         graph and invalidate the cached profile.
 
+        TEMPORARY: Archiving disabled due to Fuseki INSERT DATA 400 errors.
+        Running it will log the SPARQL but not execute it.
+
         Never raises — failures are logged and silently swallowed so a failed
         archive never crashes the recommendation pipeline.
         """
-        try:
-            snapshot_id = (
-                ctx.session_id
-                or f"ctx_{user_id}_{uuid4().hex[:8]}"
-            )
-            now = datetime.utcnow()
-            sparql = _build_archive_sparql(snapshot_id, ctx, user_id, now)
-            ok = execute_update_query(sparql)
-            if not ok:
-                logger.warning("archive_context: INSERT failed for user %s", user_id)
-        except Exception as exc:
-            logger.error("archive_context error for user %s: %s", user_id, exc)
-        finally:
-            self.invalidate_cache(user_id)
+        import threading
+        
+        def _do_archive():
+            try:
+                snapshot_id = (
+                    ctx.session_id
+                    or f"ctx_{user_id}_{uuid4().hex[:8]}"
+                )
+                now = datetime.utcnow()
+                sparql = _build_archive_sparql(snapshot_id, ctx, user_id, now)
+                logger.debug("archive_context SPARQL (disabled):\n%s", sparql)
+                # TEMPORARY: Disabled until Fuseki 400 error is fixed
+                # ok = execute_update_query(sparql)
+                # if not ok:
+                #     logger.warning("archive_context: INSERT failed for user %s", user_id)
+            except Exception as exc:
+                logger.error("archive_context error for user %s: %s", user_id, exc)
+            finally:
+                self.invalidate_cache(user_id)
+        
+        # Run in background thread to avoid blocking
+        thread = threading.Thread(target=_do_archive, daemon=True)
+        thread.start()
 
     def invalidate_cache(self, user_id: str) -> None:
         """Evict the user from the profile cache."""

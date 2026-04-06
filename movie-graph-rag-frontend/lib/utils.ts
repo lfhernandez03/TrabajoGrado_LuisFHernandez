@@ -40,6 +40,7 @@ export const COLORS = {
   accent: "var(--accent)",
   accent2: "var(--accent2)",
   teal: "var(--teal)",
+  purple: "var(--color-purple)",
   border: "var(--border)",
   border2: "var(--border2)",
 } as const

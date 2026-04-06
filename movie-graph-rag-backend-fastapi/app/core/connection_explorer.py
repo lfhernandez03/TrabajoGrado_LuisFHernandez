@@ -52,6 +52,7 @@ class NetworkNode:
     rating: float | None = None
     poster_url: str | None = None
     description: str | None = None
+    runtime: int | None = None
 
 
 @dataclass
@@ -77,15 +78,16 @@ def _esc(value: str) -> str:
 
 
 def _get_movie_info(title: str) -> dict | None:
-    """Fetch URI, genre, and director for a movie by title (case-insensitive)."""
+    """Fetch URI, genre, director, and runtime for a movie by title (case-insensitive)."""
     query = (
         _PREFIXES
-        + "SELECT ?movie ?title ?genreName ?directorUri\n"
+        + "SELECT ?movie ?title ?genreName ?directorUri ?runtime\n"
         + "WHERE {\n"
         + "  ?movie rdf:type movie:FeatureFilm ; movie:hasTitle ?title .\n"
         + f'  FILTER(LCASE(STR(?title)) = LCASE("{_esc(title)}"))\n'
         + "  OPTIONAL { ?movie movie:hasMainGenre/movie:genreName ?genreName }\n"
         + "  OPTIONAL { ?movie movie:hasDirector ?directorUri }\n"
+        + "  OPTIONAL { ?movie movie:runtime ?runtime }\n"
         + "}\n"
         + "LIMIT 1"
     )
@@ -103,7 +105,7 @@ def _movies_by_genre(genre: str, exclude_uris: set[str], limit: int = 30) -> lis
     excl_filter = f"  FILTER(?movie NOT IN ({excl}))\n" if excl else ""
     query = (
         _PREFIXES
-        + "SELECT DISTINCT ?movie ?title ?genreName ?rating ?posterUrl ?description\n"
+        + "SELECT DISTINCT ?movie ?title ?genreName ?rating ?posterUrl ?description ?runtime\n"
         + "WHERE {\n"
         + "  ?movie rdf:type movie:FeatureFilm ; movie:hasTitle ?title .\n"
         + f'  ?movie movie:hasMainGenre/movie:genreName "{_esc(genre)}" .\n'
@@ -111,6 +113,7 @@ def _movies_by_genre(genre: str, exclude_uris: set[str], limit: int = 30) -> lis
         + "  OPTIONAL { ?movie movie:hasRating ?rating }\n"
         + "  OPTIONAL { ?movie schema1:image ?posterUrl }\n"
         + "  OPTIONAL { ?movie movie:hasPlotSummary ?description }\n"
+        + "  OPTIONAL { ?movie movie:runtime ?runtime }\n"
         + excl_filter
         + "}\n"
         + f"LIMIT {limit}"
@@ -128,7 +131,7 @@ def _movies_by_director(director_uri: str, exclude_uris: set[str], limit: int = 
     excl_filter = f"  FILTER(?movie NOT IN ({excl}))\n" if excl else ""
     query = (
         _PREFIXES
-        + "SELECT DISTINCT ?movie ?title ?genreName ?rating ?posterUrl ?description\n"
+        + "SELECT DISTINCT ?movie ?title ?genreName ?rating ?posterUrl ?description ?runtime\n"
         + "WHERE {\n"
         + "  ?movie rdf:type movie:FeatureFilm ; movie:hasTitle ?title .\n"
         + f"  ?movie movie:hasDirector <{director_uri}> .\n"
@@ -136,6 +139,7 @@ def _movies_by_director(director_uri: str, exclude_uris: set[str], limit: int = 
         + "  OPTIONAL { ?movie movie:hasRating ?rating }\n"
         + "  OPTIONAL { ?movie schema1:image ?posterUrl }\n"
         + "  OPTIONAL { ?movie movie:hasPlotSummary ?description }\n"
+        + "  OPTIONAL { ?movie movie:runtime ?runtime }\n"
         + excl_filter
         + "}\n"
         + f"LIMIT {limit}"
@@ -284,10 +288,15 @@ class ConnectionExplorer:
             return graph
 
         center_uri = info["movie"]
+        try:
+            runtime = int(info["runtime"]) if info.get("runtime") else None
+        except (ValueError, TypeError):
+            runtime = None
         center_node = NetworkNode(
             uri=center_uri,
             title=info.get("title", title),
             genre=info.get("genreName"),
+            runtime=runtime,
         )
         graph.nodes.append(center_node)
 
@@ -316,6 +325,10 @@ class ConnectionExplorer:
                         rating = float(row["rating"]) if row.get("rating") else None
                     except (ValueError, TypeError):
                         rating = None
+                    try:
+                        runtime = int(row["runtime"]) if row.get("runtime") else None
+                    except (ValueError, TypeError):
+                        runtime = None
                     node = NetworkNode(
                         uri=n_uri,
                         title=row.get("title", ""),
@@ -323,6 +336,7 @@ class ConnectionExplorer:
                         rating=rating,
                         poster_url=row.get("posterUrl"),
                         description=row.get("description"),
+                        runtime=runtime,
                     )
                     graph.nodes.append(node)
                     rel = "same_genre" if genre and row.get("genreName") == genre else "same_director"

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import Link from "next/link";
 import { Mail, Lock, Loader2, Sparkles } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -11,6 +11,14 @@ export default function LoginPage() {
   const { login } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({ email: "", password: "" });
+
+  const handleEmailChange = useCallback((email: string) => {
+    setFormData((f) => ({ ...f, email }));
+  }, []);
+
+  const handlePasswordChange = useCallback((password: string) => {
+    setFormData((f) => ({ ...f, password }));
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,7 +59,7 @@ export default function LoginPage() {
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" />
                 <Input id="email" type="email" variant="default" placeholder="tu@email.com" className="pl-9"
-                  value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  value={formData.email} onChange={(e) => handleEmailChange(e.target.value)}
                   required disabled={isLoading} />
               </div>
             </div>
@@ -61,7 +69,7 @@ export default function LoginPage() {
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" />
                 <Input id="password" type="password" variant="default" placeholder="••••••••" className="pl-9"
-                  value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                  value={formData.password} onChange={(e) => handlePasswordChange(e.target.value)}
                   required disabled={isLoading} />
               </div>
             </div>

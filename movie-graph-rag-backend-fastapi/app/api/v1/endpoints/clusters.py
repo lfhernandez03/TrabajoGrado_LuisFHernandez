@@ -4,7 +4,7 @@ import collections
 import logging
 from functools import lru_cache
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Path, Query, status
 
 from app.api.di import get_current_user_di as get_current_user
 from app.api.schemas.clusters import (
@@ -13,6 +13,7 @@ from app.api.schemas.clusters import (
     ClusterListItem,
     ClusterListResponse,
     ClusterMovie,
+    ClusterMovieListResponse,
     MovieClusterResponse,
 )
 from app.core.fuseki_client import execute_select_query
@@ -52,11 +53,21 @@ def _row_to_cluster_movie(row: dict) -> ClusterMovie:
             rating = round(float(row["rating"]), 2)
     except (ValueError, TypeError):
         pass
+    runtime = None
+    try:
+        if row.get("runtime"):
+            runtime = int(row["runtime"])
+    except (ValueError, TypeError):
+        pass
+    # Parse comma-separated genres from GROUP_CONCAT
+    genres_str = row.get("genres") or ""
+    genres = [g.strip() for g in genres_str.split(",") if g.strip()] if genres_str else []
     return ClusterMovie(
         title=row.get("title", ""),
         rating=rating,
-        genre=row.get("genreName") or None,
+        genres=genres,
         posterUrl=row.get("posterUrl") or None,
+        runtime=runtime,
     )
 
 
@@ -308,3 +319,35 @@ def list_clusters(
     del pipeline).
     """
     return _cached_cluster_list()
+
+
+@router.get("/{cluster_id}/movies", response_model=ClusterMovieListResponse)
+def get_cluster_movies(
+    cluster_id: str = Path(..., description="ID del cluster Louvain (e.g., '0', '1', ...)"),
+    limit: int = Query(default=12, ge=1, le=50, description="Número de películas (1-50)"),
+    current_user: AuthUser = Depends(get_current_user),
+) -> ClusterMovieListResponse:
+    """Devuelve las películas de un cluster ordenadas por rating.
+
+    Útil para exploración de géneros inexplorados - permite cargar películas
+    de clusters específicos que el usuario aún no ha descubierto.
+    """
+    safe_cid = _escape(cluster_id)
+    query = (
+        _PREFIXES
+        + "SELECT ?title ?rating ?posterUrl ?runtime (GROUP_CONCAT(DISTINCT ?genreName; separator=\", \") AS ?genres) WHERE {\n"
+        f'  ?m movie:belongsToCluster "{safe_cid}" ;\n'
+        "     movie:hasTitle ?title .\n"
+        "  OPTIONAL { ?m movie:hasRating ?rating }\n"
+        "  OPTIONAL { ?m movie:hasMainGenre/movie:genreName ?genreName }\n"
+        "  OPTIONAL { ?m schema1:image ?posterUrl }\n"
+        "  OPTIONAL { ?m movie:runtime ?runtime }\n"
+        f"}} GROUP BY ?title ?rating ?posterUrl ?runtime ORDER BY DESC(?rating) LIMIT {limit}"
+    )
+    try:
+        rows = execute_select_query(query)
+        movies = [_row_to_cluster_movie(row) for row in rows]
+        return ClusterMovieListResponse(cluster_id=cluster_id, movies=movies)
+    except Exception as exc:
+        logger.error("get_cluster_movies failed for cluster '%s': %s", cluster_id, exc)
+        return ClusterMovieListResponse(cluster_id=cluster_id, movies=[])

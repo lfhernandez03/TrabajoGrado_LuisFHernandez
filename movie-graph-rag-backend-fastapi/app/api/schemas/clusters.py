@@ -6,8 +6,9 @@ from pydantic import BaseModel
 class ClusterMovie(BaseModel):
     title: str
     rating: float | None = None
-    genre: str | None = None
+    genres: list[str] = []
     posterUrl: str | None = None
+    runtime: int | None = None
 
 
 class ClusterInfo(BaseModel):
@@ -41,3 +42,8 @@ class ClusterListItem(BaseModel):
 class ClusterListResponse(BaseModel):
     clusters: list[ClusterListItem]
     total: int
+
+
+class ClusterMovieListResponse(BaseModel):
+    cluster_id: str
+    movies: list[ClusterMovie]

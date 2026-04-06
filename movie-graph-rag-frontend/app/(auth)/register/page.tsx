@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
 import { Mail, Lock, User, Loader2, Sparkles } from "lucide-react";
@@ -23,15 +23,31 @@ export default function RegisterPage() {
   const [formData, setFormData] = useState({ name: "", email: "", password: "", confirmPassword: "" });
   const [errors, setErrors] = useState({ password: "", confirmPassword: "" });
 
-  const handlePasswordChange = (pw: string) => {
-    setFormData((f) => ({ ...f, password: pw }));
-    setErrors((e) => ({ ...e, password: validatePassword(pw) }));
-  };
+  const handleNameChange = useCallback((name: string) => {
+    setFormData((f) => ({ ...f, name }));
+  }, []);
 
-  const handleConfirmChange = (cpw: string) => {
-    setFormData((f) => ({ ...f, confirmPassword: cpw }));
-    setErrors((e) => ({ ...e, confirmPassword: cpw !== formData.password ? "Las contraseñas no coinciden" : "" }));
-  };
+  const handleEmailChange = useCallback((email: string) => {
+    setFormData((f) => ({ ...f, email }));
+  }, []);
+
+  const handlePasswordChange = useCallback((password: string) => {
+    setFormData((f) => ({ ...f, password }));
+    setErrors((e) => ({ ...e, password: validatePassword(password) }));
+  }, []);
+
+  const handleConfirmChange = useCallback((confirmPassword: string) => {
+    setFormData((f) => ({
+      ...f,
+      confirmPassword,
+      // Validate against the formData that will be updated
+    }));
+    // Use the new confirmPassword value for comparison with current formData.password
+    setErrors((e) => ({ 
+      ...e, 
+      confirmPassword: confirmPassword !== formData.password ? "Las contraseñas no coinciden" : "" 
+    }));
+  }, [formData.password]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -87,18 +103,49 @@ export default function RegisterPage() {
           </div>
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-            <Field id="name" label="Nombre completo" icon={User} placeholder="Juan Pérez"
-              value={formData.name} onChange={(v) => setFormData((f) => ({ ...f, name: v }))} disabled={isLoading} />
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="name" className="text-xs font-medium text-muted uppercase tracking-wider">Nombre completo</label>
+              <div className="relative">
+                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" />
+                <Input id="name" type="text" variant="default" placeholder="Juan Pérez" className="pl-9"
+                  value={formData.name} onChange={(e) => handleNameChange(e.target.value)}
+                  required disabled={isLoading} />
+              </div>
+            </div>
 
-            <Field id="email" label="Email" type="email" icon={Mail} placeholder="tu@email.com"
-              value={formData.email} onChange={(v) => setFormData((f) => ({ ...f, email: v }))} disabled={isLoading} />
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="email" className="text-xs font-medium text-muted uppercase tracking-wider">Email</label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" />
+                <Input id="email" type="email" variant="default" placeholder="tu@email.com" className="pl-9"
+                  value={formData.email} onChange={(e) => handleEmailChange(e.target.value)}
+                  required disabled={isLoading} />
+              </div>
+            </div>
 
-            <Field id="password" label="Contraseña" type="password" icon={Lock} placeholder="••••••••"
-              value={formData.password} onChange={handlePasswordChange} error={errors.password} disabled={isLoading} />
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="password" className="text-xs font-medium text-muted uppercase tracking-wider">Contraseña</label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" />
+                <Input id="password" type="password" variant="default" placeholder="••••••••" 
+                  className={cn("pl-9", errors.password && "border-red-600/60")}
+                  value={formData.password} onChange={(e) => handlePasswordChange(e.target.value)}
+                  required disabled={isLoading} />
+              </div>
+              {errors.password && <p className="text-xs text-red-400">{errors.password}</p>}
+            </div>
 
-            <Field id="confirmPassword" label="Confirmar contraseña" type="password" icon={Lock} placeholder="••••••••"
-              value={formData.confirmPassword} onChange={handleConfirmChange}
-              error={errors.confirmPassword} disabled={isLoading} />
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="confirmPassword" className="text-xs font-medium text-muted uppercase tracking-wider">Confirmar contraseña</label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" />
+                <Input id="confirmPassword" type="password" variant="default" placeholder="••••••••"
+                  className={cn("pl-9", errors.confirmPassword && "border-red-600/60")}
+                  value={formData.confirmPassword} onChange={(e) => handleConfirmChange(e.target.value)}
+                  required disabled={isLoading} />
+              </div>
+              {errors.confirmPassword && <p className="text-xs text-red-400">{errors.confirmPassword}</p>}
+            </div>
 
             <Button type="submit" variant="primary" disabled={isLoading} className="w-full mt-2">
               {isLoading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Creando cuenta…</>

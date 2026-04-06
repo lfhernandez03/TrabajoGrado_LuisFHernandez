@@ -113,6 +113,19 @@ def execute_update_query(sparql_update: str) -> bool:
         try:
             with request.urlopen(req, timeout=timeout_seconds) as response:
                 return int(getattr(response, "status", 0)) in (200, 204)
+        except error.HTTPError as http_exc:
+            error_body = http_exc.read().decode("utf-8", errors="ignore")
+            logger.error(
+                "Fuseki HTTP %d at %s: %s",
+                http_exc.code,
+                endpoint,
+                error_body[:500],
+            )
+            last_error = http_exc
+            if attempt < retries:
+                time.sleep(0.2 * (attempt + 1))
+                continue
+            return False
         except (error.URLError, TimeoutError) as exc:
             last_error = exc
             if attempt < retries:

@@ -8,14 +8,42 @@ import { ScoreBar } from "@/components/atoms/ScoreBar";
 import { SkeletonPoster, SkeletonBox } from "@/components/atoms/Loader";
 import { cn } from "@/lib/utils";
 
-// Metrics for the top section
-const RECOMMENDATION_METRICS = [
-  { label: "Compatibilidad", value: 0.94 },
-  { label: "Estado de ánimo", value: 0.87 },
-  { label: "Momento del día", value: 0.92 },
-];
+
+// Generate dynamic metrics from context
+function generateMetrics(movie: HeroMovie | null | undefined) {
+  const metrics = [];
+
+  // Compatibilidad: from compatibilityScore
+  if (movie?.compatibilityScore !== undefined) {
+    metrics.push({
+      label: "Compatibilidad",
+      value: Math.min(Math.max(movie.compatibilityScore, 0), 1),
+    });
+  } else {
+    metrics.push({ label: "Compatibilidad", value: 0.85 });
+  }
+
+  // Estado de ánimo: from contextExtracted.moodDescription
+  if (movie?.contextExtracted?.moodDescription) {
+    // Presence of mood description = high confidence
+    metrics.push({ label: "Estado de ánimo", value: 0.85 });
+  } else {
+    metrics.push({ label: "Estado de ánimo", value: 0.60 });
+  }
+
+  // Momento del día: from contextExtracted.availableTime
+  if (movie?.contextExtracted?.availableTime) {
+    // Presence of time context = high confidence
+    metrics.push({ label: "Momento del día", value: 0.88 });
+  } else {
+    metrics.push({ label: "Momento del día", value: 0.70 });
+  }
+
+  return metrics;
+}
 
 export interface HeroMovie {
+  uri?: string;
   title: string;
   posterUrl?: string | null;
   genreName?: string | null;
@@ -25,6 +53,11 @@ export interface HeroMovie {
   compatibilityScore?: number;
   explanation?: string;
   description?: string;
+  contextExtracted?: {
+    moodDescription?: string;
+    desiredEnergyLevel?: string;
+    availableTime?: number;
+  };
 }
 
 export interface HeroSectionProps {
@@ -76,8 +109,7 @@ export function HeroSection({
               </h1>
 
               <p className="text-sm md:text-base text-muted max-w-2xl leading-relaxed">
-                El grafo conoce tu historial — thrillers psicológicos, sci-fi y
-                drama. Eligió esto para ti ahora mismo.
+                El grafo conoce tu historial — <span className="font-bold" style={{ color: 'var(--color-purple)' }}>{featuredMovie?.genres?.slice(0, 3).join(", ") || "películas de calidad"}</span>. Eligió esto para ti ahora mismo.
               </p>
             </div>
 
@@ -119,7 +151,7 @@ export function HeroSection({
 
             {/* Recommendation Metrics */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4 border-t border-border">
-              {RECOMMENDATION_METRICS.map((metric) => (
+              {generateMetrics(featuredMovie).map((metric) => (
                 <div key={metric.label} className="space-y-2">
                   <div className="flex justify-between items-center">
                     <span className="text-xs font-semibold text-muted">

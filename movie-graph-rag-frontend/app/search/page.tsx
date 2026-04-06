@@ -9,7 +9,8 @@ import { type MovieCardMovie } from "@/components/organisms/MovieCard";
 import { Button } from "@/components/ui/button";
 import { ProtectedRoute } from "@/components/shared/ProtectedRoute";
 import { MovieSearchInput } from "@/components/recommendation/MovieSearchInput";
-import { Movie, searchMovies, MovieSuggestion } from "@/services/movies.service";
+import { MovieDetailsDialog } from "@/components/home/MovieDetailsDialog";
+import { Movie, searchMovies, MovieSuggestion, getMovieNeighborhood } from "@/services/movies.service";
 import { addMyFavorite, FavoriteMovie, getMyFavorites, removeMyFavorite } from "@/services/favorites.service";
 import { toast } from "sonner";
 import { buildDisplaySparqlQuery } from "@/lib/sparql";
@@ -35,12 +36,15 @@ function ExploreContent() {
 
   const [query, setQuery] = useState(queryParam);
   const [results, setResults] = useState<Movie[]>([]);
+  const [directResultCount, setDirectResultCount] = useState(0);
   const [isSearching, setIsSearching] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
   const [executionTime, setExecutionTime] = useState(0);
   const [lastSparql, setLastSparql] = useState("");
   const [showSparql, setShowSparql] = useState(false);
   const [favorites, setFavorites] = useState<FavoriteMovie[]>([]);
+  const [selectedMovie, setSelectedMovie] = useState<Movie | null>(null);
+  const [showDetailsDialog, setShowDetailsDialog] = useState(false);
 
   const loadFavorites = useCallback(async () => {
     try { setFavorites(await getMyFavorites()); } catch { /* not auth */ }
@@ -73,10 +77,42 @@ function ExploreContent() {
     try {
       const t0 = Date.now();
       const data = await searchMovies({ q: term, limit: 30 });
+      setDirectResultCount(data.length);
+      
+      // If we found results, fetch similar movies from the first (most relevant) movie
+      let allResults = [...data];
+      if (data.length > 0) {
+        try {
+          const mainMovie = data[0];
+          const neighborhood = await getMovieNeighborhood(mainMovie.title, 1);
+          // Add neighbors that aren't already in results (avoid duplicates)
+          const resultUris = new Set(data.map(m => m.uri));
+          const similarMovies = neighborhood.nodes
+            .filter(n => !resultUris.has(n.uri))
+            .map(n => ({
+              uri: n.uri,
+              title: n.title,
+              posterUrl: n.poster_url ?? undefined,
+              year: undefined,
+              runtime: n.runtime ?? undefined,
+              genres: n.genre ? [n.genre] : undefined,
+              rating: n.rating ?? undefined,
+              description: n.description ?? undefined,
+              director: undefined,
+            } as Movie))
+            .slice(0, 12); // Limit similar movies
+          
+          allResults = [...data, ...similarMovies];
+        } catch (err) {
+          console.warn("Could not load similar movies:", err);
+          // Continue with just search results if similarity fails
+        }
+      }
+      
       setExecutionTime(Date.now() - t0);
-      setResults(data);
+      setResults(allResults);
       setHasSearched(true);
-      if (data.length === 0) toast.info("No se encontraron películas");
+      if (allResults.length === 0) toast.info("No se encontraron películas");
     } catch { toast.error("Error al buscar películas"); }
     finally { setIsSearching(false); }
   };
@@ -86,6 +122,15 @@ function ExploreContent() {
   };
 
   const handleSelect = (movie: MovieSuggestion) => {
+    router.push(`/search?q=${encodeURIComponent(movie.title)}`);
+  };
+
+  const handleViewDetails = (movie: MovieCardMovie) => {
+    setSelectedMovie(movie as Movie);
+    setShowDetailsDialog(true);
+  };
+
+  const handleFindSimilar = (movie: MovieCardMovie) => {
     router.push(`/search?q=${encodeURIComponent(movie.title)}`);
   };
 
@@ -126,7 +171,10 @@ function ExploreContent() {
                   {queryParam && `"${queryParam}"`}
                 </h1>
                 <p className="text-sm text-muted flex items-center gap-3 mt-1">
-                  <span>{results.length} resultado{results.length !== 1 ? "s" : ""}</span>
+                  <span>
+                    {directResultCount} resultado{directResultCount !== 1 ? "s" : ""} 
+                    {results.length > directResultCount && ` + ${results.length - directResultCount} similares`}
+                  </span>
                   <span className="flex items-center gap-1">
                     <Clock className="w-3 h-3" />{executionTime}ms
                   </span>
@@ -167,6 +215,8 @@ function ExploreContent() {
               isLoading={isSearching}
               isFavorite={isFavorite}
               onToggleFavorite={handleToggleFavorite}
+              onViewDetails={handleViewDetails}
+              onFindSimilar={handleFindSimilar}
               emptyMessage={
                 hasSearched
                   ? "No se encontraron películas con esos criterios."
@@ -185,6 +235,16 @@ function ExploreContent() {
             )}
           </div>
         </main>
+
+        {/* Movie details dialog */}
+        <MovieDetailsDialog
+          movie={selectedMovie}
+          open={showDetailsDialog}
+          onOpenChange={setShowDetailsDialog}
+          onRecommendSimilar={(movie) =>
+            router.push(`/search?q=${encodeURIComponent(movie.title)}`)
+          }
+        />
       </div>
     </ProtectedRoute>
   );

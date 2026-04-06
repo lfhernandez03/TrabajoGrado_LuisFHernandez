@@ -7,7 +7,7 @@ import { RecommendationHeader } from "@/components/organisms/RecommendationHeade
 import { RecommendationCarousel } from "@/components/organisms/RecommendationCarousel";
 import { type MovieCardMovie } from "@/components/organisms/MovieCard";
 import { MovieDetailsDialog } from "@/components/home/MovieDetailsDialog";
-import { Movie, searchMovies, getMovieExamples, getMoviesByCentrality, getMovieNeighborhood, type RecommendedMovie } from "@/services/movies.service";
+import { Movie, searchMovies, getMovieExamples, getMoviesByCentrality, getMovieNeighborhood, getTopologicalProfile, getClusterMovies, type RecommendedMovie } from "@/services/movies.service";
 import { getActivityRecommendation } from "@/services/chat.service";
 import {
   addMyFavorite,
@@ -63,6 +63,10 @@ export default function Home() {
   const [carousel2, setCarousel2] = useState<MovieCardMovie[]>([]);
   const [carousel3, setCarousel3] = useState<MovieCardMovie[]>([]);
   const [carouselLoading, setCarouselLoading] = useState(true);
+  const [carousel1Title, setCarousel1Title] = useState<string>("Porque viste");
+  const [carousel1FavoriteTitle, setCarousel1FavoriteTitle] = useState<string>("…");
+  const [carousel2Title, setCarousel2Title] = useState<string>("Basado en tus favoritos");
+  const [carousel2FavoriteTitle, setCarousel2FavoriteTitle] = useState<string>("");
 
   // ── Favorites ─────────────────────────────────────────────────────────────
   const [favorites, setFavorites] = useState<FavoriteMovie[]>([]);
@@ -75,9 +79,12 @@ export default function Home() {
 
   const loadFavorites = useCallback(async () => {
     try {
-      setFavorites(await getMyFavorites());
+      const fav = await getMyFavorites();
+      setFavorites(fav);
+      return fav;
     } catch {
       // silently fail — user may not be authenticated
+      return [];
     }
   }, []);
 
@@ -95,6 +102,7 @@ export default function Home() {
           );
           if (canonical) {
             setHeroMovie({
+              uri: canonical.uri,
               title: canonical.title,
               posterUrl: canonical.posterUrl ?? best.posterUrl,
               genreName: best.genreName ?? canonical.genres?.[0],
@@ -104,12 +112,18 @@ export default function Home() {
               compatibilityScore: best.compatibilityScore,
               description: canonical.description ?? best.description,
               explanation: rec.explanation,
+              contextExtracted: rec.contextExtracted ? {
+                moodDescription: rec.contextExtracted.emotionalContext?.moodDescription,
+                desiredEnergyLevel: rec.contextExtracted.emotionalContext?.desiredEnergyLevel,
+                availableTime: rec.contextExtracted.requirementContext?.availableTime,
+              } : undefined,
             });
             return canonical.title;
           }
         } catch { /* ignore enrichment errors */ }
 
         setHeroMovie({
+          uri: best.uri,
           title: best.title,
           posterUrl: best.posterUrl,
           genreName: best.genreName,
@@ -117,6 +131,11 @@ export default function Home() {
           compatibilityScore: best.compatibilityScore,
           description: best.description,
           explanation: rec.explanation,
+          contextExtracted: rec.contextExtracted ? {
+            moodDescription: rec.contextExtracted.emotionalContext?.moodDescription,
+            desiredEnergyLevel: rec.contextExtracted.emotionalContext?.desiredEnergyLevel,
+            availableTime: rec.contextExtracted.requirementContext?.availableTime,
+          } : undefined,
         });
         return best.title;
       } else {
@@ -124,6 +143,7 @@ export default function Home() {
         const examples = await getMovieExamples(1);
         if (examples[0]) {
           setHeroMovie({ 
+            uri: examples[0].uri,
             title: examples[0].title, 
             posterUrl: examples[0].posterUrl,
             description: examples[0].description,
@@ -135,6 +155,7 @@ export default function Home() {
       const examples = await getMovieExamples(1).catch(() => []);
       if (examples[0]) {
         setHeroMovie({ 
+          uri: examples[0].uri,
           title: examples[0].title, 
           posterUrl: examples[0].posterUrl,
           description: examples[0].description,
@@ -146,27 +167,92 @@ export default function Home() {
     }
   }, []);
 
-  const loadCarousels = useCallback(async (featuredTitle?: string) => {
+  const loadCarousels = useCallback(async (userFavorites: FavoriteMovie[]) => {
     setCarouselLoading(true);
     try {
+      // Select random favorites for each carousel
+      const getRandomFavorite = () => userFavorites.length > 0 
+        ? userFavorites[Math.floor(Math.random() * userFavorites.length)]
+        : null;
+      
+      const randomFavorite1 = getRandomFavorite();
+      const randomFavorite2 = getRandomFavorite();
+      
+      // Update carousel 1 heading based on cold start status
+      if (randomFavorite1) {
+        setCarousel1Title("Porque viste");
+        setCarousel1FavoriteTitle(randomFavorite1.title);
+      } else {
+        setCarousel1Title("Películas para ti");
+        setCarousel1FavoriteTitle("Para que empieces a disfrutar");
+      }
+      
+      // Update carousel 2 heading based on favorites availability
+      if (randomFavorite2) {
+        setCarousel2Title("Como");
+        setCarousel2FavoriteTitle(randomFavorite2.title);
+      } else {
+        setCarousel2Title("Basado en tus favoritos");
+        setCarousel2FavoriteTitle("");
+      }
+      
+      // Load topological profile to find unexplored clusters
+      const getUnexploredClusterId = async () => {
+        try {
+          const profile = await getTopologicalProfile();
+          if (profile?.unexploredAdjacent && profile.unexploredAdjacent.length > 0) {
+            // Pick a random unexplored cluster for discovery
+            const randomCluster = profile.unexploredAdjacent[Math.floor(Math.random() * profile.unexploredAdjacent.length)];
+            return randomCluster.clusterId;
+          }
+        } catch (err) {
+          console.error("Failed to load topological profile:", err);
+          // If topological profile fails, fallback to null and use serendipity score
+        }
+        return null;
+      };
+      
       const [neighborhood, centrality, serendipity] = await Promise.allSettled([
-        // "Porque viste X" — neighborhood of the hero movie
-        featuredTitle
-          ? getMovieNeighborhood(featuredTitle, 1).then((r) => r.nodes.map((n) => ({
+        // "Porque viste X" — neighborhood of a random favorite (backend excludes center node)
+        randomFavorite1
+          ? getMovieNeighborhood(randomFavorite1.title, 1).then((r) => r.nodes.map((n) => ({
               uri: n.uri, title: n.title, posterUrl: n.poster_url ?? undefined,
               genres: n.genre ? [n.genre] : undefined, rating: n.rating ?? undefined,
+              runtime: n.runtime ?? undefined,
               description: n.description ?? undefined,
             } as MovieCardMovie)))
           : getMovieExamples(12).then((arr) => arr.map(toCardMovie)),
-        // "Basado en favoritos" — highest centrality (most connected)
-        getMoviesByCentrality(undefined, 12).then((r) => r.movies.map(recToCardMovie)),
-        // "Explora algo diferente" — centrality sorted by serendipity desc
-        getMoviesByCentrality(undefined, 20).then((r) =>
-          [...r.movies]
-            .sort((a, b) => (b.serendipityScore ?? 0) - (a.serendipityScore ?? 0))
-            .slice(0, 12)
-            .map(recToCardMovie)
-        ),
+        // "Como Y" — neighborhood of another random favorite (backend excludes center node)
+        randomFavorite2
+          ? getMovieNeighborhood(randomFavorite2.title, 1).then((r) => r.nodes.map((n) => ({
+              uri: n.uri, title: n.title, posterUrl: n.poster_url ?? undefined,
+              genres: n.genre ? [n.genre] : undefined, rating: n.rating ?? undefined,
+              runtime: n.runtime ?? undefined,
+              description: n.description ?? undefined,
+            } as MovieCardMovie)))
+          : getMoviesByCentrality(undefined, 12).then((r) => r.movies.map(recToCardMovie)),
+        // "Explora nuevos géneros" — from least-explored cluster or fallback to serendipity
+        (async () => {
+          const clusterId = await getUnexploredClusterId();
+          if (clusterId) {
+            return getClusterMovies(clusterId, 12).then(r => r.movies.map((m) => ({
+              uri: "", // ClusterMovie doesn't have uri yet, might need to enhance backend
+              title: m.title ?? "",
+              posterUrl: m.posterUrl ?? undefined,
+              genres: m.genres && m.genres.length > 0 ? m.genres : undefined,
+              rating: m.rating ?? undefined,
+              runtime: m.runtime ?? undefined,
+              description: undefined,
+            } as MovieCardMovie)));
+          }
+          // Fallback: use serendipity score from centrality
+          return getMoviesByCentrality(undefined, 20).then((r) =>
+            [...r.movies]
+              .sort((a, b) => (b.serendipityScore ?? 0) - (a.serendipityScore ?? 0))
+              .slice(0, 12)
+              .map(recToCardMovie)
+          );
+        })(),
       ]);
 
       const fallback = () => getMovieExamples(12).then((arr) => arr.map(toCardMovie));
@@ -181,10 +267,16 @@ export default function Home() {
     }
   }, []);
 
+  // Initial load: fetch favorites and hero on mount
   useEffect(() => {
-    loadFavorites();
-    loadHero().then((title) => loadCarousels(title));
-  }, [loadFavorites, loadHero, loadCarousels]);
+    const initialize = async () => {
+      const userFavorites = await loadFavorites();
+      await loadHero();
+      await loadCarousels(userFavorites);
+    };
+    initialize();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only run once on mount
 
   // ── Favorites helpers ─────────────────────────────────────────────────────
 
@@ -221,10 +313,23 @@ export default function Home() {
     router.push(`/search?q=${encodeURIComponent(movie.title)}`);
   }, [router]);
 
-  const handleHeroDetails = useCallback(() => {
+  const handleHeroDetails = useCallback(async () => {
     if (!heroMovie) return;
-    router.push(`/search?q=${encodeURIComponent(heroMovie.title)}`);
-  }, [heroMovie, router]);
+    try {
+      // Search for the full movie details
+      const results = await searchMovies({ q: heroMovie.title, limit: 5 });
+      const fullMovie = results.find(
+        (m) => m.title.trim().toLowerCase() === heroMovie.title.trim().toLowerCase()
+      ) ?? results[0];
+      
+      if (fullMovie) {
+        setSelectedMovie(fullMovie);
+        setShowDetailsDialog(true);
+      }
+    } catch {
+      toast.error("No se pudo cargar los detalles de la película");
+    }
+  }, [heroMovie]);
 
   // ── Render ────────────────────────────────────────────────────────────────
 
@@ -237,18 +342,18 @@ export default function Home() {
         featuredMovie={heroMovie}
         isLoading={heroLoading}
         isFavorite={heroFavorite}
-        onToggleFavorite={() => heroMovie && handleToggleFavorite({ title: heroMovie.title })}
+        onToggleFavorite={() => heroMovie && handleToggleFavorite(heroMovie as MovieCardMovie)}
         onViewDetails={handleHeroDetails}
       />
 
       {/* Recommendation Header */}
-      <RecommendationHeader />
+      <RecommendationHeader movieTitle={heroMovie?.title} genres={heroMovie?.genres} />
 
       {/* Carousels */}
       <div className="max-w-7xl mx-auto px-6 pb-20 flex flex-col gap-12">
         <RecommendationCarousel
-          title="Porque viste"
-          subtitle={heroMovie?.title ?? "…"}
+          title={carousel1Title}
+          subtitle={carousel1FavoriteTitle}
           movies={carousel1}
           isLoading={carouselLoading}
           viewAllHref="/search"
@@ -260,7 +365,8 @@ export default function Home() {
         />
 
         <RecommendationCarousel
-          title="Basado en tus favoritos"
+          title={carousel2Title}
+          subtitle={carousel2FavoriteTitle}
           movies={carousel2}
           isLoading={carouselLoading}
           viewAllHref="/favorites"
@@ -271,8 +377,8 @@ export default function Home() {
         />
 
         <RecommendationCarousel
-          title="Explora algo diferente"
-          subtitle="Serendipity picks"
+          title="Explora nuevos géneros"
+          subtitle="Descubre géneros nuevos basado en lo que no has explorado"
           movies={carousel3}
           isLoading={carouselLoading}
           viewAllHref="/search"

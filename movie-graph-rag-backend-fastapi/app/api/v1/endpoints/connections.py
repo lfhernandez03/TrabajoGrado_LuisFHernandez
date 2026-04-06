@@ -109,9 +109,14 @@ def get_neighborhood(
     Los nodos representan películas conectadas; las aristas indican el tipo de
     relación (director compartido o género compartido).
 
+    El nodo central (entrada) se excluye del resultado.
+
     Limitado a 60 nodos para mantener respuestas manejables.
     """
     graph = explorer.get_neighborhood(title, depth=depth)
+
+    # Excluir el nodo central (primer nodo) — solo devolver el vecindario real
+    neighborhood_nodes = graph.nodes[1:] if graph.nodes else []
 
     nodes = [
         NetworkNodeResponse(
@@ -121,8 +126,9 @@ def get_neighborhood(
             rating=n.rating,
             poster_url=n.poster_url,
             description=n.description,
+            runtime=getattr(n, "runtime", None),
         )
-        for n in graph.nodes
+        for n in neighborhood_nodes
     ]
     edges = [
         NetworkEdgeResponse(

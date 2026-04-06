@@ -142,6 +142,7 @@ export interface NetworkNode {
   rating?: number | null;
   poster_url?: string | null;
   description?: string | null;
+  runtime?: number | null;
 }
 
 export interface NetworkEdge {
@@ -170,6 +171,14 @@ export interface ConnectionPathResponse {
   found: boolean;
   hops: ConnectionHop[];
   length: number;
+}
+
+export interface ClusterMovie {
+  title: string;
+  rating?: number | null;
+  genres: string[];
+  posterUrl?: string | null;
+  runtime?: number | null;
 }
 
 /** Movies ranked by graph centrality (most "connected" in the knowledge graph) */
@@ -204,3 +213,18 @@ export const getConnectionPath = async (
   });
   return response.data;
 };
+
+/** Get user's topological profile (unexplored clusters, dominant genres, etc) */
+export const getTopologicalProfile = async () => {
+  const response = await api.get('/users/me/topology');
+  return response.data;
+};
+
+/** Get movies from a specific cluster (for exploring unexplored clusters) */
+export const getClusterMovies = (
+  clusterId: string,
+  limit = 12
+): Promise<{ cluster_id: string; movies: ClusterMovie[] }> =>
+  api.get(`/clusters/${clusterId}/movies`, {
+    params: { limit },
+  }).then(r => r.data);
