@@ -8,10 +8,12 @@ ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PIP_NO_CACHE_DIR=1
 
-# Install system dependencies
+# Install system dependencies (for entrypoint: wget, netcat; for build: gcc)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
     curl \
+    wget \
+    netcat-traditional \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy entire monorepo first (everything from root)
@@ -21,7 +23,13 @@ COPY . /tmp/repo
 RUN cp /tmp/repo/movie-graph-rag-backend-fastapi/pyproject.toml /app/ && \
     cp -r /tmp/repo/movie-graph-rag-backend-fastapi/app /app/ && \
     ([ -d /tmp/repo/movie-graph-rag-backend-fastapi/tests ] && cp -r /tmp/repo/movie-graph-rag-backend-fastapi/tests /app/ || true) && \
+    ([ -d /tmp/repo/movie-graph-rag-backend-fastapi/scripts ] && cp -r /tmp/repo/movie-graph-rag-backend-fastapi/scripts /app/ || true) && \
+    ([ -d /tmp/repo/movie-graph-rag-ontologies/data ] && cp -r /tmp/repo/movie-graph-rag-ontologies/data /app/ || true) && \
+    cp /tmp/repo/movie-graph-rag-backend-fastapi/entrypoint.sh /app/ 2>/dev/null || true && \
     rm -rf /tmp/repo
+
+# Make entrypoint executable
+RUN chmod +x /app/entrypoint.sh 2>/dev/null || true
 
 # Install dependencies
 RUN pip install --upgrade pip setuptools wheel && \
@@ -34,5 +42,5 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
 # Expose port
 EXPOSE 8000
 
-# Run app
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Run entrypoint (waits for Fuseki/MongoDB before starting FastAPI)
+CMD ["/bin/bash", "./entrypoint.sh"]

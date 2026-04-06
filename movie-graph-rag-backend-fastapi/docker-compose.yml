@@ -30,7 +30,7 @@ services:
     container_name: movie-rag-fuseki
     restart: unless-stopped
     environment:
-      ADMIN_PASSWORD: ${FUSEKI_USER:-admin}
+      ADMIN_PASSWORD: ${FUSEKI_PASSWORD:-admin}
       JVM_ARGS: -Xmx2g
     ports:
       - "3030:3030"
