@@ -1,0 +1,33 @@
+services:
+  - type: web
+    name: movie-graph-rag-api
+    env: python
+    buildCommand: pip install -e ./movie-graph-rag-backend-fastapi
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port 8000
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: MONGO_URI
+        fromDatabase:
+          name: mongodb-atlas
+          property: connectionString
+      - key: FUSEKI_URL
+        value: http://localhost:3030
+      - key: JWT_SECRET
+        generateValue: true
+      - key: GEMINI_API_KEY
+        value: ${GEMINI_API_KEY} 
+      - key: CORS_ALLOWED_ORIGINS
+        value: https://tudominio-frontend.vercel.app
+
+  - type: web
+    name: fuseki
+    dockerfilePath: ./Dockerfile.fuseki
+    envVars:
+      - key: ADMIN_PASSWORD
+        generateValue: true
+
+databases:
+  - name: mongodb-atlas
+    provider: mongodb
+    plan: free
