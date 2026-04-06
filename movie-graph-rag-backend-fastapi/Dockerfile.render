@@ -11,12 +11,17 @@ ENV PYTHONUNBUFFERED=1 \
 # Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy project files (desde monorepo root en Render)
-COPY movie-graph-rag-backend-fastapi/pyproject.toml .
-COPY movie-graph-rag-backend-fastapi/app/ ./app/
-COPY movie-graph-rag-backend-fastapi/tests/ ./tests/
+# Copy entire monorepo first (everything from root)
+COPY . /tmp/repo
+
+# Copy backend-specific files to /app
+RUN cp /tmp/repo/movie-graph-rag-backend-fastapi/pyproject.toml /app/ && \
+    cp -r /tmp/repo/movie-graph-rag-backend-fastapi/app /app/ && \
+    ([ -d /tmp/repo/movie-graph-rag-backend-fastapi/tests ] && cp -r /tmp/repo/movie-graph-rag-backend-fastapi/tests /app/ || true) && \
+    rm -rf /tmp/repo
 
 # Install dependencies
 RUN pip install --upgrade pip setuptools wheel && \
