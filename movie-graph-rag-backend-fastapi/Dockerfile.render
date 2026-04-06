@@ -1,9 +1,14 @@
 # ============================================================
 # Stage 1: Pre-load movie ontology data into TDB2 format.
-# Build context must be the repository root so we can access
-# both the backend and the ontologies directories.
+# We start Fuseki, upload all TTL files via its HTTP API, then
+# stop it — TDB2 persists to disk and is copied to stage 2.
+# This avoids fragile tdb2.tdbloader env-var / path issues.
 # ============================================================
 FROM stain/jena-fuseki:latest AS data-builder
+
+# curl is needed for the HTTP uploads during build
+RUN apt-get update && apt-get install -y --no-install-recommends curl \
+    && rm -rf /var/lib/apt/lists/*
 
 # Copy ontology TTL files
 COPY movie-graph-rag-ontologies/data/ontologies/base/movie-ontology.ttl    /ontologies/
@@ -12,16 +17,40 @@ COPY movie-graph-rag-ontologies/data/ontologies/bridge/bridge-ontology.ttl /onto
 COPY movie-graph-rag-ontologies/data/ontologies/instances/movies_data.ttl  /ontologies/
 COPY movie-graph-rag-ontologies/data/ontologies/instances/bridge_data.ttl  /ontologies/
 
-# Load all TTL files into a TDB2 database at build time.
-# Jena tools live at /jena/bin/ inside the stain/jena-fuseki image.
-RUN mkdir -p /tdb2-data && \
-    /jena/bin/tdb2.tdbloader \
-        --loc /tdb2-data \
+# Create required Fuseki directories
+RUN mkdir -p /fuseki/databases /fuseki/logs
+
+# Start Fuseki with a TDB2 backend, upload all TTL files via the GSP
+# endpoint, then stop gracefully so TDB2 flushes everything to disk.
+# --tdb2 --loc writes triples directly to disk, keeping heap usage low.
+RUN set -e; \
+    java -Xmx1g -jar /jena-fuseki/fuseki-server.jar \
+        --port 3030 \
+        --tdb2 --loc=/fuseki/databases/movies /movies \
+        >/tmp/fuseki-build.log 2>&1 & \
+    FPID=$!; \
+    READY=0; \
+    for i in $(seq 1 45); do \
+        wget -q --spider http://localhost:3030/$/ping 2>/dev/null && READY=1 && break; \
+        sleep 2; \
+    done; \
+    if [ "$READY" -eq 0 ]; then \
+        echo "=== Fuseki failed to start ===" && cat /tmp/fuseki-build.log && exit 1; \
+    fi; \
+    for f in \
         /ontologies/movie-ontology.ttl \
         /ontologies/context-ontology.ttl \
         /ontologies/bridge-ontology.ttl \
         /ontologies/movies_data.ttl \
-        /ontologies/bridge_data.ttl
+        /ontologies/bridge_data.ttl; \
+    do \
+        echo "Loading $f ..."; \
+        curl -sf -X POST "http://localhost:3030/movies/data" \
+             -H "Content-Type: text/turtle" \
+             --data-binary "@$f" \
+        || (echo "Failed to upload $f" && cat /tmp/fuseki-build.log && exit 1); \
+    done; \
+    kill $FPID && sleep 5 && echo "TDB2 data loaded successfully."
 
 # ============================================================
 # Stage 2: Runtime — Python 3.11 + JRE + Fuseki + FastAPI
@@ -47,7 +76,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY --from=data-builder /jena-fuseki /jena-fuseki
 
 # Copy the pre-loaded TDB2 database baked at build time
-COPY --from=data-builder /tdb2-data /fuseki/databases/movies
+COPY --from=data-builder /fuseki/databases/movies /fuseki/databases/movies
 
 # Create the Fuseki directory structure expected at runtime
 RUN mkdir -p /fuseki/configuration /fuseki/logs /fuseki/system /fuseki/system_files
