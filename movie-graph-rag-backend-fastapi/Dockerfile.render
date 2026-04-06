@@ -30,8 +30,10 @@ COPY movie-graph-rag-ontologies/data/ontologies/instances/bridge_data.ttl  /onto
 RUN mkdir -p /tdb2-data
 
 # Start Fuseki with a TDB2 backend, upload all TTL files, stop gracefully.
+# Must run from /opt/fuseki so the JAR finds its webapp/ directory.
 # TDB2 writes straight to disk so heap usage stays low even for large files.
-RUN java -Xmx1g -jar /opt/fuseki/fuseki-server.jar \
+WORKDIR /opt/fuseki
+RUN java -Xmx1g -jar fuseki-server.jar \
         --port 3030 --tdb2 --loc=/tdb2-data /movies \
         >/tmp/fuseki-load.log 2>&1 & \
     FPID=$! ; \

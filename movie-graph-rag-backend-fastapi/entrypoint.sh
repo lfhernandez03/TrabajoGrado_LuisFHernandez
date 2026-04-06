@@ -3,12 +3,15 @@ set -e
 
 echo "[$(date)] Starting Fuseki with pre-loaded TDB2 data..."
 
-# FUSEKI_BASE tells Fuseki to load /fuseki/configuration/*.ttl automatically
+# Must run from /opt/fuseki so fuseki-server.jar finds its webapp/ directory.
+# FUSEKI_BASE tells Fuseki to auto-load /fuseki/configuration/*.ttl
+cd /opt/fuseki
 FUSEKI_BASE=/fuseki \
 java -Xmx180m -Xms64m \
-    -jar /opt/fuseki/fuseki-server.jar \
+    -jar fuseki-server.jar \
     --port 3030 \
     &
+cd /app
 
 echo "[$(date)] Waiting for Fuseki..."
 max=60
