@@ -64,27 +64,11 @@ export default function RegisterPage() {
       setIsLoading(false);
     }
   };
-
-  const Field = ({ id, label, type = "text", icon: Icon, placeholder, value, onChange, error, disabled }: {
-    id: string; label: string; type?: string; icon: React.ComponentType<{ className?: string }>;
-    placeholder: string; value: string; onChange: (v: string) => void; error?: string; disabled?: boolean;
-  }) => (
-    <div className="flex flex-col gap-1.5">
-      <label htmlFor={id} className="text-xs font-medium text-muted uppercase tracking-wider">{label}</label>
-      <div className="relative">
-        <Icon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" />
-        <Input id={id} type={type} variant="default" placeholder={placeholder}
-          className={cn("pl-9", error && "border-red-600/60")}
-          value={value} onChange={(e) => onChange(e.target.value)} required disabled={disabled} />
-      </div>
-      {error && <p className="text-xs text-red-400">{error}</p>}
-    </div>
-  );
-
+  
   return (
     <div className="min-h-screen bg-bg flex items-center justify-center p-4">
       <div className="fixed inset-0 pointer-events-none">
-        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[400px] bg-teal/5 rounded-full blur-3xl" />
+        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-150 h-100 bg-teal/5 rounded-full blur-3xl" />
       </div>
 
       <div className="relative w-full max-w-sm animate-fade-in">
