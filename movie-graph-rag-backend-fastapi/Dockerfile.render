@@ -6,9 +6,8 @@
 # ============================================================
 FROM stain/jena-fuseki:latest AS data-builder
 
-# curl is needed for the HTTP uploads during build
-RUN apt-get update && apt-get install -y --no-install-recommends curl \
-    && rm -rf /var/lib/apt/lists/*
+# curl is needed for the HTTP uploads during build (Alpine-based image)
+RUN apk add --no-cache curl
 
 # Copy ontology TTL files
 COPY movie-graph-rag-ontologies/data/ontologies/base/movie-ontology.ttl    /ontologies/
