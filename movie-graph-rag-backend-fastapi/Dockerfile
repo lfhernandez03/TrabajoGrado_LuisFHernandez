@@ -21,6 +21,7 @@ COPY app/ ./app/
 COPY tests/ ./tests/
 COPY scripts/ ./scripts/
 COPY data/ ./data/
+COPY fuseki-init/ ./fuseki-init/
 COPY entrypoint.sh .
 
 # Make entrypoint executable

@@ -5,7 +5,7 @@ echo "[$(date)] Starting CineSemantico services..."
 
 # Wait for Fuseki to be healthy
 echo "[$(date)] Waiting for Fuseki to be ready..."
-max_attempts=30
+max_attempts=60
 attempt=0
 
 while [ $attempt -lt $max_attempts ]; do
@@ -41,22 +41,36 @@ if [ $attempt -eq $max_attempts ]; then
   exit 1
 fi
 
-# Check if Fuseki dataset exists, if not initialize it
-echo "[$(date)] Checking if Fuseki dataset '${FUSEKI_DATASET:-movies}' exists..."
-DATASET_CHECK=$(wget -q -O - "http://fuseki:3030/" 2>/dev/null || echo "")
+# Check if dataset exists; if not, create and load from dump
+DATASET="${FUSEKI_DATASET:-movies}"
+echo "[$(date)] Checking if dataset '$DATASET' exists and has data..."
 
-if echo "$DATASET_CHECK" | grep -q "${FUSEKI_DATASET:-movies}"; then
-  echo "[$(date)] ✅ Dataset already exists"
+DATASET_CHECK=$(wget -q -O - "http://fuseki:3030/$/datasets" 2>/dev/null || echo "")
+
+if echo "$DATASET_CHECK" | grep -q "\"$DATASET\""; then
+  echo "[$(date)] ℹ️  Dataset exists. Checking if it has data..."
+  
+  # Try a simple query to see if dataset has data
+  TRIPLE_COUNT=$(wget -q -O - "http://fuseki:3030/$DATASET/query?query=SELECT%20COUNT%28%3Fs%29%20WHERE%20%7B%3Fs%20%3Fp%20%3Fo%7D" 2>/dev/null || echo "0")
+  
+  if echo "$TRIPLE_COUNT" | grep -q '"value" : "0"'; then
+    echo "[$(date)] ⚠️  Dataset is empty. Loading from dump..."
+    if [ -f "/app/fuseki-init/movies-dump.ttl" ]; then
+      echo "[$(date)] Loading TTL dump into Fuseki..."
+      curl -X POST "http://fuseki:3030/$DATASET/upload" \
+        -H "Content-Type: multipart/form-data" \
+        -F "file=@/app/fuseki-init/movies-dump.ttl" 2>/dev/null || echo "Upload attempt completed"
+      echo "[$(date)] ✅ Dump loaded (or attempted)"
+    else
+      echo "[$(date)] [WARN] No dump file found at /app/fuseki-init/movies-dump.ttl"
+    fi
+  else
+    echo "[$(date)] ✅ Dataset has data. Skipping load."
+  fi
 else
-  echo "[$(date)] ⚠️  Dataset not found. Create it in Fuseki UI or run pipeline.py"
+  echo "[$(date)] [WARN] Dataset '$DATASET' not found. Create it manually or run pipeline."
 fi
-
-# Optional: Load data from pipeline if in the right environment
-# ⚠️  DISABLED: Render kills the container after ~30s without response
-# if [ "$APP_ENV" = "production" ] && [ -f "/app/data/scripts/pipeline.py" ]; then
-#   echo "[$(date)] Production mode detected. Attempting to load initial data..."
-#   cd /app && python data/scripts/pipeline.py --max-movies 5000 --skip-enrichment --no-incremental 2>&1 || true
-# fi
 
 echo "[$(date)] Starting FastAPI application..."
 exec uvicorn app.main:app --host 0.0.0.0 --port ${APP_PORT:-8000}
+

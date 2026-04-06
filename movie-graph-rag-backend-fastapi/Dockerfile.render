@@ -24,6 +24,7 @@ RUN cp /tmp/repo/movie-graph-rag-backend-fastapi/pyproject.toml /app/ && \
     cp -r /tmp/repo/movie-graph-rag-backend-fastapi/app /app/ && \
     ([ -d /tmp/repo/movie-graph-rag-backend-fastapi/tests ] && cp -r /tmp/repo/movie-graph-rag-backend-fastapi/tests /app/ || true) && \
     ([ -d /tmp/repo/movie-graph-rag-backend-fastapi/scripts ] && cp -r /tmp/repo/movie-graph-rag-backend-fastapi/scripts /app/ || true) && \
+    ([ -d /tmp/repo/movie-graph-rag-backend-fastapi/fuseki-init ] && cp -r /tmp/repo/movie-graph-rag-backend-fastapi/fuseki-init /app/ || true) && \
     ([ -d /tmp/repo/movie-graph-rag-ontologies/data ] && cp -r /tmp/repo/movie-graph-rag-ontologies/data /app/ || true) && \
     cp /tmp/repo/movie-graph-rag-backend-fastapi/entrypoint.sh /app/ 2>/dev/null || true && \
     rm -rf /tmp/repo
