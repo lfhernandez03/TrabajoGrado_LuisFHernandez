@@ -27,7 +27,7 @@ services:
   # Apache Fuseki - Triple Store
   fuseki:
     image: stain/jena-fuseki:latest
-    container_name: movie-rag-fuseki
+    container_name: movie-graph-rag-fuseki
     restart: unless-stopped
     environment:
       ADMIN_PASSWORD: ${FUSEKI_PASSWORD:-admin}
@@ -37,7 +37,7 @@ services:
     volumes:
       - fuseki_data:/fuseki
     networks:
-      - movie-rag-network
+      - movie--graph-rag-network
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3030/$/ping"]
       interval: 10s
@@ -50,7 +50,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: movie-rag-api
+    container_name: movie-graph-rag-api
     restart: unless-stopped
     ports:
       - "${APP_PORT:-8000}:8000"
@@ -64,7 +64,7 @@ services:
       
       # Fuseki - usa hostname del servicio en compose
       FUSEKI_URL: http://fuseki:3030
-      FUSEKI_DATASET: ${FUSEKI_DATASET:-movies}
+      FUSEKI_DATASET: ${FUSEKI_DATASET:-Cine}
       FUSEKI_USER: ${FUSEKI_USER:-admin}
       FUSEKI_PASSWORD: ${FUSEKI_PASSWORD:-admin}
       FUSEKI_TIMEOUT_SECONDS: 8
@@ -94,7 +94,7 @@ services:
       - ./tests:/app/tests:ro
     
     networks:
-      - movie-rag-network
+      - movie-graph-rag-network
     
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]

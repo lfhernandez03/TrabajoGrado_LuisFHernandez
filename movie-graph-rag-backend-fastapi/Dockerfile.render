@@ -1,57 +1,69 @@
-# ============================================================
-# Stage 1: Pre-load movie ontology data into TDB2 format.
-# We start Fuseki, upload all TTL files via its HTTP API, then
-# stop it — TDB2 persists to disk and is copied to stage 2.
-# This avoids fragile tdb2.tdbloader env-var / path issues.
-# ============================================================
-FROM stain/jena-fuseki:latest AS data-builder
+# =============================================================================
+# Stage 1 — Load ontology data into Fuseki TDB2
+#
+# Uses eclipse-temurin (Debian, runs as root) so apt-get and curl work
+# without permission issues. Downloads a pinned Fuseki version, starts it,
+# uploads all TTL files via its HTTP API, then stops it cleanly.
+# The TDB2 files on disk survive the kill and are copied to stage 2.
+# =============================================================================
+FROM eclipse-temurin:17-jre AS data-builder
 
-# Copy ontology TTL files
+RUN apt-get update && apt-get install -y --no-install-recommends wget curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Download Fuseki (pinned; archive.apache.org keeps all versions permanently)
+ARG FUSEKI_VERSION=4.10.0
+RUN wget -q --show-progress \
+        "https://archive.apache.org/dist/jena/binaries/apache-jena-fuseki-${FUSEKI_VERSION}.tar.gz" \
+        -O /tmp/fuseki.tar.gz \
+    && tar -xzf /tmp/fuseki.tar.gz -C /opt \
+    && mv "/opt/apache-jena-fuseki-${FUSEKI_VERSION}" /opt/fuseki \
+    && rm /tmp/fuseki.tar.gz
+
+# Copy ontology TTL files from the monorepo (build context = repo root)
 COPY movie-graph-rag-ontologies/data/ontologies/base/movie-ontology.ttl    /ontologies/
 COPY movie-graph-rag-ontologies/data/ontologies/base/context-ontology.ttl  /ontologies/
 COPY movie-graph-rag-ontologies/data/ontologies/bridge/bridge-ontology.ttl /ontologies/
 COPY movie-graph-rag-ontologies/data/ontologies/instances/movies_data.ttl  /ontologies/
 COPY movie-graph-rag-ontologies/data/ontologies/instances/bridge_data.ttl  /ontologies/
 
-# Create required Fuseki directories
-RUN mkdir -p /fuseki/databases /fuseki/logs
+RUN mkdir -p /tdb2-data
 
-# Start Fuseki with a TDB2 backend, upload all TTL files via the GSP
-# endpoint, then stop gracefully so TDB2 flushes everything to disk.
-# --tdb2 --loc writes triples directly to disk, keeping heap usage low.
-RUN set -e; \
-    java -Xmx1g -jar /jena-fuseki/fuseki-server.jar \
-        --port 3030 \
-        --tdb2 --loc=/fuseki/databases/movies /movies \
-        >/tmp/fuseki-build.log 2>&1 & \
-    FPID=$!; \
-    READY=0; \
-    for i in $(seq 1 45); do \
-        wget -q --spider http://localhost:3030/$/ping 2>/dev/null && READY=1 && break; \
-        sleep 2; \
-    done; \
-    if [ "$READY" -eq 0 ]; then \
-        echo "=== Fuseki failed to start ===" && cat /tmp/fuseki-build.log && exit 1; \
-    fi; \
+# Start Fuseki with a TDB2 backend, upload all TTL files, stop gracefully.
+# TDB2 writes straight to disk so heap usage stays low even for large files.
+RUN java -Xmx1g -jar /opt/fuseki/fuseki-server.jar \
+        --port 3030 --tdb2 --loc=/tdb2-data /movies \
+        >/tmp/fuseki-load.log 2>&1 & \
+    FPID=$! ; \
+    echo "Waiting for Fuseki to start..." ; \
+    READY=0 ; \
+    for i in $(seq 1 60) ; do \
+        wget -q --spider http://localhost:3030/$/ping 2>/dev/null \
+            && READY=1 && echo "Fuseki is ready." && break ; \
+        sleep 2 ; \
+    done ; \
+    if [ "$READY" -eq 0 ] ; then \
+        echo "ERROR: Fuseki did not start:" && cat /tmp/fuseki-load.log && exit 1 ; \
+    fi ; \
     for f in \
         /ontologies/movie-ontology.ttl \
         /ontologies/context-ontology.ttl \
         /ontologies/bridge-ontology.ttl \
         /ontologies/movies_data.ttl \
-        /ontologies/bridge_data.ttl; \
+        /ontologies/bridge_data.ttl ; \
     do \
-        echo "Loading $f ..."; \
-        wget -q -O /dev/null \
-             --header="Content-Type: text/turtle" \
-             --post-file="$f" \
-             "http://localhost:3030/movies/data" \
-        || (echo "Failed to upload $f" && cat /tmp/fuseki-build.log && exit 1); \
-    done; \
-    kill $FPID && sleep 5 && echo "TDB2 data loaded successfully."
+        echo "Loading $(basename $f) ..." ; \
+        curl -sf -X POST "http://localhost:3030/movies/data" \
+             -H "Content-Type: text/turtle" \
+             --data-binary "@$f" \
+        || (echo "ERROR uploading $f:" && cat /tmp/fuseki-load.log && exit 1) ; \
+    done ; \
+    echo "All data loaded. Stopping Fuseki..." ; \
+    kill $FPID ; sleep 5 ; echo "Stage 1 complete."
 
-# ============================================================
-# Stage 2: Runtime — Python 3.11 + JRE + Fuseki + FastAPI
-# ============================================================
+# =============================================================================
+# Stage 2 — Runtime: Python 3.11 + JRE + Fuseki + FastAPI
+# =============================================================================
 FROM python:3.11-slim
 
 WORKDIR /app
@@ -60,43 +72,33 @@ ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PIP_NO_CACHE_DIR=1
 
-# OpenJDK 17 (headless) to run Fuseki; build tools for Python packages
+# default-jre-headless to run Fuseki; wget for the health-wait loop; gcc for some Python packages
 RUN apt-get update && apt-get install -y --no-install-recommends \
     default-jre-headless \
-    curl \
     wget \
-    netcat-traditional \
     gcc \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy Fuseki server JAR and helper scripts from the builder stage
-COPY --from=data-builder /jena-fuseki /jena-fuseki
+# Fuseki server from stage 1
+COPY --from=data-builder /opt/fuseki /opt/fuseki
 
-# Copy the pre-loaded TDB2 database baked at build time
-COPY --from=data-builder /fuseki/databases/movies /fuseki/databases/movies
+# Pre-loaded TDB2 database
+COPY --from=data-builder /tdb2-data /fuseki/databases/movies
 
-# Create the Fuseki directory structure expected at runtime
+# Fuseki runtime directories + dataset configuration
 RUN mkdir -p /fuseki/configuration /fuseki/logs /fuseki/system /fuseki/system_files
-
-# Install the dataset assembler configuration for Fuseki
 COPY movie-graph-rag-backend-fastapi/fuseki-init/movies-config.ttl /fuseki/configuration/movies.ttl
 
-# Copy backend application
+# Python application
 COPY movie-graph-rag-backend-fastapi/pyproject.toml /app/
-COPY movie-graph-rag-backend-fastapi/app /app/app/
-COPY movie-graph-rag-backend-fastapi/entrypoint.sh /app/entrypoint.sh
-
+COPY movie-graph-rag-backend-fastapi/app             /app/app/
+COPY movie-graph-rag-backend-fastapi/entrypoint.sh   /app/entrypoint.sh
 RUN chmod +x /app/entrypoint.sh
 
-# Install Python dependencies
-RUN pip install --upgrade pip setuptools wheel && \
-    pip install -e .
+RUN pip install --upgrade pip setuptools wheel && pip install -e .
 
-# Health check against FastAPI
 HEALTHCHECK --interval=30s --timeout=10s --start-period=120s --retries=3 \
     CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')" || exit 1
 
-# Render detects this port to mark the service as live
 EXPOSE 8000
-
 CMD ["/bin/bash", "/app/entrypoint.sh"]
