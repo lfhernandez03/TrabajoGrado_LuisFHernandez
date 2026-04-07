@@ -39,6 +39,5 @@ services:
       - key: JWT_SECRET
         generateValue: true
 
-      # Update to your actual frontend URL
       - key: CORS_ALLOWED_ORIGINS
-        value: https://tudominio-frontend.vercel.app
+        value: https://movie-graph-rag-frontend.vercel.app

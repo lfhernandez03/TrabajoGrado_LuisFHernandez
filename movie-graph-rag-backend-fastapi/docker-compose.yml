@@ -37,7 +37,7 @@ services:
     volumes:
       - fuseki_data:/fuseki
     networks:
-      - movie--graph-rag-network
+      - movie-rag-network
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3030/$/ping"]
       interval: 10s

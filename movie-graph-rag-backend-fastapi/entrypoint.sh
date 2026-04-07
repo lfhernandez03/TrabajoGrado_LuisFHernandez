@@ -3,14 +3,14 @@ set -e
 
 echo "[$(date)] Starting Fuseki with pre-loaded TDB2 data..."
 
-# Must run from /opt/fuseki so fuseki-server.jar finds its webapp/ directory.
-# FUSEKI_BASE tells Fuseki to auto-load /fuseki/configuration/*.ttl
 cd /opt/fuseki
 FUSEKI_BASE=/fuseki \
 java -Xmx180m -Xms64m \
     -jar fuseki-server.jar \
     --port 3030 \
+    >/tmp/fuseki-runtime.log 2>&1 \
     &
+FUSEKI_PID=$!
 cd /app
 
 echo "[$(date)] Waiting for Fuseki..."
@@ -24,9 +24,11 @@ while [ $i -lt $max ]; do
 done
 
 if [ $i -eq $max ]; then
-    echo "[$(date)] ERROR: Fuseki failed to start after $((max * 2))s"
+    echo "[$(date)] ERROR: Fuseki failed to start. Log:"
+    cat /tmp/fuseki-runtime.log
     exit 1
 fi
 
+echo "[$(date)] FUSEKI_URL=${FUSEKI_URL}"
 echo "[$(date)] Starting FastAPI on port ${PORT:-8000}..."
 exec uvicorn app.main:app --host 0.0.0.0 --port "${PORT:-8000}"

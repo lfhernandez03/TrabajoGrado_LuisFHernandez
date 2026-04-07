@@ -45,7 +45,7 @@ RUN java -Xmx1g -jar fuseki-server.jar \
         sleep 2 ; \
     done ; \
     if [ "$READY" -eq 0 ] ; then \
-        echo "ERROR: Fuseki did not start:" && cat /tmp/fuseki-load.log && exit 1 ; \
+        echo "ERROR: Fuseki did not start:" ; cat /tmp/fuseki-load.log ; exit 1 ; \
     fi ; \
     for f in \
         /ontologies/movie-ontology.ttl \
@@ -55,13 +55,18 @@ RUN java -Xmx1g -jar fuseki-server.jar \
         /ontologies/bridge_data.ttl ; \
     do \
         echo "Loading $(basename $f) ..." ; \
-        curl -sf -X POST "http://localhost:3030/movies/data" \
+        if ! curl -sf -X POST "http://localhost:3030/movies/data" \
              -H "Content-Type: text/turtle" \
-             --data-binary "@$f" \
-        || (echo "ERROR uploading $f:" && cat /tmp/fuseki-load.log && exit 1) ; \
+             --data-binary "@$f" ; then \
+            echo "ERROR uploading $f. Fuseki log:" ; \
+            cat /tmp/fuseki-load.log ; \
+            kill $FPID ; \
+            exit 1 ; \
+        fi ; \
     done ; \
     echo "All data loaded. Stopping Fuseki..." ; \
-    kill $FPID ; sleep 5 ; echo "Stage 1 complete."
+    kill -TERM $FPID && wait $FPID ; \
+    echo "Stage 1 complete."
 
 # =============================================================================
 # Stage 2 — Runtime: Python 3.11 + JRE + Fuseki + FastAPI
