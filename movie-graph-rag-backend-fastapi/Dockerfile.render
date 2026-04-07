@@ -17,9 +17,10 @@ RUN wget -q --show-progress \
     && mv "/opt/apache-jena-fuseki-${FUSEKI_VERSION}" /opt/fuseki \
     && rm /tmp/fuseki.tar.gz
 
-# Copy base ontology schemas (instance data generated at runtime)
+# Copy all ontologies (schemas + pre-generated instance data)
 COPY movie-graph-rag-ontologies/data/ontologies/base/ /ontologies/base/
 COPY movie-graph-rag-ontologies/data/ontologies/bridge/ /ontologies/bridge/
+COPY movie-graph-rag-ontologies/data/ontologies/instances/ /ontologies/instances/
 
 # =============================================================================
 # Stage 2 — Runtime: Python 3.11 + JRE + Fuseki + FastAPI + Pipeline
@@ -47,7 +48,8 @@ COPY --from=fuseki-builder /opt/fuseki /opt/fuseki
 COPY --from=fuseki-builder /ontologies /ontologies
 
 # Fuseki configuration directory
-RUN mkdir -p /fuseki/configuration /fuseki/logs /fuseki/system /fuseki/system_files /fuseki/databases
+RUN mkdir -p /fuseki/configuration /fuseki/logs /fuseki/system /fuseki/system_files /fuseki/databases \
+    && mkdir -p /app/ontologies/instances /app/dataset/processed
 
 # Python application files
 COPY movie-graph-rag-backend-fastapi/pyproject.toml /app/

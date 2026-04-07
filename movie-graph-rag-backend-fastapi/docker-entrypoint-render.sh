@@ -83,14 +83,16 @@ if [ $READY -eq 0 ]; then
 fi
 
 # =============================================================================
-# Load Base Ontologies
+# Load All Ontologies (schemas + pre-generated instance data)
 # =============================================================================
-log_info "Loading base ontology schemas..."
+log_info "Loading ontologies into Fuseki..."
 
 ONTOLOGY_FILES=(
     "/ontologies/base/movie-ontology.ttl"
     "/ontologies/base/context-ontology.ttl"
     "/ontologies/bridge/bridge-ontology.ttl"
+    "/ontologies/instances/movies_data.ttl"
+    "/ontologies/instances/bridge_data.ttl"
 )
 
 for f in "${ONTOLOGY_FILES[@]}"; do
@@ -98,49 +100,16 @@ for f in "${ONTOLOGY_FILES[@]}"; do
         log_info "  Loading $(basename $f)..."
         if ! curl -sf -X POST "http://localhost:3030/${FUSEKI_DATASET}/data" \
              -H "Content-Type: text/turtle" \
-             --data-binary "@$f" >/dev/null 2>&1; then
-            log_error "Failed to load $f"
+             --data-binary "@$f"; then
+            log_error "❌ Failed to load $f"
             kill $FUSEKI_PID 2>/dev/null || true
             exit 1
         fi
         log_info "  ✅ $(basename $f) loaded"
+    else
+        log_warn "  ⚠️  $f not found, skipping"
     fi
 done
-
-# =============================================================================
-# Execute Pipeline (generates instance data)
-# =============================================================================
-log_info "Starting data pipeline to generate instance data..."
-
-cd /app/scripts
-
-# Check if pipeline.py exists
-if [ ! -f "pipeline.py" ]; then
-    log_warn "⚠️  pipeline.py not found at /app/scripts/pipeline.py, skipping data generation"
-    log_warn "   Only base ontologies will be available"
-else
-    # Set environment for pipeline
-    export FUSEKI_URL=http://localhost:3030
-    export FUSEKI_DATASET=${FUSEKI_DATASET}
-    export FUSEKI_USER=
-    export FUSEKI_PASSWORD=""
-    export PYTHONUNBUFFERED=1
-    
-    # Run pipeline with max 5000 movies on Render (balance between data & startup time)
-    # Set via MAX_MOVIES env var, default to 5000
-    MAX_MOVIES=${MAX_MOVIES:-5000}
-    
-    log_info "Running pipeline.py with --max-movies $MAX_MOVIES --skip-enrichment --no-incremental..."
-    
-    if python pipeline.py --max-movies $MAX_MOVIES --skip-enrichment --no-incremental 2>&1 | tee /tmp/pipeline.log; then
-        log_info "✅ Pipeline completed successfully!"
-    else
-        log_error "⚠️  Pipeline failed (non-critical - base ontologies available)"
-        log_error "Pipeline logs (last 30 lines):"
-        tail -30 /tmp/pipeline.log
-        # Don't exit - let FastAPI start anyway with just base ontologies
-    fi
-fi
 
 # =============================================================================
 # Compute Network Metrics (Phase 6: centrality, communities, cluster labels)

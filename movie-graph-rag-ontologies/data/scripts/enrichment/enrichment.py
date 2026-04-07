@@ -11,7 +11,7 @@ if str(SCRIPTS_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPTS_DIR))
 
 DATA_ROOT = Path(__file__).resolve().parents[2]
-PROCESSED_DIR = DATA_ROOT / "data" / "processed"
+PROCESSED_DIR = DATA_ROOT / "dataset" / "processed"
 
 from config.config import *
 

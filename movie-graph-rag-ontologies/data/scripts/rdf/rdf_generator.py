@@ -24,7 +24,7 @@ TMDB_IMAGE_BASE_URL = "https://image.tmdb.org/t/p/w500"
 
 # Paths absolutos relativos a DATA
 DATA_ROOT = Path(__file__).resolve().parents[2]
-PROCESSED_DIR = DATA_ROOT / "data" / "processed"
+PROCESSED_DIR = DATA_ROOT / "dataset" / "processed"
 ONTOLOGIES_DIR = DATA_ROOT / "ontologies" / "instances"
 
 class RDFMovieGenerator:
