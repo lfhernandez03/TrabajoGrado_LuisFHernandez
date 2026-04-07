@@ -42,7 +42,7 @@ services:
 
         # Idempotencia: si el dataset ya tiene datos, salir
         echo "[data-loader] Verificando si los datos ya estan cargados..."
-        if curl -sf -u admin:admin "http://fuseki:3030/Cine/query" \
+        if curl -sf -u admin:admin "http://localhost:3030/Cine/query" \
             --data "query=ASK%20%7B%20%3Fs%20%3Fp%20%3Fo%20%7D" 2>/dev/null \
             | grep -q '"boolean":true'; then
           echo "[data-loader] Datos ya cargados, omitiendo carga."
@@ -50,7 +50,7 @@ services:
         fi
 
         echo "[data-loader] Creando dataset 'Cine'..."
-        curl -sf -u admin:admin -X POST "http://fuseki:3030/$$/datasets" \
+        curl -sf -u admin:admin -X POST "http://localhost:3030/$$/datasets" \
           --data "dbName=Cine&dbType=tdb2" \
           && echo "[data-loader] Dataset creado." \
           || echo "[data-loader] Dataset ya existe (OK)."
@@ -62,7 +62,7 @@ services:
             /ontologies/instances/movies_data.ttl \
             /ontologies/instances/bridge_data.ttl; do
           echo "[data-loader] Cargando $$(basename $$f)..."
-          if ! curl -sf -u admin:admin -X POST "http://fuseki:3030/Cine/data" \
+          if ! curl -sf -u admin:admin -X POST "http://localhost:3030/Cine/data" \
               -H "Content-Type: text/turtle" \
               --data-binary "@$$f"; then
             echo "[data-loader] ERROR al cargar $$f"

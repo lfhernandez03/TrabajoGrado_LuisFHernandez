@@ -34,18 +34,19 @@ RUN mkdir -p /tdb2-data
 # TDB2 writes straight to disk so heap usage stays low even for large files.
 WORKDIR /opt/fuseki
 RUN java -Xmx1g -jar fuseki-server.jar \
-        --port 3030 --tdb2 --loc=/tdb2-data /movies \
+        --port 3030 --tdb2 --update --loc=/tdb2-data /movies \
         >/tmp/fuseki-load.log 2>&1 & \
     FPID=$! ; \
-    echo "Waiting for Fuseki to start..." ; \
+    echo "Waiting for Fuseki to start (PID=$FPID)..." ; \
     READY=0 ; \
-    for i in $(seq 1 60) ; do \
+    for i in $(seq 1 90) ; do \
+        kill -0 $FPID 2>/dev/null || { echo "Fuseki process died early. Log:"; cat /tmp/fuseki-load.log; exit 1; } ; \
         wget -q --spider http://localhost:3030/$/ping 2>/dev/null \
-            && READY=1 && echo "Fuseki is ready." && break ; \
+            && READY=1 && echo "Fuseki is ready at try $i." && break ; \
         sleep 2 ; \
     done ; \
     if [ "$READY" -eq 0 ] ; then \
-        echo "ERROR: Fuseki did not start:" ; cat /tmp/fuseki-load.log ; exit 1 ; \
+        echo "ERROR: Fuseki did not start after timeout. Log:" ; cat /tmp/fuseki-load.log ; exit 1 ; \
     fi ; \
     for f in \
         /ontologies/movie-ontology.ttl \
@@ -65,8 +66,7 @@ RUN java -Xmx1g -jar fuseki-server.jar \
         fi ; \
     done ; \
     echo "All data loaded. Stopping Fuseki..." ; \
-    kill -TERM $FPID && wait $FPID ; \
-    echo "Stage 1 complete."
+    kill $FPID ; wait $FPID ; true
 
 # =============================================================================
 # Stage 2 — Runtime: Python 3.11 + JRE + Fuseki + FastAPI
