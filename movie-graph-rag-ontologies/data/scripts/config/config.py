@@ -1,25 +1,40 @@
-import os 
+import os
+import logging
 from dotenv import load_dotenv
 
 load_dotenv()
 
-# API KEYS - Validar variables de entorno criticas
+logger = logging.getLogger(__name__)
+
+# API KEYS - opcionales; solo requeridas cuando se ejecuta el paso de enrichment
 OMDB_API_KEY = os.getenv('OMDB_API_KEY')
 TMDB_API_KEY = os.getenv('TMDB_API_KEY')
 
 if not OMDB_API_KEY:
-    raise ValueError(
-        "OMDB_API_KEY not configured. "
-        "Please set OMDB_API_KEY environment variable in .env file. "
-        "Get it from https://www.omdbapi.com/apikey.aspx"
+    logger.warning(
+        "OMDB_API_KEY no configurada. El paso de enrichment fallará si se ejecuta. "
+        "Obtener en https://www.omdbapi.com/apikey.aspx"
     )
 
 if not TMDB_API_KEY:
-    raise ValueError(
-        "TMDB_API_KEY not configured. "
-        "Please set TMDB_API_KEY environment variable in .env file. "
-        "Get it from https://www.themoviedb.org/settings/api"
+    logger.warning(
+        "TMDB_API_KEY no configurada. El paso de enrichment fallará si se ejecuta. "
+        "Obtener en https://www.themoviedb.org/settings/api"
     )
+
+
+def require_enrichment_keys() -> None:
+    """Llamar esta función al inicio del paso de enrichment para validar las keys."""
+    if not OMDB_API_KEY:
+        raise ValueError(
+            "OMDB_API_KEY not configured. "
+            "Set it as environment variable or in .env file."
+        )
+    if not TMDB_API_KEY:
+        raise ValueError(
+            "TMDB_API_KEY not configured. "
+            "Set it as environment variable or in .env file."
+        )
 
 # URLs de APIs
 OMDB_BASE_URL = "http://www.omdbapi.com/"
