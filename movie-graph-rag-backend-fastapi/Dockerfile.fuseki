@@ -1,4 +1,4 @@
 FROM stain/jena-fuseki:latest
 ENV ADMIN_PASSWORD=admin
-ENV JVM_ARGS=-Xmx512m
+ENV JVM_ARGS=-Xmx2g
 EXPOSE 3030

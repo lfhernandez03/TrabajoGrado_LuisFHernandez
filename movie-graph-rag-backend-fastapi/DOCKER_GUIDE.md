@@ -60,7 +60,7 @@ MONGO_URI=mongodb://root:password@mongodb:27017/movie-graph-rag?authSource=admin
 
 # Fuseki
 FUSEKI_URL=http://fuseki:3030
-FUSEKI_DATASET=movies
+FUSEKI_DATASET=Cine
 FUSEKI_USER=admin
 FUSEKI_PASSWORD=admin
 

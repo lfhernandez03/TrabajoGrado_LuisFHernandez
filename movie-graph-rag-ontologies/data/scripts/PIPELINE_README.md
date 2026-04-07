@@ -52,7 +52,7 @@ El pipeline ejecuta los siguientes pasos en orden (por defecto sin NLP):
 - `--skip-import`: Omite paso 5 (solo genera archivos TTL sin importarlos)
 - `--no-incremental`: Desactiva modo incremental y sobrescribe archivos de salida
 - `--fuseki-url`: URL base de Fuseki (default: `http://localhost:3030`)
-- `--fuseki-dataset`: Dataset de Fuseki (default: `movies`)
+- `--fuseki-dataset`: Dataset de Fuseki (default: `Cine`)
 - `--fuseki-user` / `--fuseki-password`: credenciales opcionales de Fuseki (tambien pueden usar variables de entorno FUSEKI_USER, FUSEKI_PASSWORD)
 
 ## Modo incremental (default)

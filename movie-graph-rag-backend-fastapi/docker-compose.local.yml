@@ -16,6 +16,7 @@ services:
       - "3030:3030"
     volumes:
       - fuseki_data_local:/fuseki
+      - ../../movie-graph-rag-ontologies/data/ontologies:/ontologies:ro
     networks:
       - movie-rag-network-local
     healthcheck:

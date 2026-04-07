@@ -255,7 +255,7 @@ def run_pipeline(
     
     # Obtener valores de variables de entorno con defaults seguros
     fuseki_url = fuseki_url or os.getenv("FUSEKI_URL", "http://localhost:3030")
-    fuseki_dataset = fuseki_dataset or os.getenv("FUSEKI_DATASET", "movies")
+    fuseki_dataset = fuseki_dataset or os.getenv("FUSEKI_DATASET", "Cine")
     fuseki_user = fuseki_user or os.getenv("FUSEKI_USER", "")
     fuseki_password = fuseki_password or os.getenv("FUSEKI_PASSWORD", "")
     
