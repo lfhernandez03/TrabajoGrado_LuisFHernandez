@@ -24,11 +24,15 @@ log_error() {
 # =============================================================================
 log_info "Starting Apache Fuseki server..."
 
+# Crear directorio TDB2 antes de arrancar Fuseki
+mkdir -p /fuseki/databases
+
 export FUSEKI_BASE=/fuseki
 cd /opt/fuseki
 
-java -Xmx512m -Xms128m \
-    -Dorg.apache.jena.fuseki.mgt.opUpdate=true \
+# Heap reducido para caber dentro del límite de 512MB de Render free tier:
+# JVM ~180m heap + ~100m overhead + Python/uvicorn ~150m ≈ 430MB total
+java -Xmx180m -Xms64m \
     -jar fuseki-server.jar \
     --port 3030 \
     --tdb2 \
@@ -46,16 +50,23 @@ log_info "Fuseki started with PID=$FUSEKI_PID"
 log_info "Waiting for Fuseki to respond on http://localhost:3030..."
 
 READY=0
-MAX_ATTEMPTS=60
+MAX_ATTEMPTS=75
 ATTEMPT=0
 
 while [ $ATTEMPT -lt $MAX_ATTEMPTS ]; do
-    if wget -q --spider http://localhost:3030/$/ping 2>/dev/null; then
+    # Detectar crash inmediato: si el proceso ya no existe, no seguir esperando
+    if ! kill -0 $FUSEKI_PID 2>/dev/null; then
+        log_error "❌ Fuseki process (PID=$FUSEKI_PID) died. Logs:"
+        cat /tmp/fuseki.log
+        exit 1
+    fi
+
+    if wget -q --spider "http://localhost:3030/\$/ping" 2>/dev/null; then
         READY=1
         log_info "✅ Fuseki is ready!"
         break
     fi
-    
+
     ATTEMPT=$((ATTEMPT + 1))
     if [ $((ATTEMPT % 5)) -eq 0 ]; then
         log_warn "Waiting for Fuseki... ($ATTEMPT/$MAX_ATTEMPTS)"
@@ -64,7 +75,7 @@ while [ $ATTEMPT -lt $MAX_ATTEMPTS ]; do
 done
 
 if [ $READY -eq 0 ]; then
-    log_error "❌ Fuseki failed to start after ${MAX_ATTEMPTS} attempts (${MAX_ATTEMPTS}*2 = $((MAX_ATTEMPTS * 2)) sec)"
+    log_error "❌ Fuseki failed to start after ${MAX_ATTEMPTS} attempts ($((MAX_ATTEMPTS * 2)) sec)"
     log_error "Fuseki logs:"
     cat /tmp/fuseki.log
     kill $FUSEKI_PID 2>/dev/null || true

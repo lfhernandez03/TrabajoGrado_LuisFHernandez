@@ -47,7 +47,7 @@ COPY --from=fuseki-builder /opt/fuseki /opt/fuseki
 COPY --from=fuseki-builder /ontologies /ontologies
 
 # Fuseki configuration directory
-RUN mkdir -p /fuseki/configuration /fuseki/logs /fuseki/system /fuseki/system_files
+RUN mkdir -p /fuseki/configuration /fuseki/logs /fuseki/system /fuseki/system_files /fuseki/databases
 
 # Python application files
 COPY movie-graph-rag-backend-fastapi/pyproject.toml /app/
