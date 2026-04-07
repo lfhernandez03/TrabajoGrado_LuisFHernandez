@@ -143,10 +143,26 @@ else
 fi
 
 # =============================================================================
-# Start FastAPI Application
+# Compute Network Metrics (Phase 6: centrality, communities, cluster labels)
 # =============================================================================
 cd /app
 
+if [ -f "/app/backend-scripts/compute_network_metrics.py" ]; then
+    log_info "Running compute_network_metrics.py (centrality + Louvain + cluster labels)..."
+    if python /app/backend-scripts/compute_network_metrics.py 2>&1 | tee /tmp/metrics.log; then
+        log_info "✅ Network metrics computed successfully!"
+    else
+        log_warn "⚠️  Network metrics failed (non-critical - app will start without graph metrics)"
+        log_warn "Metrics logs (last 20 lines):"
+        tail -20 /tmp/metrics.log
+    fi
+else
+    log_warn "compute_network_metrics.py not found at /app/backend-scripts/, skipping."
+fi
+
+# =============================================================================
+# Start FastAPI Application
+# =============================================================================
 log_info "Starting FastAPI on port ${PORT:-8000}..."
 log_info "Fuseki available at: ${FUSEKI_URL}/${FUSEKI_DATASET}"
 

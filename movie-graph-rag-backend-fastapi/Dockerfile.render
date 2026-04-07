@@ -53,6 +53,7 @@ RUN mkdir -p /fuseki/configuration /fuseki/logs /fuseki/system /fuseki/system_fi
 COPY movie-graph-rag-backend-fastapi/pyproject.toml /app/
 COPY movie-graph-rag-backend-fastapi/app /app/app/
 COPY movie-graph-rag-backend-fastapi/tests /app/tests/
+COPY movie-graph-rag-backend-fastapi/scripts /app/backend-scripts/
 
 # Pipeline scripts (etl/, enrichment/, rdf/, config/ are inside scripts/)
 COPY movie-graph-rag-ontologies/data/scripts /app/scripts/

@@ -333,8 +333,11 @@ def run_pipeline(
         # Fallback: usar movies_enriched.csv si NLP no genero el suyo
         input_csv = enriched_file
     else:
-        # Ultimo recurso: dejar que rdf_generator use su propia logica de fallback
-        input_csv = None
+        # Ultimo recurso: salida directa del ETL (caso --skip-enrichment)
+        processed_file = PROCESSED_DIR / 'movies_processed.csv'
+        input_csv = processed_file if processed_file.exists() else None
+        if input_csv is None:
+            logger.error(f"No se encontro archivo de entrada para RDF generation en {PROCESSED_DIR}")
     
     rdf_args = []
     if max_movies:
