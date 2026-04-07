@@ -1,17 +1,14 @@
 # =============================================================================
-# Stage 1 — Load ontology data into Fuseki TDB2
+# Stage 1 — Prepare Fuseki and ontologies
 #
-# Uses eclipse-temurin (Debian, runs as root) so apt-get and curl work
-# without permission issues. Downloads a pinned Fuseki version, starts it,
-# uploads all TTL files via its HTTP API, then stops it cleanly.
-# The TDB2 files on disk survive the kill and are copied to stage 2.
+# Downloads Fuseki. Base ontologies are copied here.
+# Instance data (movies) is generated at runtime via pipeline.py
 # =============================================================================
-FROM eclipse-temurin:17-jre AS data-builder
+FROM eclipse-temurin:17-jre AS fuseki-builder
 
 RUN apt-get update && apt-get install -y --no-install-recommends wget curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Download Fuseki (pinned; archive.apache.org keeps all versions permanently)
 ARG FUSEKI_VERSION=4.10.0
 RUN wget -q --show-progress \
         "https://archive.apache.org/dist/jena/binaries/apache-jena-fuseki-${FUSEKI_VERSION}.tar.gz" \
@@ -20,56 +17,12 @@ RUN wget -q --show-progress \
     && mv "/opt/apache-jena-fuseki-${FUSEKI_VERSION}" /opt/fuseki \
     && rm /tmp/fuseki.tar.gz
 
-# Copy ontology TTL files from the monorepo (build context = repo root)
-COPY movie-graph-rag-ontologies/data/ontologies/base/movie-ontology.ttl    /ontologies/
-COPY movie-graph-rag-ontologies/data/ontologies/base/context-ontology.ttl  /ontologies/
-COPY movie-graph-rag-ontologies/data/ontologies/bridge/bridge-ontology.ttl /ontologies/
-COPY movie-graph-rag-ontologies/data/ontologies/instances/movies_data.ttl  /ontologies/
-COPY movie-graph-rag-ontologies/data/ontologies/instances/bridge_data.ttl  /ontologies/
-
-RUN mkdir -p /tdb2-data
-
-# Start Fuseki with a TDB2 backend, upload all TTL files, stop gracefully.
-# Must run from /opt/fuseki so the JAR finds its webapp/ directory.
-# TDB2 writes straight to disk so heap usage stays low even for large files.
-WORKDIR /opt/fuseki
-RUN java -Xmx1g -jar fuseki-server.jar \
-        --port 3030 --tdb2 --update --loc=/tdb2-data /movies \
-        >/tmp/fuseki-load.log 2>&1 & \
-    FPID=$! ; \
-    echo "Waiting for Fuseki to start (PID=$FPID)..." ; \
-    READY=0 ; \
-    for i in $(seq 1 90) ; do \
-        kill -0 $FPID 2>/dev/null || { echo "Fuseki process died early. Log:"; cat /tmp/fuseki-load.log; exit 1; } ; \
-        wget -q --spider http://localhost:3030/$/ping 2>/dev/null \
-            && READY=1 && echo "Fuseki is ready at try $i." && break ; \
-        sleep 2 ; \
-    done ; \
-    if [ "$READY" -eq 0 ] ; then \
-        echo "ERROR: Fuseki did not start after timeout. Log:" ; cat /tmp/fuseki-load.log ; exit 1 ; \
-    fi ; \
-    for f in \
-        /ontologies/movie-ontology.ttl \
-        /ontologies/context-ontology.ttl \
-        /ontologies/bridge-ontology.ttl \
-        /ontologies/movies_data.ttl \
-        /ontologies/bridge_data.ttl ; \
-    do \
-        echo "Loading $(basename $f) ..." ; \
-        if ! curl -sf -X POST "http://localhost:3030/movies/data" \
-             -H "Content-Type: text/turtle" \
-             --data-binary "@$f" ; then \
-            echo "ERROR uploading $f. Fuseki log:" ; \
-            cat /tmp/fuseki-load.log ; \
-            kill $FPID ; \
-            exit 1 ; \
-        fi ; \
-    done ; \
-    echo "All data loaded. Stopping Fuseki..." ; \
-    kill $FPID ; wait $FPID ; true
+# Copy base ontology schemas (instance data generated at runtime)
+COPY movie-graph-rag-ontologies/data/ontologies/base/ /ontologies/base/
+COPY movie-graph-rag-ontologies/data/ontologies/bridge/ /ontologies/bridge/
 
 # =============================================================================
-# Stage 2 — Runtime: Python 3.11 + JRE + Fuseki + FastAPI
+# Stage 2 — Runtime: Python 3.11 + JRE + Fuseki + FastAPI + Pipeline
 # =============================================================================
 FROM python:3.11-slim
 
@@ -77,35 +30,51 @@ WORKDIR /app
 
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
-    PIP_NO_CACHE_DIR=1
+    PIP_NO_CACHE_DIR=1 \
+    FUSEKI_URL=http://localhost:3030 \
+    FUSEKI_DATASET=Cine
 
-# default-jre-headless to run Fuseki; wget for the health-wait loop; gcc for some Python packages
+# Install JRE, wget, curl, gcc
 RUN apt-get update && apt-get install -y --no-install-recommends \
     default-jre-headless \
     wget \
+    curl \
     gcc \
     && rm -rf /var/lib/apt/lists/*
 
-# Fuseki server from stage 1
-COPY --from=data-builder /opt/fuseki /opt/fuseki
+# Copy Fuseki from builder stage
+COPY --from=fuseki-builder /opt/fuseki /opt/fuseki
+COPY --from=fuseki-builder /ontologies /ontologies
 
-# Pre-loaded TDB2 database
-COPY --from=data-builder /tdb2-data /fuseki/databases/movies
-
-# Fuseki runtime directories + dataset configuration
+# Fuseki configuration directory
 RUN mkdir -p /fuseki/configuration /fuseki/logs /fuseki/system /fuseki/system_files
-COPY movie-graph-rag-backend-fastapi/fuseki-init/movies-config.ttl /fuseki/configuration/movies.ttl
 
-# Python application
+# Python application files
 COPY movie-graph-rag-backend-fastapi/pyproject.toml /app/
-COPY movie-graph-rag-backend-fastapi/app             /app/app/
-COPY movie-graph-rag-backend-fastapi/entrypoint.sh   /app/entrypoint.sh
+COPY movie-graph-rag-backend-fastapi/app /app/app/
+COPY movie-graph-rag-backend-fastapi/tests /app/tests/
+
+# Pipeline scripts (etl/, enrichment/, rdf/, config/ are inside scripts/)
+COPY movie-graph-rag-ontologies/data/scripts /app/scripts/
+
+# Raw dataset files needed by the ETL step (MovieLens CSVs)
+COPY movie-graph-rag-ontologies/data/dataset /app/dataset/
+
+# Ensure scripts are executable
+RUN chmod +x /app/scripts/*.py /app/scripts/*.sh 2>/dev/null || true
+
+# Install Python dependencies
+RUN pip install --upgrade pip setuptools wheel && \
+    pip install -e /app
+
+# Copy improved entrypoint
+COPY movie-graph-rag-backend-fastapi/docker-entrypoint-render.sh /app/entrypoint.sh
 RUN chmod +x /app/entrypoint.sh
 
-RUN pip install --upgrade pip setuptools wheel && pip install -e .
+EXPOSE 8000 3030
 
-HEALTHCHECK --interval=30s --timeout=10s --start-period=120s --retries=3 \
-    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')" || exit 1
+# Healthcheck: API endpoint is primary check (start after 90s for pipeline)
+HEALTHCHECK --interval=30s --timeout=10s --start-period=90s --retries=3 \
+    CMD curl -f http://localhost:8000/health || exit 1
 
-EXPOSE 8000
-CMD ["/bin/bash", "/app/entrypoint.sh"]
+CMD ["/app/entrypoint.sh"]
