@@ -33,7 +33,7 @@ ONTOLOGY_FILES: list[str] = [
     "/ontologies/instances/bridge_data.ttl",
 ]
 
-_METRICS_SCRIPT = "/app/scripts/compute_network_metrics.py"
+_METRICS_SCRIPT = "/app/backend-scripts/compute_network_metrics.py"
 _TRIPLE_COUNT_THRESHOLD = 1000
 
 PipelineStatus = Literal["idle", "loading_ontologies", "running_metrics", "done", "error"]
