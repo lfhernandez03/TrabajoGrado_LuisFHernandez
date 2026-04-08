@@ -62,6 +62,7 @@ export default function Home() {
   const [heroMovie, setHeroMovie] = useState<HeroMovie | null>(null);
   const [heroLoading, setHeroLoading] = useState(true);
   const [heroFavorite, setHeroFavorite] = useState(false);
+  const [heroColdStart, setHeroColdStart] = useState(false);
 
   // ── Carousels ─────────────────────────────────────────────────────────────
   const [carousel1, setCarousel1] = useState<MovieCardMovie[]>([]);
@@ -97,6 +98,7 @@ export default function Home() {
     setHeroLoading(true);
     try {
       const rec = await getActivityRecommendation();
+      setHeroColdStart(rec.isColdStart ?? false);
       const best = rec.moviesWithScores?.[0];
       if (best) {
         // Try to enrich with canonical poster
@@ -346,6 +348,7 @@ export default function Home() {
         featuredMovie={heroMovie}
         isLoading={heroLoading}
         isFavorite={heroFavorite}
+        isColdStart={heroColdStart}
         onToggleFavorite={() => heroMovie && handleToggleFavorite(heroMovie as MovieCardMovie)}
         onViewDetails={handleHeroDetails}
       />

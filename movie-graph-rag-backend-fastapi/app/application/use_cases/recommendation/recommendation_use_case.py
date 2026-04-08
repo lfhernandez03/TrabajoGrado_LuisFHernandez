@@ -14,6 +14,7 @@ from app.domain.ports.recommendation_llm_client import RecommendationLlmClientPo
 logger = logging.getLogger(__name__)
 
 _MIN_RESULTS = 5
+_COLD_START_MMR_LAMBDA = 0.45   # diversidad > relevancia cuando no hay preferencias conocidas
 
 
 def _unique_movie_count(rows: list[dict]) -> int:
@@ -45,6 +46,40 @@ def _run_strategy(attempts: list[tuple[str, str]]) -> tuple[list[dict], str]:
         except Exception:
             pass
     return [], "empty"
+
+
+def _run_cold_start_strategy(attempts: list[tuple[str, str]]) -> tuple[list[dict], str]:
+    """Agrega candidatos de TODAS las estrategias de género para cold start.
+
+    A diferencia de _run_strategy(), no para en el primer hit con >= _MIN_RESULTS
+    resultados. Acumula candidatos de múltiples géneros para que el scorer tenga
+    diversidad real. Para cuando lleva >= 40 películas únicas o llega a los
+    fallbacks ('centrality_ranking', 'broad').
+    """
+    all_rows: list[dict] = []
+    seen_uris: set[str] = set()
+    names_used: list[str] = []
+
+    for name, sparql in attempts:
+        if name in ("centrality_ranking", "broad"):
+            break  # fallbacks solo si la agregación no alcanzó el mínimo
+        try:
+            rows = execute_select_query(sparql)
+            new_rows = [r for r in rows if r.get("movie", "") not in seen_uris]
+            for r in new_rows:
+                seen_uris.add(r.get("movie", ""))
+            all_rows.extend(new_rows)
+            names_used.append(name)
+            if len(seen_uris) >= 40:
+                break
+        except Exception as exc:
+            logger.warning("cold-start strategy '%s' failed: %s", name, exc)
+
+    if _unique_movie_count(all_rows) >= _MIN_RESULTS:
+        return all_rows, "+".join(names_used) if names_used else "cold_start_merged"
+
+    # Fallback al comportamiento original si no hubo suficientes candidatos
+    return _run_strategy(attempts)
 
 
 def _query_type(ctx: UserContext, is_cold_start: bool) -> str:
@@ -130,8 +165,13 @@ class RecommendationUseCase:
         profile = self._profile_svc.get(user_id)
 
         attempts = build_strategy(ctx, profile)
-        candidates, strategy = _run_strategy(attempts)
-        movies = score_and_select(candidates, ctx, profile, n=5)
+        if profile.is_cold_start:
+            candidates, strategy = _run_cold_start_strategy(attempts)
+            movies = score_and_select(candidates, ctx, profile, n=5,
+                                      mmr_lambda=_COLD_START_MMR_LAMBDA)
+        else:
+            candidates, strategy = _run_strategy(attempts)
+            movies = score_and_select(candidates, ctx, profile, n=5)
         metrics = compute_metrics(movies, profile)
 
         query_type = _query_type(ctx, profile.is_cold_start)
@@ -227,6 +267,7 @@ class _Result:
     def to_api_dict(self) -> dict:
         return {
             "query": self.query,
+            "isColdStart": self.debug.get("is_cold_start", False),
             "contextExtracted": {
                 "mood": self.context.mood,
                 "companion": self.context.companion,

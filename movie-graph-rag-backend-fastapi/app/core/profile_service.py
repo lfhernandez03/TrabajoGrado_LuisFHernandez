@@ -42,7 +42,7 @@ def _build_archive_sparql(snapshot_id: str, ctx: UserContext, user_id: str, now:
     context:hasRequirement) so profiles can be rebuilt from history.
     """
     sid = _esc(snapshot_id)
-    iso_ts = now.replace(microsecond=0).isoformat()
+    iso_ts = now.replace(microsecond=0).isoformat() + "Z"
     day_name = now.strftime("%A")
     graph_uri = f"http://users/{_esc(user_id)}/history"
     
@@ -157,11 +157,10 @@ class ProfileService:
                 )
                 now = datetime.utcnow()
                 sparql = _build_archive_sparql(snapshot_id, ctx, user_id, now)
-                logger.debug("archive_context SPARQL (disabled):\n%s", sparql)
-                # TEMPORARY: Disabled until Fuseki 400 error is fixed
-                # ok = execute_update_query(sparql)
-                # if not ok:
-                #     logger.warning("archive_context: INSERT failed for user %s", user_id)
+                logger.debug("archive_context SPARQL:\n%s", sparql)
+                ok = execute_update_query(sparql)
+                if not ok:
+                    logger.warning("archive_context: INSERT failed for user %s", user_id)
             except Exception as exc:
                 logger.error("archive_context error for user %s: %s", user_id, exc)
             finally:

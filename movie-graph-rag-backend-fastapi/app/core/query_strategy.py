@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import random
+
 from app.domain.entities.recommendation_models import UserContext, UserProfile
 from app.core.ontology_query_builder import (
     build_cross_ontology_sparql_from_signals,
@@ -39,6 +41,12 @@ _OPTIONAL_BLOCK = (
     "  OPTIONAL { ?movie bridge:timeMatchScore ?timeMatchScore }\n"
     "  OPTIONAL { ?movie bridge:isKidFriendly ?kidFriendly }\n"
 )
+
+# Géneros confirmados en la ontología — usados para diversificar cold start
+_COLD_START_GENRES = [
+    "Action", "Drama", "Comedy", "Thriller", "Animation",
+    "Romance", "Sci-Fi", "Horror", "Children", "Adventure",
+]
 
 # Broadest possible fallback — no filters, just ORDER BY rating.
 _BROAD_SPARQL = (
@@ -118,15 +126,17 @@ def _genre_filter_sparql(
     )
 
 
-def _centrality_ranking_sparql(genre: str | None = None, limit: int = 50) -> str:
+def _centrality_ranking_sparql(genre: str | None = None, limit: int = 50, offset: int = 0) -> str:
     """Movies ordered by rating + bridge score — used as cold-start ranking.
 
     When ``genre`` is provided the query is restricted to that genre so cold-start
     users that did express a genre preference still receive relevant results.
+    ``offset`` allows paginating the ranking to surface different movies across requests.
     """
     genre_filter = (
         f'  FILTER(?genreName = "{_esc(genre)}")\n' if genre else ""
     )
+    offset_clause = f"OFFSET {offset}\n" if offset > 0 else ""
     return (
         _PREFIXES
         + _SELECT_COLS
@@ -147,6 +157,7 @@ def _centrality_ranking_sparql(genre: str | None = None, limit: int = 50) -> str
         + "  OPTIONAL { ?movie bridge:isKidFriendly ?kidFriendly }\n"
         + "}\n"
         + "ORDER BY DESC(?rating) DESC(?compatibilityScore)\n"
+        + offset_clause
         + f"LIMIT {limit}"
     )
 
@@ -175,12 +186,19 @@ def build_strategy(ctx: UserContext, profile: UserProfile) -> list[tuple[str, st
 
     has_strong_signal = bool(mood_es or companion_es or ctx.genres)
 
-    # Cold start with no signal → just return high-quality broad results
+    # Cold start with no signal → genre-stratified queries for diversity
     if profile.is_cold_start and not has_strong_signal:
-        return [
-            ("centrality_ranking", _centrality_ranking_sparql()),
-            ("broad", _BROAD_SPARQL),
-        ]
+        # Sample 4 random genres each request so candidates differ on every call
+        shuffled = random.sample(_COLD_START_GENRES, k=min(4, len(_COLD_START_GENRES)))
+        strategies: list[tuple[str, str]] = []
+        for g in shuffled:
+            strategies.append((
+                f"cold_start_{g.lower()}",
+                _centrality_ranking_sparql(genre=g, limit=15),
+            ))
+        strategies.append(("centrality_ranking", _centrality_ranking_sparql()))
+        strategies.append(("broad", _BROAD_SPARQL))
+        return strategies
 
     attempts: list[tuple[str, str]] = []
 

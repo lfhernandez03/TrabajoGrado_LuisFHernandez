@@ -225,11 +225,14 @@ def _similarity(a: Movie, b: Movie) -> float:
     return max(0.0, 0.3 - score_diff * 0.3)
 
 
-def _mmr_select(scored: list[tuple[Movie, float]], n: int) -> list[Movie]:
+def _mmr_select(scored: list[tuple[Movie, float]], n: int, lam: float = _MMR_LAMBDA) -> list[Movie]:
     """Maximum Marginal Relevance selection.
 
     Iteratively picks the candidate that maximises:
         MMR = λ·relevance − (1−λ)·max_similarity_to_selected
+
+    ``lam`` overrides the module-level _MMR_LAMBDA (useful for cold start,
+    where diversity should outweigh relevance since no preferences are known).
     """
     if len(scored) <= n:
         return [m for m, _ in scored]
@@ -243,7 +246,7 @@ def _mmr_select(scored: list[tuple[Movie, float]], n: int) -> list[Movie]:
 
         for i, (cand, cand_score) in enumerate(remaining):
             max_sim = max(_similarity(cand, sel) for sel, _ in selected)
-            mmr = _MMR_LAMBDA * cand_score - (1.0 - _MMR_LAMBDA) * max_sim
+            mmr = lam * cand_score - (1.0 - lam) * max_sim
             if mmr > best_mmr:
                 best_mmr = mmr
                 best_idx = i
@@ -262,6 +265,7 @@ def score_and_select(
     ctx: UserContext,
     profile: UserProfile,
     n: int = 5,
+    mmr_lambda: float | None = None,
 ) -> list[Movie]:
     """Convert raw SPARQL rows → Movie objects, score, and select top-n with MMR.
 
@@ -319,4 +323,5 @@ def score_and_select(
         return []
 
     scored.sort(key=lambda x: x[1], reverse=True)
-    return _mmr_select(scored, n)
+    lam = mmr_lambda if mmr_lambda is not None else _MMR_LAMBDA
+    return _mmr_select(scored, n, lam=lam)

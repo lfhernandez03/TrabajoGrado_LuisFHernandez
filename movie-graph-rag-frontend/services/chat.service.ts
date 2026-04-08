@@ -3,6 +3,7 @@ import { withCache, TTL } from '@/lib/cache';
 
 export interface ChatRecommendationResponse {
   query: string;
+  isColdStart?: boolean;
   contextExtracted?: {
     snapshotID: string;
     userIntent: string;
@@ -40,6 +41,13 @@ export interface ChatRecommendationResponse {
   }[];
   explanation: string;
   executionTimeMs: number;
+  metrics?: {
+    ild: number;
+    graphDiversityScore: number;
+    semanticPrecision: number;
+    coldStartThreshold: number;
+    movieCount: number;
+  };
 }
 
 export interface ChatMessage {

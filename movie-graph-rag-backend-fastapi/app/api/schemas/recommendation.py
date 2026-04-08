@@ -60,6 +60,8 @@ class RecommendationResponse(BaseModel):
     moviesWithScores: list[RecommendedMovieResponse]
     explanation: str
     executionTimeMs: int
+    isColdStart: bool = False
+    """True when the user has fewer context snapshots than the cold-start threshold."""
     metrics: RecommendationMetricsResponse | None = None
     debugPayload: dict[str, Any] | None = None
 
