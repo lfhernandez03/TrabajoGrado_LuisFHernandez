@@ -29,3 +29,20 @@ class RecommendationMetricSummaryResponse(BaseModel):
 class AdminRecommendationMetricsResponse(BaseModel):
     summary: RecommendationMetricSummaryResponse
     recent: list[RecommendationMetricItemResponse]
+
+
+class PipelineStatusResponse(BaseModel):
+    status: str
+    step: str
+    started_at: datetime | None = None
+    finished_at: datetime | None = None
+    error: str | None = None
+    ontologies_loaded: int
+    ontologies_total: int
+    skipped_load: bool
+
+
+class PipelineLoadResponse(BaseModel):
+    accepted: bool
+    message: str
+    status: str

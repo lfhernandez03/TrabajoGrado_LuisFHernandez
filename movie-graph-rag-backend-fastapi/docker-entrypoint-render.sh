@@ -83,74 +83,12 @@ if [ $READY -eq 0 ]; then
 fi
 
 # =============================================================================
-# Load All Ontologies (schemas + pre-generated instance data)
-# Skip if data is already loaded (persistent disk scenario)
-# =============================================================================
-log_info "Checking if ontologies are already loaded in Fuseki..."
-
-TRIPLE_COUNT=$(curl -sf \
-    -H "Accept: application/sparql-results+json" \
-    "http://localhost:3030/${FUSEKI_DATASET}/query?query=SELECT+(COUNT(*)+AS+%3Fn)+WHERE+%7B+%3Fs+%3Fp+%3Fo+%7D" \
-    | python3 -c "import sys,json; print(json.load(sys.stdin)['results']['bindings'][0]['n']['value'])" 2>/dev/null || echo "0")
-
-log_info "Current triple count: ${TRIPLE_COUNT}"
-
-if [ "${TRIPLE_COUNT}" -gt "1000" ] 2>/dev/null; then
-    log_info "✅ Ontologies already loaded (${TRIPLE_COUNT} triples), skipping load."
-else
-    log_info "Loading ontologies into Fuseki..."
-
-    ONTOLOGY_FILES=(
-        "/ontologies/base/movie-ontology.ttl"
-        "/ontologies/base/context-ontology.ttl"
-        "/ontologies/bridge/bridge-ontology.ttl"
-        "/ontologies/instances/movies_data.ttl"
-        "/ontologies/instances/bridge_data.ttl"
-    )
-
-    for f in "${ONTOLOGY_FILES[@]}"; do
-        if [ -f "$f" ]; then
-            log_info "  Loading $(basename $f)..."
-            if ! curl -sf -X POST "http://localhost:3030/${FUSEKI_DATASET}/data" \
-                 -H "Content-Type: text/turtle" \
-                 --data-binary "@$f"; then
-                log_error "❌ Failed to load $f"
-                kill $FUSEKI_PID 2>/dev/null || true
-                exit 1
-            fi
-            log_info "  ✅ $(basename $f) loaded"
-        else
-            log_warn "  ⚠️  $f not found, skipping"
-        fi
-    done
-fi
-
-# =============================================================================
-# Compute Network Metrics (Phase 6: centrality, communities, cluster labels)
+# Start FastAPI Application
+# (Data loading is triggered via POST /api/v1/admin/pipeline/load after deploy)
 # =============================================================================
 cd /app
-
-if [ -f "/app/backend-scripts/compute_network_metrics.py" ]; then
-    log_info "Running compute_network_metrics.py (centrality + Louvain + cluster labels)..."
-    if python /app/backend-scripts/compute_network_metrics.py 2>&1 | tee /tmp/metrics.log; then
-        log_info "✅ Network metrics computed successfully!"
-    else
-        log_warn "⚠️  Network metrics failed (non-critical - app will start without graph metrics)"
-        log_warn "Metrics logs (last 20 lines):"
-        tail -20 /tmp/metrics.log
-    fi
-else
-    log_warn "compute_network_metrics.py not found at /app/backend-scripts/, skipping."
-fi
-
-# =============================================================================
-# Start FastAPI Application
-# =============================================================================
 log_info "Starting FastAPI on port ${PORT:-8000}..."
 log_info "Fuseki available at: ${FUSEKI_URL}/${FUSEKI_DATASET}"
-
-# Wait a moment for any Fuseki indexing
-sleep 3
 
 # Start FastAPI (runs in foreground)
 exec uvicorn app.main:app \
