@@ -306,7 +306,7 @@ def get_movie_cluster(
     return _get_movie_cluster(title)
 
 
-@router.get("/clusters", response_model=ClusterListResponse)
+@router.get("", response_model=ClusterListResponse)
 def list_clusters(
     current_user: AuthUser = Depends(get_current_user),
 ) -> ClusterListResponse:
