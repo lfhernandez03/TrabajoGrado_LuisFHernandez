@@ -53,6 +53,8 @@ class NetworkNode:
     poster_url: str | None = None
     description: str | None = None
     runtime: int | None = None
+    director: str | None = None
+    year: int | None = None
 
 
 @dataclass
@@ -105,7 +107,7 @@ def _movies_by_genre(genre: str, exclude_uris: set[str], limit: int = 30) -> lis
     excl_filter = f"  FILTER(?movie NOT IN ({excl}))\n" if excl else ""
     query = (
         _PREFIXES
-        + "SELECT DISTINCT ?movie ?title ?genreName ?rating ?posterUrl ?description ?runtime\n"
+        + "SELECT DISTINCT ?movie ?title ?genreName ?rating ?posterUrl ?description ?runtime ?directorName ?releaseDate\n"
         + "WHERE {\n"
         + "  ?movie rdf:type movie:FeatureFilm ; movie:hasTitle ?title .\n"
         + f'  ?movie movie:hasMainGenre/movie:genreName "{_esc(genre)}" .\n'
@@ -114,6 +116,8 @@ def _movies_by_genre(genre: str, exclude_uris: set[str], limit: int = 30) -> lis
         + "  OPTIONAL { ?movie schema1:image ?posterUrl }\n"
         + "  OPTIONAL { ?movie movie:hasPlotSummary ?description }\n"
         + "  OPTIONAL { ?movie movie:runtime ?runtime }\n"
+        + "  OPTIONAL { ?movie movie:hasDirector/movie:hasName ?directorName }\n"
+        + "  OPTIONAL { ?movie movie:releaseDate ?releaseDate }\n"
         + excl_filter
         + "}\n"
         + f"LIMIT {limit}"
@@ -131,7 +135,7 @@ def _movies_by_director(director_uri: str, exclude_uris: set[str], limit: int = 
     excl_filter = f"  FILTER(?movie NOT IN ({excl}))\n" if excl else ""
     query = (
         _PREFIXES
-        + "SELECT DISTINCT ?movie ?title ?genreName ?rating ?posterUrl ?description ?runtime\n"
+        + "SELECT DISTINCT ?movie ?title ?genreName ?rating ?posterUrl ?description ?runtime ?directorName ?releaseDate\n"
         + "WHERE {\n"
         + "  ?movie rdf:type movie:FeatureFilm ; movie:hasTitle ?title .\n"
         + f"  ?movie movie:hasDirector <{director_uri}> .\n"
@@ -140,6 +144,8 @@ def _movies_by_director(director_uri: str, exclude_uris: set[str], limit: int = 
         + "  OPTIONAL { ?movie schema1:image ?posterUrl }\n"
         + "  OPTIONAL { ?movie movie:hasPlotSummary ?description }\n"
         + "  OPTIONAL { ?movie movie:runtime ?runtime }\n"
+        + f"  OPTIONAL {{ <{director_uri}> movie:hasName ?directorName }}\n"
+        + "  OPTIONAL { ?movie movie:releaseDate ?releaseDate }\n"
         + excl_filter
         + "}\n"
         + f"LIMIT {limit}"
@@ -329,6 +335,10 @@ class ConnectionExplorer:
                         runtime = int(row["runtime"]) if row.get("runtime") else None
                     except (ValueError, TypeError):
                         runtime = None
+                    try:
+                        year = int(str(row["releaseDate"])[:4]) if row.get("releaseDate") else None
+                    except (ValueError, TypeError):
+                        year = None
                     node = NetworkNode(
                         uri=n_uri,
                         title=row.get("title", ""),
@@ -337,6 +347,8 @@ class ConnectionExplorer:
                         poster_url=row.get("posterUrl"),
                         description=row.get("description"),
                         runtime=runtime,
+                        director=row.get("directorName") or None,
+                        year=year,
                     )
                     graph.nodes.append(node)
                     rel = "same_genre" if genre and row.get("genreName") == genre else "same_director"

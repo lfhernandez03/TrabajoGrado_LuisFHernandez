@@ -225,7 +225,7 @@ class MongoMovieCatalogRepositoryAdapter:
             "  OPTIONAL { ?movie movie:releaseDate ?releaseDate }\n"
             "  OPTIONAL { ?movie movie:hasAverageRating ?rating }\n"
             "  OPTIONAL { ?movie movie:hasPlotSummary ?description }\n"
-            "  OPTIONAL { ?movie movie:hasDirector/movie:personName ?directorName }\n"
+            "  OPTIONAL { ?movie movie:hasDirector/movie:hasName ?directorName }\n"
             "  OPTIONAL { ?movie movie:hasMainGenre/movie:genreName ?genreName }\n"
             f"  {filters_block}\n"
             "}\n"
@@ -316,7 +316,7 @@ class MongoMovieCatalogRepositoryAdapter:
             "WHERE {\n"
             "  ?movie rdf:type movie:FeatureFilm ;\n"
             "         movie:hasTitle ?title .\n"
-            "  OPTIONAL { ?movie movie:hasDirector/movie:personName ?directorName }\n"
+            "  OPTIONAL { ?movie movie:hasDirector/movie:hasName ?directorName }\n"
             f'  FILTER(CONTAINS(LCASE(?title), "{safe_term}"))\n'
             "}\n"
             "ORDER BY ?title\n"

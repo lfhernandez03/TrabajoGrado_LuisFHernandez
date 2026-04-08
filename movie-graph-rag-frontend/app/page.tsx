@@ -21,6 +21,40 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { usePendingSet } from "@/hooks/usePendingSet";
 
+// ── Cold start genre rotation ─────────────────────────────────────────────────
+// Genres must match the ontology literals used in the backend
+const _COLD_START_GENRES = [
+  "Drama", "Comedy", "Action", "Thriller", "Animation",
+  "Romance", "Sci-Fi", "Horror", "Adventure",
+] as const;
+
+// Spanish display names for each ontology genre
+const _GENRE_DISPLAY: Record<string, string> = {
+  Drama: "Drama",
+  Comedy: "Comedia",
+  Action: "Acción",
+  Thriller: "Thriller",
+  Animation: "Animación",
+  Romance: "Romance",
+  "Sci-Fi": "Ciencia Ficción",
+  Horror: "Terror",
+  Adventure: "Aventura",
+};
+
+/**
+ * Returns 3 distinct genres for today's cold start carousels.
+ * Rotates daily so the user sees different content each day.
+ */
+function getThreeDailyGenres(): [string, string, string] {
+  const day = new Date().getDay(); // 0–6
+  const n = _COLD_START_GENRES.length;
+  return [
+    _COLD_START_GENRES[day % n],
+    _COLD_START_GENRES[(day + 3) % n],
+    _COLD_START_GENRES[(day + 6) % n],
+  ];
+}
+
 // ── Adapters ─────────────────────────────────────────────────────────────────
 
 function toCardMovie(movie: Movie | FavoriteMovie): MovieCardMovie {
@@ -73,6 +107,7 @@ export default function Home() {
   const [carousel1FavoriteTitle, setCarousel1FavoriteTitle] = useState<string>("…");
   const [carousel2Title, setCarousel2Title] = useState<string>("Basado en tus favoritos");
   const [carousel2FavoriteTitle, setCarousel2FavoriteTitle] = useState<string>("");
+  const [carousel3Subtitle, setCarousel3Subtitle] = useState<string>("Descubre géneros nuevos basado en lo que no has explorado");
 
   // ── Favorites ─────────────────────────────────────────────────────────────
   const [favorites, setFavorites] = useState<FavoriteMovie[]>([]);
@@ -177,8 +212,35 @@ export default function Home() {
   const loadCarousels = useCallback(async (userFavorites: FavoriteMovie[]) => {
     setCarouselLoading(true);
     try {
+      // ── Cold start: genre-rotation carousels (no favorites yet) ────────────
+      if (userFavorites.length === 0) {
+        const [g1, g2, g3] = getThreeDailyGenres();
+        const d1 = _GENRE_DISPLAY[g1] ?? g1;
+        const d2 = _GENRE_DISPLAY[g2] ?? g2;
+        const d3 = _GENRE_DISPLAY[g3] ?? g3;
+
+        setCarousel1Title("Lo mejor de");
+        setCarousel1FavoriteTitle(d1);
+        setCarousel2Title("Descubre");
+        setCarousel2FavoriteTitle(d2);
+        setCarousel3Subtitle(`Empieza explorando lo mejor de ${d3}`);
+
+        const [c1, c2, c3] = await Promise.allSettled([
+          getMoviesByCentrality(g1, 12).then((r) => r.movies.map(recToCardMovie)),
+          getMoviesByCentrality(g2, 12).then((r) => r.movies.map(recToCardMovie)),
+          getMoviesByCentrality(g3, 12).then((r) => r.movies.map(recToCardMovie)),
+        ]);
+
+        const fallback = () => getMovieExamples(12).then((arr) => arr.map(toCardMovie));
+        setCarousel1(c1.status === "fulfilled" ? c1.value : await fallback());
+        setCarousel2(c2.status === "fulfilled" ? c2.value : await fallback());
+        setCarousel3(c3.status === "fulfilled" ? c3.value : await fallback());
+        return;
+      }
+
+      // ── Normal path: favorites-based carousels ────────────────────────────
       // Select random favorites for each carousel
-      const getRandomFavorite = () => userFavorites.length > 0 
+      const getRandomFavorite = () => userFavorites.length > 0
         ? userFavorites[Math.floor(Math.random() * userFavorites.length)]
         : null;
       
@@ -223,19 +285,23 @@ export default function Home() {
         // "Porque viste X" — neighborhood of a random favorite (backend excludes center node)
         randomFavorite1
           ? getMovieNeighborhood(randomFavorite1.title, 1).then((r) => r.nodes.map((n) => ({
-              uri: n.uri, title: n.title, posterUrl: n.poster_url ?? undefined,
+              uri: n.uri, title: n.title, posterUrl: n.posterUrl ?? undefined,
+              year: n.year ?? undefined,
               genres: n.genre ? [n.genre] : undefined, rating: n.rating ?? undefined,
               runtime: n.runtime ?? undefined,
               description: n.description ?? undefined,
+              director: n.director ?? undefined,
             } as MovieCardMovie)))
           : getMovieExamples(12).then((arr) => arr.map(toCardMovie)),
         // "Como Y" — neighborhood of another random favorite (backend excludes center node)
         randomFavorite2
           ? getMovieNeighborhood(randomFavorite2.title, 1).then((r) => r.nodes.map((n) => ({
-              uri: n.uri, title: n.title, posterUrl: n.poster_url ?? undefined,
+              uri: n.uri, title: n.title, posterUrl: n.posterUrl ?? undefined,
+              year: n.year ?? undefined,
               genres: n.genre ? [n.genre] : undefined, rating: n.rating ?? undefined,
               runtime: n.runtime ?? undefined,
               description: n.description ?? undefined,
+              director: n.director ?? undefined,
             } as MovieCardMovie)))
           : getMoviesByCentrality(undefined, 12).then((r) => r.movies.map(recToCardMovie)),
         // "Explora nuevos géneros" — from least-explored cluster or fallback to serendipity
@@ -385,7 +451,7 @@ export default function Home() {
 
         <RecommendationCarousel
           title="Explora nuevos géneros"
-          subtitle="Descubre géneros nuevos basado en lo que no has explorado"
+          subtitle={carousel3Subtitle}
           movies={carousel3}
           isLoading={carouselLoading}
           viewAllHref="/search"

@@ -17,6 +17,10 @@ export interface Movie {
 
 export interface SearchMovieParams {
   q?: string;
+  genre?: string;
+  director?: string;
+  yearFrom?: number;
+  yearTo?: number;
   limit?: number;
 }
 
@@ -140,9 +144,11 @@ export interface NetworkNode {
   title: string;
   genre?: string | null;
   rating?: number | null;
-  poster_url?: string | null;
+  posterUrl?: string | null;
   description?: string | null;
   runtime?: number | null;
+  director?: string | null;
+  year?: number | null;
 }
 
 export interface NetworkEdge {

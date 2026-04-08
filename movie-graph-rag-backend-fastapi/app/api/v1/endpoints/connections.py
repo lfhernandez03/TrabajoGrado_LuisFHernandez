@@ -124,9 +124,11 @@ def get_neighborhood(
             title=n.title,
             genre=n.genre,
             rating=n.rating,
-            poster_url=n.poster_url,
+            posterUrl=n.poster_url,
             description=n.description,
             runtime=getattr(n, "runtime", None),
+            director=getattr(n, "director", None),
+            year=getattr(n, "year", None),
         )
         for n in neighborhood_nodes
     ]
