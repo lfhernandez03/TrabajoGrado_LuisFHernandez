@@ -69,7 +69,7 @@ RUN chmod +x /app/scripts/*.py /app/scripts/*.sh 2>/dev/null || true
 # Install Python dependencies
 RUN pip install --upgrade pip setuptools wheel && \
     pip install -e /app && \
-    pip install pandas requests
+    pip install pandas requests scipy
 
 # Copy improved entrypoint
 COPY movie-graph-rag-backend-fastapi/docker-entrypoint-render.sh /app/entrypoint.sh

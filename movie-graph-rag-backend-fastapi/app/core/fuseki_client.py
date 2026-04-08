@@ -1,15 +1,37 @@
 from __future__ import annotations
 
 import base64
+import hashlib
 import json
 import logging
 import time
+from datetime import datetime, timedelta
 from urllib import error, parse, request
 
 from app.core.config import settings
 
 
 logger = logging.getLogger(__name__)
+
+# ---------------------------------------------------------------------------
+# In-process SELECT query cache
+# Keyed by MD5 of the SPARQL string; TTL of 90 seconds.
+# User-specific queries (GRAPH <http://users/…>) are still cached per-user
+# because each user's query is a distinct string with a distinct cache key.
+# ---------------------------------------------------------------------------
+_SPARQL_CACHE: dict[str, tuple[list[dict], datetime]] = {}
+_SPARQL_CACHE_TTL = timedelta(seconds=90)
+# Queries containing these substrings are never cached (mutable user data)
+_NO_CACHE_PATTERNS = ("/history>", "INSERT", "DELETE", "UPDATE")
+
+
+def _sparql_cache_key(sparql: str) -> str:
+    return hashlib.md5(sparql.encode("utf-8")).hexdigest()
+
+
+def _is_cacheable(sparql: str) -> bool:
+    upper = sparql.upper()
+    return not any(p.upper() in upper for p in _NO_CACHE_PATTERNS)
 
 
 class FusekiQueryError(RuntimeError):
@@ -42,6 +64,17 @@ def _build_auth_headers() -> dict[str, str]:
 
 
 def execute_select_query(sparql_query: str) -> list[dict[str, str]]:
+    # Cache hit path
+    cacheable = _is_cacheable(sparql_query)
+    if cacheable:
+        key = _sparql_cache_key(sparql_query)
+        now = datetime.utcnow()
+        if key in _SPARQL_CACHE:
+            cached_result, expires = _SPARQL_CACHE[key]
+            if now < expires:
+                logger.debug("SPARQL cache hit (key=%s)", key[:8])
+                return cached_result
+
     endpoint = _build_query_endpoint()
     payload = parse.urlencode({"query": sparql_query}).encode("utf-8")
 
@@ -87,6 +120,10 @@ def execute_select_query(sparql_query: str) -> list[dict[str, str]]:
             if isinstance(value, dict) and "value" in value:
                 row_values[key] = str(value["value"])
         parsed.append(row_values)
+
+    if cacheable:
+        _SPARQL_CACHE[key] = (parsed, datetime.utcnow() + _SPARQL_CACHE_TTL)
+
     return parsed
 
 

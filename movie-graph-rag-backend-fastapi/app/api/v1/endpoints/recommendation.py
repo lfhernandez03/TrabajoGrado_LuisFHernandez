@@ -19,7 +19,6 @@ from app.api.schemas.recommendation import (
 from app.application.use_cases.recommendation import RecommendationUseCase
 from app.application.use_cases.recommendation.chat_use_case import ChatUseCase
 from app.application.use_cases.users import UserFavoritesUseCase
-from app.core.profile_service import ProfileService
 from app.domain.entities.auth_user import AuthUser
 
 router = APIRouter(prefix="/recommendation", tags=["recommendation"])
@@ -46,20 +45,21 @@ def get_recommendation_post(
 
 
 @router.get("/activity", response_model=RecommendationResponse)
-async def get_activity_recommendation(
+def get_activity_recommendation(
     current_user: AuthUser = Depends(get_current_user),
     use_case: RecommendationUseCase = Depends(get_recommendation_use_case),
     favorites_use_case: UserFavoritesUseCase = Depends(get_user_favorites_use_case_di),
 ) -> RecommendationResponse:
     """Inteligent activity recommendation based on user's profile, favorites, and topological exploration.
-    
+
     Combines:
     - Time-of-day context (morning, afternoon, evening, night)
     - Favorite genres with weights
     - Dominant clusters and exploration index
     - Temporal trends (specializing vs diversifying)
     """
-    profile_service = ProfileService()
+    from app.api.di.movies_di import get_profile_service_singleton
+    profile_service = get_profile_service_singleton()
     
     # Get user's favorites
     favorites = favorites_use_case.get_my_favorites(current_user.id)

@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import re
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from google import genai
 
@@ -89,7 +90,24 @@ QUERY_TYPE_INSTRUCTIONS: dict[str, str] = {
 }
 
 
+# ---------------------------------------------------------------------------
+# In-process explanation cache
+# Key: MD5(context_summary | sorted movie titles). TTL: 5 minutes.
+# ---------------------------------------------------------------------------
+_EXPLANATION_CACHE: dict[str, tuple[str, datetime]] = {}
+_EXPLANATION_TTL = timedelta(minutes=5)
+
+
+def _explanation_cache_key(context_summary: str, movies: list[dict]) -> str:
+    titles = ",".join(sorted(str(m.get("title", "")) for m in movies[:5]))
+    raw = f"{context_summary}|{titles}"
+    return hashlib.md5(raw.encode("utf-8")).hexdigest()
+
+
 class GeminiRecommendationLlmAdapter(RecommendationLlmClientPort):
+    def __init__(self) -> None:
+        self._client = genai.Client(api_key=settings.gemini_api_key)
+
     def _keyword_extract_context(self, query_lower: str) -> QueryContext:
         social_context = None
         if any(token in query_lower for token in ["solo", "sola", "yo solo", "yo sola"]):
@@ -195,8 +213,7 @@ class GeminiRecommendationLlmAdapter(RecommendationLlmClientPort):
 
     def extract_query_context(self, query: str) -> QueryContext:
         try:
-            client = genai.Client(api_key=settings.gemini_api_key)
-            response = client.models.generate_content(
+            response = self._client.models.generate_content(
                 model=settings.gemini_model,
                 contents=query,
                 config=genai.types.GenerateContentConfig(
@@ -226,8 +243,7 @@ class GeminiRecommendationLlmAdapter(RecommendationLlmClientPort):
         llm_ok = False
         data: dict = {}
         try:
-            client = genai.Client(api_key=settings.gemini_api_key)
-            response = client.models.generate_content(
+            response = self._client.models.generate_content(
                 model=settings.gemini_model,
                 contents=query,
                 config=genai.types.GenerateContentConfig(
@@ -385,6 +401,14 @@ class GeminiRecommendationLlmAdapter(RecommendationLlmClientPort):
         semantic_hint: str = "",
         query_type: str = "general",
     ) -> str:
+        # Check explanation cache first
+        cache_key = _explanation_cache_key(context_summary, movies_with_scores)
+        now = datetime.utcnow()
+        if cache_key in _EXPLANATION_CACHE:
+            cached_text, expires = _EXPLANATION_CACHE[cache_key]
+            if now < expires:
+                return cached_text
+
         try:
             prompt = self._build_prompt(
                 query,
@@ -393,8 +417,7 @@ class GeminiRecommendationLlmAdapter(RecommendationLlmClientPort):
                 semantic_hint,
                 query_type,
             )
-            client = genai.Client(api_key=settings.gemini_api_key)
-            response = client.models.generate_content(
+            response = self._client.models.generate_content(
                 model=settings.gemini_model,
                 contents=prompt,
                 config=genai.types.GenerateContentConfig(
@@ -410,6 +433,8 @@ class GeminiRecommendationLlmAdapter(RecommendationLlmClientPort):
                     max_output_tokens=600,
                 ),
             )
-            return response.text
+            text = response.text
+            _EXPLANATION_CACHE[cache_key] = (text, datetime.utcnow() + _EXPLANATION_TTL)
+            return text
         except Exception:
             return self._fallback_explanation(query, context_summary, movies_with_scores)
