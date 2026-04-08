@@ -7,6 +7,7 @@ import { RecommendationHeader } from "@/components/organisms/RecommendationHeade
 import { RecommendationCarousel } from "@/components/organisms/RecommendationCarousel";
 import { type MovieCardMovie } from "@/components/organisms/MovieCard";
 import { MovieDetailsDialog } from "@/components/home/MovieDetailsDialog";
+import { ProtectedRoute } from "@/components/shared/ProtectedRoute";
 import { Movie, searchMovies, getMovieExamples, getMoviesByCentrality, getMovieNeighborhood, getTopologicalProfile, getClusterMovies, type RecommendedMovie } from "@/services/movies.service";
 import { getActivityRecommendation } from "@/services/chat.service";
 import {
@@ -17,6 +18,8 @@ import {
 } from "@/services/favorites.service";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/hooks/useAuth";
+import { usePendingSet } from "@/hooks/usePendingSet";
 
 // ── Adapters ─────────────────────────────────────────────────────────────────
 
@@ -52,6 +55,8 @@ function recToCardMovie(movie: RecommendedMovie): MovieCardMovie {
 
 export default function Home() {
   const router = useRouter();
+  const { isAuthenticated } = useAuth();
+  const withPending = usePendingSet();
 
   // ── Hero ──────────────────────────────────────────────────────────────────
   const [heroMovie, setHeroMovie] = useState<HeroMovie | null>(null);
@@ -267,16 +272,21 @@ export default function Home() {
     }
   }, []);
 
-  // Initial load: fetch favorites and hero on mount
+  // Initial load: only fetch data once we know the user is authenticated.
+  // This prevents firing API calls when ProtectedRoute is about to redirect to login.
   useEffect(() => {
+    if (!isAuthenticated) return;
     const initialize = async () => {
+      // Hero and favorites are independent — start both in parallel.
+      // Carousels need favorites but NOT hero, so they start as soon as
+      // favorites resolve without waiting for the hero call to finish.
+      const heroPromise = loadHero();
       const userFavorites = await loadFavorites();
-      await loadHero();
-      await loadCarousels(userFavorites);
+      await Promise.all([heroPromise, loadCarousels(userFavorites)]);
     };
     initialize();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Only run once on mount
+  }, [isAuthenticated]);
 
   // ── Favorites helpers ─────────────────────────────────────────────────────
 
@@ -286,22 +296,19 @@ export default function Home() {
   );
 
   const handleToggleFavorite = useCallback(
-    async (movie: MovieCardMovie) => {
+    (movie: MovieCardMovie) => {
       if (!movie.uri) return;
-      try {
-        const was = isFavorite(movie.uri);
+      withPending(movie.uri, async () => {
+        const was = isFavorite(movie.uri!);
         const updated = was
-          ? await removeMyFavorite(movie.uri)
+          ? await removeMyFavorite(movie.uri!)
           : await addMyFavorite(movie as Movie);
         setFavorites(updated);
         toast.success(was ? `"${movie.title}" eliminado de favoritos` : `"${movie.title}" agregado a favoritos`);
-        // Update hero fav status
         if (heroMovie && movie.title === heroMovie.title) setHeroFavorite(!was);
-      } catch {
-        toast.error("No se pudo actualizar favoritos");
-      }
+      }).catch(() => toast.error("No se pudo actualizar favoritos"));
     },
-    [isFavorite, heroMovie]
+    [withPending, isFavorite, heroMovie]
   );
 
   const handleViewDetails = useCallback((movie: MovieCardMovie) => {
@@ -313,27 +320,24 @@ export default function Home() {
     router.push(`/search?q=${encodeURIComponent(movie.title)}`);
   }, [router]);
 
-  const handleHeroDetails = useCallback(async () => {
+  const handleHeroDetails = useCallback(() => {
     if (!heroMovie) return;
-    try {
-      // Search for the full movie details
+    withPending('hero-details', async () => {
       const results = await searchMovies({ q: heroMovie.title, limit: 5 });
       const fullMovie = results.find(
         (m) => m.title.trim().toLowerCase() === heroMovie.title.trim().toLowerCase()
       ) ?? results[0];
-      
       if (fullMovie) {
         setSelectedMovie(fullMovie);
         setShowDetailsDialog(true);
       }
-    } catch {
-      toast.error("No se pudo cargar los detalles de la película");
-    }
-  }, [heroMovie]);
+    }).catch(() => toast.error("No se pudo cargar los detalles de la película"));
+  }, [withPending, heroMovie]);
 
   // ── Render ────────────────────────────────────────────────────────────────
 
   return (
+    <ProtectedRoute>
     <div className="min-h-screen bg-bg">
       <Navbar />
 
@@ -400,5 +404,6 @@ export default function Home() {
         }
       />
     </div>
+    </ProtectedRoute>
   );
 }

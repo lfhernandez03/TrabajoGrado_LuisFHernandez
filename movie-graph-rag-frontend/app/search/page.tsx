@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, Suspense } from "react";
+import { useState, useEffect, useCallback, useRef, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Search, Code2, ChevronDown, ChevronUp, Clock } from "lucide-react";
 import { Navbar } from "@/components/organisms/Navbar";
@@ -33,6 +33,7 @@ function ExploreContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const queryParam = searchParams.get("q") ?? "";
+  const pendingFavs = useRef(new Set<string>());
 
   const [query, setQuery] = useState(queryParam);
   const [results, setResults] = useState<Movie[]>([]);
@@ -59,7 +60,8 @@ function ExploreContent() {
   const isFavorite = (uri: string) => favorites.some((f) => f.uri === uri);
 
   const handleToggleFavorite = async (movie: MovieCardMovie) => {
-    if (!movie.uri) return;
+    if (!movie.uri || pendingFavs.current.has(movie.uri)) return;
+    pendingFavs.current.add(movie.uri);
     try {
       const was = isFavorite(movie.uri);
       const updated = was
@@ -67,7 +69,11 @@ function ExploreContent() {
         : await addMyFavorite(movie as Movie);
       setFavorites(updated);
       toast.success(was ? `"${movie.title}" eliminado de favoritos` : `"${movie.title}" agregado a favoritos`);
-    } catch { toast.error("No se pudo actualizar favoritos"); }
+    } catch {
+      toast.error("No se pudo actualizar favoritos");
+    } finally {
+      pendingFavs.current.delete(movie.uri);
+    }
   };
 
   const executeSearch = async (term: string) => {

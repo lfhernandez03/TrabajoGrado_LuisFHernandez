@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Heart } from "lucide-react";
 import { Navbar } from "@/components/organisms/Navbar";
@@ -29,6 +29,7 @@ function toCardMovie(m: FavoriteMovie): MovieCardMovie {
 export default function FavoritesPage() {
   const router = useRouter();
   const [favorites, setFavorites] = useState<FavoriteMovie[]>([]);
+  const pendingFavs = useRef(new Set<string>());
   const [isLoading, setIsLoading] = useState(true);
   const [selectedMovie, setSelectedMovie] = useState<Movie | null>(null);
   const [showDetails, setShowDetails] = useState(false);
@@ -47,12 +48,15 @@ export default function FavoritesPage() {
   useEffect(() => { load(); }, [load]);
 
   const handleRemove = useCallback(async (movie: MovieCardMovie) => {
-    if (!movie.uri) return;
+    if (!movie.uri || pendingFavs.current.has(movie.uri)) return;
+    pendingFavs.current.add(movie.uri);
     try {
       setFavorites(await removeMyFavorite(movie.uri));
       toast.success(`"${movie.title}" eliminado de favoritos`);
     } catch {
       toast.error("No se pudo eliminar el favorito");
+    } finally {
+      pendingFavs.current.delete(movie.uri);
     }
   }, []);
 

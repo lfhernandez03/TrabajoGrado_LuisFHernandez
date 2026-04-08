@@ -18,8 +18,12 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<AuthResponse["user"] | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  // Read localStorage synchronously so the initial state is correct on first render.
+  // If there is no token we know immediately that the user is not authenticated
+  // (isLoading stays false). If there is a token we still need to verify it
+  // with the backend, so isLoading starts true.
+  const [user, setUser] = useState<AuthResponse["user"] | null>(() => authService.getUser());
+  const [isLoading, setIsLoading] = useState<boolean>(() => authService.isAuthenticated());
   const router = useRouter();
 
   const logout = useCallback(() => {
