@@ -13,6 +13,7 @@ class MovieResponse(BaseModel):
     genres: list[str] | None = None
     description: str | None = None
     rating: float | None = None
+    imdbRating: float | None = None
     relationReason: str | None = None
 
 

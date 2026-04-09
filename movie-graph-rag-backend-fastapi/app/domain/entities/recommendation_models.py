@@ -236,6 +236,8 @@ class ConversationSession:
     accumulated_context: UserContext | None = None
     # Merged UserContext from all user turns so far.
     # None until at least one user turn has been processed.
+    recommended_titles: list[str] = field(default_factory=list)
+    # Titles already shown to the user so they can be excluded in future turns.
 
     created_at: datetime = field(default_factory=datetime.utcnow)
     last_updated: datetime = field(default_factory=datetime.utcnow)

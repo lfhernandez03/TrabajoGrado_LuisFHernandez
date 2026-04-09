@@ -98,6 +98,7 @@ class ChatResponse(BaseModel):
     movies: list[ChatMovieResponse]
     explanation: str
     strategy_used: str
+    sparql_query: str = ""
     context_extracted: dict[str, Any]
     execution_ms: int
     turn_count: int = 0

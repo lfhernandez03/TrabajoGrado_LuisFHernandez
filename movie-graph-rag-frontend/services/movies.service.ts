@@ -12,6 +12,7 @@ export interface Movie {
   genres?: string[];
   description?: string;
   rating?: number;
+  imdbRating?: number;
   relationReason?: string;
 }
 
@@ -185,6 +186,8 @@ export interface ClusterMovie {
   genres: string[];
   posterUrl?: string | null;
   runtime?: number | null;
+  description?: string | null;
+  director?: string | null;
 }
 
 /** Movies ranked by graph centrality (most "connected" in the knowledge graph) */

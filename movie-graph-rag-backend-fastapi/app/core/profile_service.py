@@ -30,7 +30,15 @@ _CONTEXTDATA_NS = "http://www.semanticweb.org/movierecommendation/data/context/"
 # ---------------------------------------------------------------------------
 
 def _esc(value: str) -> str:
+    """Escape string for use in SPARQL string literals."""
     return str(value).replace("\\", "\\\\").replace('"', '\\"').replace("\n", " ")
+
+
+def _esc_uri(value: str) -> str:
+    """Escape string for use in SPARQL local names / URIs."""
+    # Remove/replace problematic characters for local names
+    s = str(value).replace("\\", "").replace('"', "").replace("/", "_").replace(":", "_").replace("#", "_").replace(" ", "_")
+    return s
 
 
 def _build_archive_sparql(snapshot_id: str, ctx: UserContext, user_id: str, now: datetime) -> str:
@@ -41,10 +49,15 @@ def _build_archive_sparql(snapshot_id: str, ctx: UserContext, user_id: str, now:
     (context:ContextSnapshot / context:feelsMood / context:withCompanion /
     context:hasRequirement) so profiles can be rebuilt from history.
     """
-    sid = _esc(snapshot_id)
+    sid_safe = _esc_uri(snapshot_id)  # For use in URIs
+    sid_str = _esc(snapshot_id)       # For use in string literals
+    user_id_safe = _esc_uri(user_id)
     iso_ts = now.replace(microsecond=0).isoformat() + "Z"
+    iso_ts_safe = _esc(iso_ts)
     day_name = now.strftime("%A")
-    graph_uri = f"http://users/{_esc(user_id)}/history"
+    day_name_safe = _esc(day_name)
+    hour_int = int(now.hour)
+    graph_uri = f"http://users/{user_id_safe}/history"
     
     logger.debug(
         "_build_archive_sparql: snapshot_id=%s, user_id=%s, iso_ts=%s, has_mood=%s, has_companion=%s, has_runtime=%s",
@@ -61,23 +74,25 @@ def _build_archive_sparql(snapshot_id: str, ctx: UserContext, user_id: str, now:
         f"PREFIX contextdata: <{_CONTEXTDATA_NS}>",
         "PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>",
         "",
-        f"INSERT DATA {{",
+        "INSERT DATA {",
         f"  GRAPH <{graph_uri}> {{",
-        f"    contextdata:Session_{sid} a context:ContextSnapshot ;",
-        f'        context:snapshotID "{sid}"^^xsd:string ;',
-        f'        context:requestTimestamp "{_esc(iso_ts)}"^^xsd:dateTime ;',
-        f"        context:hourOfDay {now.hour}^^xsd:integer ;",
-        f'        context:dayOfWeek "{_esc(day_name)}"^^xsd:string .',
+        f"    contextdata:Session_{sid_safe} a context:ContextSnapshot ;",
+        f"        context:snapshotID \"{sid_str}\"^^xsd:string ;",
+        f"        context:requestTimestamp \"{iso_ts_safe}\"^^xsd:dateTime ;",
+        f'        context:hourOfDay "{hour_int}"^^xsd:integer ;',
+        f"        context:dayOfWeek \"{day_name_safe}\"^^xsd:string .",
     ]
 
     mood_es = translate_mood(ctx.mood)
     energy_es = translate_energy(ctx.energy) or translate_energy(ctx.mood) or "medio"
     if mood_es:
+        mood_es_safe = _esc(mood_es)
+        energy_es_safe = _esc(energy_es)
         lines += [
-            f"    contextdata:Session_{sid} context:feelsMood contextdata:Mood_{sid} .",
-            f"    contextdata:Mood_{sid} a context:EmotionalContext ;",
-            f'        context:moodDescription "{_esc(mood_es)}"^^xsd:string ;',
-            f'        context:desiredEnergyLevel "{_esc(energy_es)}"^^xsd:string .',
+            f"    contextdata:Session_{sid_safe} context:feelsMood contextdata:Mood_{sid_safe} .",
+            f"    contextdata:Mood_{sid_safe} a context:EmotionalContext ;",
+            f"        context:moodDescription \"{mood_es_safe}\"^^xsd:string ;",
+            f"        context:desiredEnergyLevel \"{energy_es_safe}\"^^xsd:string .",
         ]
 
     companion_es = translate_companion(
@@ -85,19 +100,21 @@ def _build_archive_sparql(snapshot_id: str, ctx: UserContext, user_id: str, now:
         ctx.has_children or ctx.children_age_hint == "young",
     )
     if companion_es:
+        companion_es_safe = _esc(companion_es)
         has_children_str = "true" if ctx.has_children else "false"
         lines += [
-            f"    contextdata:Session_{sid} context:withCompanion contextdata:Social_{sid} .",
-            f"    contextdata:Social_{sid} a context:SocialContext ;",
-            f'        context:companionType "{_esc(companion_es)}"^^xsd:string ;',
-            f"        context:hasChildren {has_children_str}^^xsd:boolean .",
+            f"    contextdata:Session_{sid_safe} context:withCompanion contextdata:Social_{sid_safe} .",
+            f"    contextdata:Social_{sid_safe} a context:SocialContext ;",
+            f"        context:companionType \"{companion_es_safe}\"^^xsd:string ;",
+            f'        context:hasChildren "{has_children_str}"^^xsd:boolean .',
         ]
 
     if ctx.runtime_max is not None:
+        runtime_int = int(ctx.runtime_max)
         lines += [
-            f"    contextdata:Session_{sid} context:hasRequirement contextdata:Req_{sid} .",
-            f"    contextdata:Req_{sid} a context:RequirementContext ;",
-            f"        context:availableTime {int(ctx.runtime_max)}^^xsd:integer .",
+            f"    contextdata:Session_{sid_safe} context:hasRequirement contextdata:Req_{sid_safe} .",
+            f"    contextdata:Req_{sid_safe} a context:RequirementContext ;",
+            f'        context:availableTime "{runtime_int}"^^xsd:integer .',
         ]
 
     lines += ["  }", "}"]
@@ -121,6 +138,8 @@ class ProfileService:
     def __init__(self) -> None:
         # {user_id: (UserProfile, expires_at)}
         self._cache: dict[str, tuple[UserProfile, datetime]] = {}
+        # {user_id: last_archived_context} — for change detection
+        self._last_contexts: dict[str, "UserContext"] = {}
 
     # ── ProfilePort interface ───────────────────────────────────────────────
 
@@ -139,25 +158,57 @@ class ProfileService:
 
     def archive_context(self, user_id: str, ctx: UserContext) -> None:
         """Write a UserContext snapshot to the user's permanent Fuseki history
-        graph and invalidate the cached profile.
+        graph, but ONLY if the context has changed significantly since the last
+        archival.
 
-        TEMPORARY: Archiving disabled due to Fuseki INSERT DATA 400 errors.
-        Running it will log the SPARQL but not execute it.
+        Change detection compares:
+        - mood, energy, companion, has_children, children_age_hint
+        - runtime_max (if present)
 
         Never raises — failures are logged and silently swallowed so a failed
         archive never crashes the recommendation pipeline.
         """
         import threading
         
+        def _has_significant_change(old_ctx: "UserContext | None", new_ctx: UserContext) -> bool:
+            """Return True if any key fields have changed meaningfully."""
+            if old_ctx is None:
+                return True
+            
+            # Compare key fields
+            if old_ctx.mood != new_ctx.mood:
+                return True
+            if old_ctx.energy != new_ctx.energy:
+                return True
+            if old_ctx.companion != new_ctx.companion:
+                return True
+            if old_ctx.has_children != new_ctx.has_children:
+                return True
+            if old_ctx.children_age_hint != new_ctx.children_age_hint:
+                return True
+            if old_ctx.runtime_max != new_ctx.runtime_max:
+                return True
+            
+            return False
+        
         def _do_archive():
             try:
+                # Check if context has changed significantly
+                old_ctx = self._last_contexts.get(user_id)
+                if not _has_significant_change(old_ctx, ctx):
+                    logger.debug("archive_context: No significant change for user %s, skipping", user_id)
+                    return
+                
+                # Record this as the last archived context
+                self._last_contexts[user_id] = ctx
+                
                 snapshot_id = (
                     ctx.session_id
                     or f"ctx_{user_id}_{uuid4().hex[:8]}"
                 )
                 now = datetime.utcnow()
                 sparql = _build_archive_sparql(snapshot_id, ctx, user_id, now)
-                logger.debug("archive_context SPARQL:\n%s", sparql)
+                logger.info("archive_context SPARQL (user=%s):\n%s", user_id, sparql)
                 ok = execute_update_query(sparql)
                 if not ok:
                     logger.warning("archive_context: INSERT failed for user %s", user_id)

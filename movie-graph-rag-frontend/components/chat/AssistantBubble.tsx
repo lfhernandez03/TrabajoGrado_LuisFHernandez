@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Bot, Clock, Code2, ChevronDown, ChevronUp, Sparkles } from "lucide-react";
+import { Bot, Clock, Code2, ChevronDown, ChevronUp, Sparkles, Copy, Check } from "lucide-react";
 import { MovieRecommendationCard } from "./MovieRecommendationCard";
 import type { ChatMessage } from "@/services/chat.service";
 
@@ -13,7 +13,15 @@ interface AssistantBubbleProps {
 
 export function AssistantBubble({ message }: AssistantBubbleProps) {
   const [showSparql, setShowSparql] = useState(false);
-  const [showRdf, setShowRdf] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  const copySparql = () => {
+    if (!rec?.sparql_query) return;
+    navigator.clipboard.writeText(rec.sparql_query).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
   const rec = message.recommendation;
 
   return (
@@ -30,14 +38,14 @@ export function AssistantBubble({ message }: AssistantBubbleProps) {
         </div>
 
         {/* Movie recommendations cards */}
-        {rec && rec.moviesWithScores.length > 0 && (
+        {rec && rec.movies.length > 0 && (
           <div className="space-y-2">
             <p className="text-xs text-muted-foreground font-medium flex items-center gap-1 ml-1">
               <Sparkles className="h-3 w-3" />
-              {rec.moviesFound} película{rec.moviesFound !== 1 ? "s" : ""}{" "}
-              encontrada{rec.moviesFound !== 1 ? "s" : ""}
+              {rec.movies.length} película{rec.movies.length !== 1 ? "s" : ""}{" "}
+              encontrada{rec.movies.length !== 1 ? "s" : ""}
             </p>
-            {rec.moviesWithScores.map((movie, idx) => (
+            {rec.movies.map((movie, idx) => (
               <MovieRecommendationCard key={idx} movie={movie} />
             ))}
           </div>
@@ -46,14 +54,23 @@ export function AssistantBubble({ message }: AssistantBubbleProps) {
         {/* Metadata footer */}
         {rec && (
           <div className="flex flex-wrap items-center gap-2 ml-1">
-            {rec.executionTimeMs && (
+            {rec.execution_ms && (
               <Badge variant="outline" className="text-[10px]">
                 <Clock className="h-3 w-3 mr-1" />
-                {(rec.executionTimeMs / 1000).toFixed(1)}s
+                {(rec.execution_ms / 1000).toFixed(1)}s
               </Badge>
             )}
-
-            {rec.sparqlQuery && (
+            {rec.strategy_used && (
+              <Badge variant="outline" className="text-[10px]">
+                {rec.strategy_used}
+              </Badge>
+            )}
+            {rec.turn_count > 1 && (
+              <Badge variant="outline" className="text-[10px]">
+                Turno {rec.turn_count}
+              </Badge>
+            )}
+            {rec.sparql_query && (
               <Button
                 variant="ghost"
                 size="sm"
@@ -69,46 +86,31 @@ export function AssistantBubble({ message }: AssistantBubbleProps) {
                 )}
               </Button>
             )}
-
-            {rec.rdfGenerated && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-6 text-[10px] px-2"
-                onClick={() => setShowRdf(!showRdf)}
-              >
-                <Code2 className="h-3 w-3 mr-1" />
-                RDF
-                {showRdf ? (
-                  <ChevronUp className="h-3 w-3 ml-1" />
-                ) : (
-                  <ChevronDown className="h-3 w-3 ml-1" />
-                )}
-              </Button>
-            )}
           </div>
         )}
 
         {/* SPARQL Query expandable */}
-        {showSparql && rec?.sparqlQuery && (
+        {showSparql && rec?.sparql_query && (
           <div className="rounded-lg bg-slate-950 p-4 overflow-x-auto">
-            <p className="text-[10px] text-slate-400 font-medium mb-2">
-              Consulta SPARQL ejecutada:
-            </p>
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-[10px] text-slate-400 font-medium">
+                Consulta SPARQL ejecutada:
+              </p>
+              <button
+                type="button"
+                onClick={copySparql}
+                className="flex items-center gap-1 text-[10px] text-slate-400 hover:text-slate-200 transition-colors"
+                aria-label="Copiar SPARQL"
+              >
+                {copied ? (
+                  <><Check className="h-3 w-3 text-green-400" /><span className="text-green-400">Copiado</span></>
+                ) : (
+                  <><Copy className="h-3 w-3" />Copiar</>
+                )}
+              </button>
+            </div>
             <pre className="text-xs text-slate-300 font-mono whitespace-pre-wrap max-h-48 overflow-y-auto">
-              {rec.sparqlQuery}
-            </pre>
-          </div>
-        )}
-
-        {/* RDF Triples expandable */}
-        {showRdf && rec?.rdfGenerated && (
-          <div className="rounded-lg bg-slate-950 p-4 overflow-x-auto">
-            <p className="text-[10px] text-slate-400 font-medium mb-2">
-              Tripletas RDF generadas:
-            </p>
-            <pre className="text-xs text-slate-300 font-mono whitespace-pre-wrap max-h-48 overflow-y-auto">
-              {rec.rdfGenerated}
+              {rec.sparql_query}
             </pre>
           </div>
         )}

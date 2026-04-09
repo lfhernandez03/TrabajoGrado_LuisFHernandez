@@ -315,7 +315,8 @@ export default function Home() {
               genres: m.genres && m.genres.length > 0 ? m.genres : undefined,
               rating: m.rating ?? undefined,
               runtime: m.runtime ?? undefined,
-              description: undefined,
+              description: m.description ?? undefined,
+              director: m.director ?? undefined,
             } as MovieCardMovie)));
           }
           // Fallback: use serendipity score from centrality

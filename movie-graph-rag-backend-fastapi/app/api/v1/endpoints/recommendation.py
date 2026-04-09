@@ -216,6 +216,7 @@ def chat(
         movies=movies,
         explanation=result.explanation,
         strategy_used=result.strategy_used,
+        sparql_query=result.sparql_query,
         context_extracted=ctx_dict,
         execution_ms=result.execution_ms,
         turn_count=len([m for m in payload.messages if m.role == "user"]),

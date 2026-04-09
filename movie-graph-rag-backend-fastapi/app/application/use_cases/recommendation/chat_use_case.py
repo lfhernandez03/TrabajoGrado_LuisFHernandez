@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import datetime
 from time import perf_counter
 
@@ -41,6 +41,7 @@ class ChatResult:
     strategy_used: str
     context: UserContext
     execution_ms: int
+    sparql_query: str = ""
     metrics: ListMetrics | None = None
     debug: dict = field(default_factory=dict)
 
@@ -61,20 +62,20 @@ def _unique_movie_count(rows: list[dict]) -> int:
 def _run_strategy(
     attempts: list[tuple[str, str]],
     min_results: int = _MIN_RESULTS,
-) -> tuple[list[dict], str]:
+) -> tuple[list[dict], str, str]:
     """Execute strategies in order until min_results unique movies are found.
 
     Counts unique ?movie URIs rather than raw rows so that a strategy with
     30 rows for a single movie does not incorrectly signal success.
 
-    Returns ``(rows, strategy_name)``.  Returns ``([], "empty")`` if every
+    Returns ``(rows, strategy_name, sparql_query)``.  Returns ``([], "empty", "")`` if every
     attempt fails or returns fewer than min_results unique movies.
     """
     for name, sparql in attempts:
         try:
             rows = execute_select_query(sparql)
             if _unique_movie_count(rows) >= min_results:
-                return rows, name
+                return rows, name, sparql
         except Exception as exc:
             logger.warning("strategy '%s' failed: %s", name, exc)
     # Last resort: return whatever the final attempt yielded (even if < min)
@@ -82,10 +83,10 @@ def _run_strategy(
         try:
             rows = execute_select_query(sparql)
             if rows:
-                return rows, name
+                return rows, name, sparql
         except Exception:
             pass
-    return [], "empty"
+    return [], "empty", ""
 
 
 def _query_type(ctx: UserContext, is_cold_start: bool) -> str:
@@ -171,8 +172,16 @@ class ChatUseCase:
         profile = self._profile_svc.get(user_id)
 
         # ── 5. Build SPARQL strategy and run ───────────────────────────────
-        attempts = build_strategy(merged_ctx, profile)
-        candidates, strategy_used = _run_strategy(attempts)
+        # Exclude movies already shown in previous turns so the user always gets
+        # fresh recommendations, not the same titles repeated.
+        query_ctx = merged_ctx
+        if session.recommended_titles:
+            seen = {t.strip().lower() for t in session.recommended_titles if t.strip()}
+            existing_excl = {e.strip().lower() for e in (merged_ctx.exclusions or []) if e.strip()}
+            query_ctx = replace(merged_ctx, exclusions=list(existing_excl | seen))
+
+        attempts = build_strategy(query_ctx, profile)
+        candidates, strategy_used, sparql_query = _run_strategy(attempts)
 
         # ── 6. Score and select with MMR ────────────────────────────────────
         movies = score_and_select(candidates, merged_ctx, profile, n=5)
@@ -205,6 +214,9 @@ class ChatUseCase:
         if movies:
             assistant_msg = explanation[:200] + "..." if len(explanation) > 200 else explanation
             session.add_turn(ConversationTurn(role="assistant", content=assistant_msg))
+            # Track recommended titles to exclude them in subsequent turns
+            new_titles = [m.title for m in movies if m.title]
+            session.recommended_titles.extend(new_titles)
         session_store.update(session)
 
         # ── 9. Archive context to Fuseki ────────────────────────────────────
@@ -215,6 +227,7 @@ class ChatUseCase:
             movies=movies,
             explanation=explanation,
             strategy_used=strategy_used,
+            sparql_query=sparql_query,
             context=merged_ctx,
             metrics=metrics,
             execution_ms=int((perf_counter() - start) * 1000),

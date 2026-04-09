@@ -6,7 +6,7 @@ import { Navbar } from "@/components/organisms/Navbar";
 import { ProtectedRoute } from "@/components/shared/ProtectedRoute";
 import { UserBubble, AssistantBubble, LoadingBubble } from "@/components/chat";
 import { ContextChips, type ContextChip } from "@/components/molecules/ContextChips";
-import { sendChatMessage, type ChatMessage, type ChatRecommendationResponse } from "@/services/chat.service";
+import { sendChatConversation, type ChatMessage, type ChatResponse } from "@/services/chat.service";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
@@ -35,7 +35,7 @@ export default function ChatPage() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [lastRec, setLastRec] = useState<ChatRecommendationResponse | null>(null);
+  const [lastRec, setLastRec] = useState<ChatResponse | null>(null);
   const [contextChips, setContextChips] = useState<ContextChip[]>([]);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -75,6 +75,7 @@ export default function ChatPage() {
 
     // Ensure we have an active session
     let sid = activeId;
+    let currentMessages = messages;
     if (!sid) {
       const id = genId();
       const session: Session = {
@@ -85,6 +86,7 @@ export default function ChatPage() {
       setSessions((prev) => [session, ...prev]);
       setActiveId(id);
       sid = id;
+      currentMessages = [];
     }
 
     const userMsg: ChatMessage = {
@@ -99,8 +101,14 @@ export default function ChatPage() {
     setIsLoading(true);
     setTimeout(() => textareaRef.current?.focus(), 0);
 
+    // Build the full message history to send to the backend
+    const apiMessages = [
+      ...currentMessages.map((m) => ({ role: m.role, content: m.content })),
+      { role: "user" as const, content: query },
+    ];
+
     try {
-      const rec = await sendChatMessage(query);
+      const rec = await sendChatConversation(sid, apiMessages);
       const assistantMsg: ChatMessage = {
         id: genId(),
         role: "assistant",
@@ -121,24 +129,20 @@ export default function ChatPage() {
       });
       setLastRec(rec);
 
-      // Extract context chips from response
-      const ctx = rec.contextExtracted as Record<string, unknown> | undefined;
+      // Extract context chips from flat context_extracted
+      const ctx = rec.context_extracted;
       const newChips: ContextChip[] = [];
-      const emotional = ctx?.emotionalContext as Record<string, string> | undefined;
-      const social = ctx?.socialContext as Record<string, unknown> | undefined;
-      const requirement = ctx?.requirementContext as Record<string, unknown> | undefined;
-
-      if (emotional?.moodDescription) {
-        newChips.push({ id: genId(), label: emotional.moodDescription, type: "mood" });
+      if (ctx.mood) {
+        newChips.push({ id: genId(), label: ctx.mood, type: "mood" });
       }
-      if (social?.companionType && typeof social.companionType === "string") {
-        newChips.push({ id: genId(), label: social.companionType, type: "companion" });
+      if (ctx.companion) {
+        newChips.push({ id: genId(), label: ctx.companion, type: "companion" });
       }
-      if (emotional?.desiredEnergyLevel) {
-        newChips.push({ id: genId(), label: `Energía ${emotional.desiredEnergyLevel}`, type: "energy" });
+      if (ctx.energy) {
+        newChips.push({ id: genId(), label: `Energía ${ctx.energy}`, type: "energy" });
       }
-      if (requirement?.availableTime && typeof requirement.availableTime === "number") {
-        newChips.push({ id: genId(), label: `${requirement.availableTime} min`, type: "runtime" });
+      if (ctx.runtime_max) {
+        newChips.push({ id: genId(), label: `${ctx.runtime_max} min`, type: "runtime" });
       }
       setContextChips(newChips);
     } catch {
@@ -153,7 +157,7 @@ export default function ChatPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [input, isLoading, activeId]);
+  }, [input, isLoading, activeId, messages]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -168,9 +172,7 @@ export default function ChatPage() {
   const isEmpty = messages.length === 0;
 
   // ── Context panel data ────────────────────────────────────────────────────
-  const ctx = lastRec?.contextExtracted as Record<string, unknown> | undefined;
-  const emotional = ctx?.emotionalContext as Record<string, string> | undefined;
-  const social = ctx?.socialContext as Record<string, unknown> | undefined;
+  const ctx = lastRec?.context_extracted;
 
   return (
     <ProtectedRoute>
@@ -349,33 +351,48 @@ export default function ChatPage() {
             {lastRec ? (
               <div className="p-4 flex flex-col gap-4 text-xs">
                 {/* Emotional context */}
-                {emotional && (
+                {(ctx?.mood || ctx?.energy) && (
                   <ContextPanel label="Estado emocional">
-                    {emotional.moodDescription && (
-                      <Row label="Mood" value={emotional.moodDescription} />
-                    )}
-                    {emotional.desiredEnergyLevel && (
-                      <Row label="Energía" value={emotional.desiredEnergyLevel} />
-                    )}
+                    {ctx.mood && <Row label="Mood" value={ctx.mood} />}
+                    {ctx.energy && <Row label="Energía" value={ctx.energy} />}
                   </ContextPanel>
                 )}
 
                 {/* Social context */}
-                {social && (
+                {ctx?.companion && (
                   <ContextPanel label="Contexto social">
-                    {typeof social.companionType === "string" && (
-                      <Row label="Compañía" value={social.companionType} />
-                    )}
+                    <Row label="Compañía" value={ctx.companion} />
+                    {ctx.has_children && <Row label="Niños" value="Sí" />}
                   </ContextPanel>
                 )}
 
-                {/* Metrics */}
-                {lastRec.moviesFound !== undefined && (
-                  <ContextPanel label="Métricas">
-                    <Row label="Películas" value={String(lastRec.moviesFound)} />
-                    <Row label="Tiempo" value={`${lastRec.executionTimeMs}ms`} />
+                {/* Preferences */}
+                {(ctx?.genres?.length || ctx?.runtime_max || ctx?.exclusions?.length) ? (
+                  <ContextPanel label="Preferencias">
+                    {ctx.genres && ctx.genres.length > 0 && (
+                      <Row label="Géneros" value={ctx.genres.join(", ")} />
+                    )}
+                    {ctx.runtime_max && (
+                      <Row label="Duración máx." value={`${ctx.runtime_max} min`} />
+                    )}
+                    {ctx.exclusions && ctx.exclusions.length > 0 && (
+                      <Row label="Excluir" value={ctx.exclusions.join(", ")} />
+                    )}
                   </ContextPanel>
-                )}
+                ) : null}
+
+                {/* Metrics */}
+                <ContextPanel label="Métricas">
+                  <Row label="Películas" value={String(lastRec.movies.length)} />
+                  <Row label="Tiempo" value={`${lastRec.execution_ms}ms`} />
+                  <Row label="Turno" value={String(lastRec.turn_count)} />
+                  {lastRec.strategy_used && (
+                    <Row label="Estrategia" value={lastRec.strategy_used} />
+                  )}
+                  {ctx?.confidence !== undefined && (
+                    <Row label="Confianza" value={`${Math.round(ctx.confidence * 100)}%`} />
+                  )}
+                </ContextPanel>
 
                 {/* Strategy indicator */}
                 <div className="flex items-center gap-1.5 text-teal">
