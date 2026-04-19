@@ -1,8 +1,8 @@
-from app.adapters.llm.gemini_recommendation_llm_adapter import GeminiRecommendationLlmAdapter
+from app.adapters.llm.groq_recommendation_llm_adapter import GroqRecommendationLlmAdapter
 from app.domain.entities.query_context import QueryContext
 
 
-_default_llm_adapter = GeminiRecommendationLlmAdapter()
+_default_llm_adapter = GroqRecommendationLlmAdapter()
 
 
 def extract_query_context(query: str) -> QueryContext:

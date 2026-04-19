@@ -19,6 +19,10 @@ const QUICK_PROMPTS = [
   { icon: "😰", text: "Estoy estresado, necesito desconectarme" },
 ];
 
+const SESSIONS_KEY = "cinegraph_sessions";
+const ACTIVE_KEY = "cinegraph_active_session";
+const MAX_SESSIONS = 20;
+
 function genId() {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 }
@@ -29,13 +33,51 @@ interface Session {
   messages: ChatMessage[];
 }
 
+function deserializeSessions(raw: string): Session[] {
+  try {
+    const parsed = JSON.parse(raw) as Session[];
+    return parsed.map((s) => ({
+      ...s,
+      messages: s.messages.map((m) => ({
+        ...m,
+        timestamp: new Date(m.timestamp),
+      })),
+    }));
+  } catch {
+    return [];
+  }
+}
+
+function readStoredSessions(): Session[] {
+  if (typeof window === "undefined") return [];
+  const raw = localStorage.getItem(SESSIONS_KEY);
+  return raw ? deserializeSessions(raw) : [];
+}
+
+function readStoredActiveId(): string | null {
+  if (typeof window === "undefined") return null;
+  return localStorage.getItem(ACTIVE_KEY);
+}
+
 export default function ChatPage() {
-  const [sessions, setSessions] = useState<Session[]>([]);
-  const [activeId, setActiveId] = useState<string | null>(null);
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [sessions, setSessions] = useState<Session[]>(() => readStoredSessions());
+  const [activeId, setActiveId] = useState<string | null>(() => readStoredActiveId());
+  const [messages, setMessages] = useState<ChatMessage[]>(() => {
+    const storedSessions = readStoredSessions();
+    const storedActiveId = readStoredActiveId();
+    const active = storedSessions.find((s) => s.id === storedActiveId);
+    return active?.messages ?? [];
+  });
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [lastRec, setLastRec] = useState<ChatResponse | null>(null);
+  const [lastRec, setLastRec] = useState<ChatResponse | null>(() => {
+    const storedSessions = readStoredSessions();
+    const storedActiveId = readStoredActiveId();
+    const active = storedSessions.find((s) => s.id === storedActiveId);
+    if (!active) return null;
+    const last = active.messages.findLast((m) => m.recommendation);
+    return last?.recommendation ?? null;
+  });
   const [contextChips, setContextChips] = useState<ContextChip[]>([]);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -46,6 +88,22 @@ export default function ChatPage() {
   }, []);
 
   useEffect(() => { scrollBottom(); }, [messages, isLoading, scrollBottom]);
+
+  // ── Persistence ───────────────────────────────────────────────────────────
+
+  useEffect(() => {
+    try {
+      const trimmed = sessions.slice(0, MAX_SESSIONS);
+      localStorage.setItem(SESSIONS_KEY, JSON.stringify(trimmed));
+    } catch {
+      // Quota exceeded — silently ignore
+    }
+  }, [sessions]);
+
+  useEffect(() => {
+    if (activeId) localStorage.setItem(ACTIVE_KEY, activeId);
+    else localStorage.removeItem(ACTIVE_KEY);
+  }, [activeId]);
 
   // ── Session helpers ───────────────────────────────────────────────────────
 

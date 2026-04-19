@@ -98,7 +98,7 @@ export function RecommendationCarousel({
           ? Array.from({ length: PAGE_SIZE }).map((_, i) => <SkeletonMovieCard key={i} />)
           : visible.map((movie, i) => (
               <MovieCard
-                key={movie.uri ?? movie.title ?? `movie-${i}`}
+                key={(movie.uri?.trim()) || (movie.title?.trim()) || `movie-${i}`}
                 movie={movie}
                 isFavorite={isFavorite?.(movie.uri ?? '') ?? false}
                 onToggleFavorite={onToggleFavorite}

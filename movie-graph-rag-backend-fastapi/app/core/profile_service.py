@@ -338,6 +338,32 @@ class ProfileService:
             clusteredFavorites=clustered,
         )
 
+    # ── Public helpers ──────────────────────────────────────────────────────
+
+    @staticmethod
+    def build_genre_weights(favorites: list) -> dict[str, float]:
+        """Compute normalized genre weights from a list of FavoriteMovie objects.
+
+        Each favorite may carry multiple genres (FavoriteMovie.genres: list[str]).
+        Counts occurrences of every genre across all favorites and normalises to
+        [0, 1] so the heaviest genre = 1.0.  Returns {} when favorites is empty
+        or none of them have genre data.
+        """
+        from collections import Counter
+
+        counts: Counter[str] = Counter()
+        for fav in favorites:
+            for g in getattr(fav, "genres", []) or []:
+                g = str(g).strip()
+                if g:
+                    counts[g] += 1
+
+        if not counts:
+            return {}
+
+        max_count = max(counts.values())
+        return {g: round(cnt / max_count, 4) for g, cnt in counts.items()}
+
     # ── Internal ────────────────────────────────────────────────────────────
 
     def _build_profile(self, user_id: str) -> UserProfile:

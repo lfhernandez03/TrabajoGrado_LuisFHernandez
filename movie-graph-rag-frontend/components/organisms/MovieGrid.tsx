@@ -53,7 +53,7 @@ export function MovieGrid({
     <div className={gridClass}>
       {movies.map((movie, i) => (
         <MovieCard
-          key={movie.uri ?? movie.title ?? `movie-${i}`}
+          key={(movie.uri?.trim()) || (movie.title?.trim()) || `movie-${i}`}
           movie={movie}
           isFavorite={isFavorite?.(movie.uri ?? '') ?? false}
           onToggleFavorite={onToggleFavorite}

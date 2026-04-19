@@ -1,3 +1,4 @@
+from dataclasses import replace
 from fastapi import APIRouter, Depends, Query
 from datetime import datetime
 
@@ -67,8 +68,11 @@ async def get_activity_recommendation(
     # Get topological profile
     topo_profile = profile_service.get_topological_profile(current_user.id, favorites)
     
-    # Get basic user profile for genre weights and moods
+    # Get basic user profile for genre weights and moods, then enrich with favorites
     basic_profile = profile_service.get(current_user.id)
+    genre_weights = ProfileService.build_genre_weights(favorites)
+    if genre_weights:
+        basic_profile = replace(basic_profile, genre_weights=genre_weights)
     
     # Build time-of-day context
     hour = datetime.now().hour

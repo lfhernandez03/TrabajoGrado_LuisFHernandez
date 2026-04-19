@@ -1,16 +1,23 @@
 from __future__ import annotations
 
 import json
+import logging
 import re
 from datetime import datetime
+from typing import TYPE_CHECKING
 
-from google import genai
+from groq import Groq
+
+logger = logging.getLogger(__name__)
 
 from app.core.config import settings
 from app.core.conversation_context import get_time_of_day, infer_children_age_hint
 from app.domain.entities.query_context import QueryContext
 from app.domain.entities.recommendation_models import UserContext
 from app.domain.ports.recommendation_llm_client import RecommendationLlmClientPort
+
+if TYPE_CHECKING:
+    from app.domain.entities.recommendation_models import UserProfile
 
 
 _NLU_SYSTEM_PROMPT = (
@@ -88,8 +95,68 @@ QUERY_TYPE_INSTRUCTIONS: dict[str, str] = {
     ),
 }
 
+_PROFILE_NLU_SYSTEM_PROMPT = (
+    "Eres un analizador de intención para un sistema de recomendación de películas en español.\n"
+    "El usuario tiene un perfil con historial de preferencias.\n\n"
+    "COMPORTAMIENTO ESPECIAL:\n"
+    "- Si la consulta es AMBIGUA (ej. 'algo bueno', 'no sé qué ver', 'sorpréndeme') y hay perfil disponible,\n"
+    "  INFIERE la intención a partir del perfil en lugar de devolver campos vacíos.\n"
+    "- Si el mensaje es claramente un SALUDO, SMALL TALK, o pregunta NO relacionada con películas\n"
+    "  (ej. '¿cómo estás?', '¿quién eres?', '¿cuál es la capital de Francia?'), devuelve off_topic=true.\n"
+    "- 'Hola, quiero algo bueno' → off_topic=false (hay intención de ver algo).\n"
+    "- 'Hola' solo, '¿cómo estás?' → off_topic=true.\n\n"
+    "EJEMPLOS:\n"
+    'Consulta: "Hola, ¿cómo estás?"\n'
+    'Respuesta: {"off_topic": true, "intent": "general", "mood": null, "social_context": null, "genres": [], "director_hint": null, "year_range": null, "runtime_max": null, "exclusions": []}\n\n'
+    'Consulta: "No sé qué ver" (usuario con perfil: Comedy 80%, Drama 40%, mood dominante: relaxed)\n'
+    'Respuesta: {"off_topic": false, "intent": "comedy", "mood": "relaxed", "social_context": null, "genres": ["Comedy"], "director_hint": null, "year_range": null, "runtime_max": null, "exclusions": []}\n\n'
+    'Consulta: "Algo de terror para esta noche"\n'
+    'Respuesta: {"off_topic": false, "intent": "horror", "mood": "excited", "social_context": null, "genres": ["Horror"], "director_hint": null, "year_range": null, "runtime_max": null, "exclusions": []}\n\n'
+    "REGLAS:\n"
+    "- off_topic: true SOLO si el mensaje no tiene ninguna relación con películas/series/recomendaciones.\n"
+    "- mood: elige el valor más cercano del enum. NUNCA devuelvas un valor fuera del enum. Si no hay señal emocional clara, usa null.\n"
+    "- Si el usuario menciona un director o actor por nombre, extráelo en director_hint.\n"
+    "- 'sin X', 'nada de X', 'que no sea X' → agregar X a exclusions.\n"
+    "- year_range: solo si el usuario menciona explícitamente una época, década o rango de años.\n"
+    "- runtime_max: solo para restricciones explícitas. 'algo corto' → 90. 'tengo una hora' → 60.\n"
+    "- Si el usuario menciona un género en español, mapéalo al nombre en inglés del enum.\n"
+    "- Responde SOLO con el JSON. Sin texto adicional, sin backticks, sin explicaciones.\n\n"
+    "{\n"
+    '  "off_topic": false | true,\n'
+    '  "intent": "general|action|romance|horror|comedy|family|scifi|thriller|drama",\n'
+    '  "mood": null | "relaxed|excited|sad|happy|neutral|stressed|anxious|bored|curious|romantic|nostalgic|adventurous|nervous",\n'
+    '  "social_context": null | {"companionType": "solo|partner|friends|family", '
+    '"hasChildren": bool, "numberOfPeople": int},\n'
+    '  "genres": ["Action","Drama","Comedy","Romance","Horror","Family",'
+    '"Animation","Science Fiction","Thriller"],\n'
+    '  "director_hint": null | "string",\n'
+    '  "year_range": null | [min_year_int, max_year_int],\n'
+    '  "runtime_max": null | int,\n'
+    '  "exclusions": []\n'
+    "}"
+)
 
-class GeminiRecommendationLlmAdapter(RecommendationLlmClientPort):
+_GREETING_SYSTEM_PROMPT = (
+    "Eres CineGraph, un asistente virtual de recomendación de películas. "
+    "El usuario te ha enviado un mensaje que no es una consulta de película. "
+    "Responde de forma amigable, muy breve (2-3 frases máximo) y en español. "
+    "Invítalo a hacer una consulta de recomendación. "
+    "Sugiere 1-2 ejemplos concretos de preguntas que puede hacerte. "
+    "No te presentes en cada respuesta si parece una conversación continua."
+)
+
+_EXPLANATION_SYSTEM_PROMPT = (
+    "Eres un experto asistente de recomendación de películas con profundo conocimiento de cine. "
+    "Tu tarea es explicar por qué las películas recomendadas son perfectas para el usuario. "
+    "Siempre responde en español. "
+    "Sé apasionado, detallado y específico. "
+    "Explica elementos de la trama, atmósfera, tono y por qué conectan con lo que el usuario busca. "
+    "Evita ser genérico: haz que cada explicación sea personal y convincente."
+)
+
+
+class GroqRecommendationLlmAdapter(RecommendationLlmClientPort):
+
     def _keyword_extract_context(self, query_lower: str) -> QueryContext:
         social_context = None
         if any(token in query_lower for token in ["solo", "sola", "yo solo", "yo sola"]):
@@ -150,33 +217,16 @@ class GeminiRecommendationLlmAdapter(RecommendationLlmClientPort):
                     exclusions.append(tail)
 
         genre_aliases = {
-            "accion": "Action",
-            "acción": "Action",
-            "drama": "Drama",
-            "comedia": "Comedy",
-            "romantica": "Romance",
-            "romántica": "Romance",
-            "romance": "Romance",
-            "terror": "Horror",
-            "miedo": "Horror",
-            "familia": "Family",
-            "familiar": "Family",
-            "animada": "Animation",
-            "animacion": "Animation",
-            "animación": "Animation",
-            "ciencia": "Science Fiction",
-            "ciencia ficcion": "Science Fiction",
-            "ciencia ficción": "Science Fiction",
-            "sci-fi": "Science Fiction",
-            "thriller": "Thriller",
-            "fantasia": "Fantasy",
-            "fantasía": "Fantasy",
-            "misterio": "Mystery",
-            "aventura": "Adventure",
-            "musical": "Musical",
-            "western": "Western",
-            "crimen": "Crime",
-            "guerra": "War",
+            "accion": "Action", "acción": "Action", "drama": "Drama",
+            "comedia": "Comedy", "romantica": "Romance", "romántica": "Romance",
+            "romance": "Romance", "terror": "Horror", "miedo": "Horror",
+            "familia": "Family", "familiar": "Family", "animada": "Animation",
+            "animacion": "Animation", "animación": "Animation",
+            "ciencia": "Science Fiction", "ciencia ficcion": "Science Fiction",
+            "ciencia ficción": "Science Fiction", "sci-fi": "Science Fiction",
+            "thriller": "Thriller", "fantasia": "Fantasy", "fantasía": "Fantasy",
+            "misterio": "Mystery", "aventura": "Adventure", "musical": "Musical",
+            "western": "Western", "crimen": "Crime", "guerra": "War",
         }
         preferred_genres: list[str] = []
         for keyword, genre_name in genre_aliases.items():
@@ -193,22 +243,44 @@ class GeminiRecommendationLlmAdapter(RecommendationLlmClientPort):
             exclusions=exclusions,
         )
 
+    def _call_nlu_with_system(self, system_prompt: str, user_message: str) -> dict:
+        """Generic Groq NLU call with a custom system prompt and pre-built user message."""
+        client = Groq(api_key=settings.groq_api_key)
+        response = client.chat.completions.create(
+            model=settings.groq_model,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_message},
+            ],
+            temperature=0.1,
+            max_tokens=300,
+            response_format={"type": "json_object"},
+        )
+        return json.loads(response.choices[0].message.content)
+
+    def _call_nlu(self, query: str) -> dict:
+        print(f"[GROQ] _call_nlu called — model={settings.groq_model} key_len={len(settings.groq_api_key)}", flush=True)
+        client = Groq(api_key=settings.groq_api_key)
+        response = client.chat.completions.create(
+            model=settings.groq_model,
+            messages=[
+                {"role": "system", "content": _NLU_SYSTEM_PROMPT},
+                {"role": "user", "content": query},
+            ],
+            temperature=0.1,
+            max_tokens=300,
+            response_format={"type": "json_object"},
+        )
+        return json.loads(response.choices[0].message.content)
+
     def extract_query_context(self, query: str) -> QueryContext:
         try:
-            client = genai.Client(api_key=settings.gemini_api_key)
-            response = client.models.generate_content(
-                model=settings.gemini_model,
-                contents=query,
-                config=genai.types.GenerateContentConfig(
-                    system_instruction=_NLU_SYSTEM_PROMPT,
-                    temperature=0.1,
-                    max_output_tokens=300,
-                    response_mime_type="application/json",
-                ),
-            )
-            data = json.loads(response.text)
+            data = self._call_nlu(query)
             return QueryContext.model_validate(data)
-        except Exception:
+        except Exception as exc:
+            import traceback
+            print(f"[GROQ] NLU FAILED: {type(exc).__name__}: {exc}", flush=True)
+            traceback.print_exc()
             return self._keyword_extract_context(query.lower())
 
     def extract_user_context(
@@ -217,30 +289,15 @@ class GeminiRecommendationLlmAdapter(RecommendationLlmClientPort):
         now: datetime | None = None,
         session_id: str | None = None,
     ) -> UserContext:
-        """Call the NLU pipeline and return a UserContext directly.
-
-        Uses the same Gemini prompt as extract_query_context but builds
-        UserContext instead of QueryContext, injecting server-clock time_of_day
-        and detecting children_age_hint from the raw query text.
-        """
         llm_ok = False
         data: dict = {}
         try:
-            client = genai.Client(api_key=settings.gemini_api_key)
-            response = client.models.generate_content(
-                model=settings.gemini_model,
-                contents=query,
-                config=genai.types.GenerateContentConfig(
-                    system_instruction=_NLU_SYSTEM_PROMPT,
-                    temperature=0.1,
-                    max_output_tokens=300,
-                    response_mime_type="application/json",
-                ),
-            )
-            data = json.loads(response.text)
+            data = self._call_nlu(query)
             llm_ok = True
-        except Exception:
-            pass
+        except Exception as exc:
+            import traceback
+            print(f"[GROQ] extract_user_context FAILED: {type(exc).__name__}: {exc}", flush=True)
+            traceback.print_exc()
 
         if llm_ok:
             social = data.get("social_context") or {}
@@ -261,7 +318,6 @@ class GeminiRecommendationLlmAdapter(RecommendationLlmClientPort):
                 raw_query=query,
             )
 
-        # Keyword fallback — build UserContext from keyword extraction
         qctx = self._keyword_extract_context(query.lower())
         social = qctx.social_context or {}
         return UserContext(
@@ -279,6 +335,131 @@ class GeminiRecommendationLlmAdapter(RecommendationLlmClientPort):
             raw_query=query,
         )
 
+    def extract_user_context_with_profile(
+        self,
+        query: str,
+        profile: "UserProfile",
+        favorites_sample: list[str],
+        recent_queries: list[str],
+        topological_type: str,
+        dominant_cluster_labels: list[str],
+        accumulated_context: "UserContext | None",
+        now: "datetime | None" = None,
+    ) -> UserContext:
+        # Build enriched user message with profile context
+        genre_info = ", ".join(
+            f"{g} ({w:.0%})"
+            for g, w in sorted(
+                (profile.genre_weights or {}).items(), key=lambda x: -x[1]
+            )[:4]
+        ) or "sin historial"
+
+        acc_parts: list[str] = []
+        if accumulated_context:
+            if accumulated_context.mood:
+                acc_parts.append(f"mood={accumulated_context.mood}")
+            if accumulated_context.genres:
+                acc_parts.append(f"genres={accumulated_context.genres}")
+            if accumulated_context.companion:
+                acc_parts.append(f"companion={accumulated_context.companion}")
+        acc_summary = ", ".join(acc_parts) or "sin contexto previo"
+
+        user_message = (
+            f"CONTEXTO DEL USUARIO:\n"
+            f"- Géneros favoritos: {genre_info}\n"
+            f"- Estado de ánimo predominante: {profile.dominant_mood or 'desconocido'}\n"
+            f"- Perfil de exploración: {topological_type}\n"
+            f"- Comunidades temáticas frecuentes: {', '.join(dominant_cluster_labels[:3]) or 'ninguna'}\n"
+            f"- Favoritos recientes: {', '.join(favorites_sample[:5]) or 'ninguno aún'}\n"
+            f"- Búsquedas recientes: {'; '.join(recent_queries[:3]) or 'ninguna'}\n"
+            f"- Contexto acumulado de sesión: {acc_summary}\n\n"
+            f"QUERY ACTUAL: {query}\n\n"
+            "INSTRUCCIÓN: Si el query es ambiguo, usa el perfil para inferir intención. "
+            "Si no es una consulta de película, devuelve off_topic=true."
+        )
+
+        llm_ok = False
+        data: dict = {}
+        try:
+            data = self._call_nlu_with_system(_PROFILE_NLU_SYSTEM_PROMPT, user_message)
+            llm_ok = True
+        except Exception as exc:
+            logger.warning("extract_user_context_with_profile LLM failed: %s", exc)
+
+        if llm_ok:
+            social = data.get("social_context") or {}
+            ctx = UserContext(
+                mood=data.get("mood"),
+                companion=social.get("companionType"),
+                has_children=bool(social.get("hasChildren", False)),
+                energy=None,
+                genres=list(data.get("genres") or []),
+                runtime_max=data.get("runtime_max"),
+                exclusions=list(data.get("exclusions") or []),
+                confidence=0.9,
+                time_of_day=get_time_of_day(now),
+                children_age_hint=infer_children_age_hint(query),
+                raw_query=query,
+                off_topic=bool(data.get("off_topic", False)),
+            )
+            # Profile fallback: if low signal but warm user, infer from history
+            low_signal = not ctx.off_topic and not ctx.mood and not ctx.genres and not ctx.companion
+            if low_signal and not profile.is_cold_start:
+                ctx.mood = profile.dominant_mood
+                ctx.genres = [
+                    g for g, _ in sorted(
+                        (profile.genre_weights or {}).items(), key=lambda x: -x[1]
+                    )[:2]
+                ]
+                ctx.confidence = 0.65
+            return ctx
+
+        # Fallback: keyword extraction (no off_topic detection possible without LLM)
+        qctx = self._keyword_extract_context(query.lower())
+        social = qctx.social_context or {}
+        return UserContext(
+            mood=qctx.mood,
+            companion=social.get("companionType"),
+            has_children=bool(social.get("hasChildren", False)),
+            energy=None,
+            genres=list(qctx.genres or []),
+            runtime_max=qctx.runtime_max,
+            exclusions=list(qctx.exclusions or []),
+            confidence=0.5,
+            time_of_day=get_time_of_day(now),
+            children_age_hint=infer_children_age_hint(query),
+            raw_query=query,
+        )
+
+    def generate_greeting_response(
+        self,
+        query: str,
+        user_name: str | None = None,
+        is_cold_start: bool = True,
+    ) -> str:
+        try:
+            user_msg = f"Mensaje del usuario: {query}"
+            if not is_cold_start:
+                user_msg += "\n(El usuario ya ha usado el sistema antes)"
+            client = Groq(api_key=settings.groq_api_key)
+            response = client.chat.completions.create(
+                model=settings.groq_model,
+                messages=[
+                    {"role": "system", "content": _GREETING_SYSTEM_PROMPT},
+                    {"role": "user", "content": user_msg},
+                ],
+                temperature=0.7,
+                max_tokens=150,
+            )
+            return response.choices[0].message.content
+        except Exception as exc:
+            logger.warning("generate_greeting_response failed: %s", exc)
+            return (
+                "¡Hola! Soy CineGraph, tu asistente de recomendación de películas. "
+                "Puedes preguntarme cosas como: '¿qué ver esta noche con mi pareja?' "
+                "o 'algo de terror para el fin de semana'. ¿Qué te gustaría ver?"
+            )
+
     def _build_prompt(
         self,
         query: str,
@@ -288,13 +469,10 @@ class GeminiRecommendationLlmAdapter(RecommendationLlmClientPort):
         query_type: str = "general",
     ) -> str:
         query_type_instruction = QUERY_TYPE_INSTRUCTIONS.get(
-            query_type,
-            QUERY_TYPE_INSTRUCTIONS["general"],
+            query_type, QUERY_TYPE_INSTRUCTIONS["general"]
         )
         semantic_section = (
-            f"Contexto ontológico inferido: {semantic_hint}\n\n"
-            if semantic_hint
-            else ""
+            f"Contexto ontológico inferido: {semantic_hint}\n\n" if semantic_hint else ""
         )
         if not movies_with_scores:
             return (
@@ -310,7 +488,6 @@ class GeminiRecommendationLlmAdapter(RecommendationLlmClientPort):
         top: list[str] = []
         for movie in movies_with_scores[:5]:
             hints: list[str] = []
-            # Individual semantic scores are top-level fields in to_response_dict()
             mood_score = movie.get("moodMatchScore")
             if mood_score is not None:
                 hints.append(f"afinidad_emocional={float(mood_score):.2f}")
@@ -320,7 +497,6 @@ class GeminiRecommendationLlmAdapter(RecommendationLlmClientPort):
             energy_score = movie.get("energyMatchScore")
             if energy_score is not None:
                 hints.append(f"afinidad_energia={float(energy_score):.2f}")
-            # overallCompatibility lives inside semanticScores
             overall = (movie.get("semanticScores") or {}).get("overallCompatibility")
             if overall is not None:
                 hints.append(f"compatibilidad_general={float(overall):.2f}")
@@ -354,26 +530,19 @@ class GeminiRecommendationLlmAdapter(RecommendationLlmClientPort):
                 "Lamentablemente, no encontré películas que coincidan exactamente con tu búsqueda en este momento. "
                 f"Tu consulta fue: '{query}'. "
                 "Te sugiero marcar algunas películas como favoritas para que el sistema aprenda mejor tus preferencias, "
-                "o intenta con una búsqueda más general. "
-                "Vuelve a intentar después de agregar favoritos para obtener recomendaciones más personalizadas."
+                "o intenta con una búsqueda más general."
             )
-
         titles_with_genres = []
         for movie in movies_with_scores[:5]:
             title = movie.get("title", "Sin título")
             genre = movie.get("genreName", "")
             year = movie.get("releaseDate", "")
-            if genre:
-                titles_with_genres.append(f"{title} ({genre}, {year})")
-            else:
-                titles_with_genres.append(f"{title}")
-        
+            titles_with_genres.append(f"{title} ({genre}, {year})" if genre else title)
+
         titles_str = ", ".join(titles_with_genres)
         return (
             f"Basándome en tu consulta '{query}', preparé estas recomendaciones: {titles_str}. "
             f"Estas películas se alinean con el contexto que detecté ({context_summary}). "
-            "Cada una ofrece una experiencia única: unas son más relajantes, otras más emocionantes, "
-            "y todas han sido seleccionadas porque encajan con lo que buscas. "
             "Si alguna te gusta, márcala como favorita para mejorar futuras recomendaciones."
         )
 
@@ -387,56 +556,21 @@ class GeminiRecommendationLlmAdapter(RecommendationLlmClientPort):
     ) -> str:
         try:
             prompt = self._build_prompt(
-                query,
-                context_summary,
-                movies_with_scores,
-                semantic_hint,
-                query_type,
+                query, context_summary, movies_with_scores, semantic_hint, query_type
             )
-            client = genai.Client(api_key=settings.gemini_api_key)
-            response = client.models.generate_content(
-                model=settings.gemini_model,
-                contents=prompt,
-                config=genai.types.GenerateContentConfig(
-                    system_instruction=(
-                        "Eres un experto asistente de recomendación de películas con profundo conocimiento de cine. "
-                        "Tu tarea es explicar por qué las películas recomendadas son perfectas para el usuario. "
-                        "Siempre responde en español. "
-                        "Sé apasionado, detallado y específico. "
-                        "Explica elementos de la trama, atmósfera, tono y por qué conectan con lo que el usuario busca. "
-                        "Evita ser genérico: haz que cada explicación sea personal y convincente."
-                    ),
-                    temperature=0.5,
-                    max_output_tokens=600,
-                ),
+            client = Groq(api_key=settings.groq_api_key)
+            response = client.chat.completions.create(
+                model=settings.groq_model,
+                messages=[
+                    {"role": "system", "content": _EXPLANATION_SYSTEM_PROMPT},
+                    {"role": "user", "content": prompt},
+                ],
+                temperature=0.5,
+                max_tokens=600,
             )
-            return response.text
-        except Exception:
+            return response.choices[0].message.content
+        except Exception as exc:
+            import traceback
+            print(f"[GROQ] explanation FAILED: {type(exc).__name__}: {exc}", flush=True)
+            traceback.print_exc()
             return self._fallback_explanation(query, context_summary, movies_with_scores)
-
-    def extract_user_context_with_profile(
-        self,
-        query: str,
-        profile,
-        favorites_sample: list[str],
-        recent_queries: list[str],
-        topological_type: str,
-        dominant_cluster_labels: list[str],
-        accumulated_context,
-        now=None,
-    ):
-        """Stub: delegates to extract_user_context ignoring profile context."""
-        return self.extract_user_context(query, now=now)
-
-    def generate_greeting_response(
-        self,
-        query: str,
-        user_name=None,
-        is_cold_start: bool = True,
-    ) -> str:
-        """Stub: returns a hardcoded invitation message."""
-        return (
-            "¡Hola! Soy tu asistente de recomendación de películas. "
-            "Cuéntame qué tipo de película buscas y te ayudo a encontrar la perfecta. "
-            "Por ejemplo: '¿algo de comedia para esta noche?' o 'película de acción intensa'."
-        )
