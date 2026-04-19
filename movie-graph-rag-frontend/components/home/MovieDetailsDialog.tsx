@@ -94,7 +94,7 @@ export function MovieDetailsDialog({
             <span className="flex items-center gap-1.5">
               <User className="w-3.5 h-3.5 shrink-0" />
               <span className={movie.director ? "font-medium text-text" : "italic text-muted/50"}>
-                {movie.director ?? "Director no disponible"}
+                {movie.director ?? "Director not available"}
               </span>
             </span>
           </div>
@@ -103,12 +103,12 @@ export function MovieDetailsDialog({
           <div>
             <p className="text-xs font-bold text-muted tracking-widest mb-1.5 flex items-center gap-1.5">
               <Star className="w-3.5 h-3.5" />
-              CALIFICACIÓN IMDB
+              IMDB RATING
             </p>
             {movie.rating != null ? (
               <RatingBar rating={movie.rating} />
             ) : (
-              <p className="text-sm text-muted/50 italic">No disponible</p>
+              <p className="text-sm text-muted/50 italic">Not available</p>
             )}
           </div>
 
@@ -116,7 +116,7 @@ export function MovieDetailsDialog({
         <div className="space-y-4 border-t border-border pt-4">
           {movie.description && (
             <div>
-              <h3 className="text-xs font-bold text-muted tracking-widest mb-2">SINOPSIS</h3>
+              <h3 className="text-xs font-bold text-muted tracking-widest mb-2">SYNOPSIS</h3>
               <p className="text-sm text-muted leading-relaxed">
                 {movie.description}
               </p>
@@ -126,7 +126,7 @@ export function MovieDetailsDialog({
           {movie.relationReason && (
             <div className="rounded-lg border border-teal/20 bg-teal/5 px-4 py-3">
               <h3 className="text-xs font-bold text-teal tracking-widest mb-1.5">
-                POR QUÉ SE RECOMIENDA
+                WHY THIS RECOMMENDATION
               </h3>
               <p className="text-sm text-muted italic">{movie.relationReason}</p>
             </div>
@@ -139,14 +139,14 @@ export function MovieDetailsDialog({
               className="flex-1"
             >
               <Sparkles className="mr-2 h-4 w-4" />
-              Buscar Similares
+              Find Similar
             </Button>
             <Button
               variant="ghost"
               onClick={() => onOpenChange(false)}
               className="flex-1"
             >
-              Cerrar
+              Close
             </Button>
           </div>
         </div>

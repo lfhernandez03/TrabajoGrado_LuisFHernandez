@@ -128,7 +128,7 @@ export default function TopologyPage() {
   useEffect(() => {
     getGraphTopology()
       .then(setData)
-      .catch(() => toast.error("Error cargando el dashboard topológico"))
+      .catch(() => toast.error("Error loading topology dashboard"))
       .finally(() => setLoading(false));
   }, []);
 
@@ -148,9 +148,9 @@ export default function TopologyPage() {
               <Network className="h-7 w-7 text-primary" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold">Dashboard Topológico</h1>
+              <h1 className="text-2xl font-bold">Topology Dashboard</h1>
               <p className="text-muted-foreground text-sm mt-0.5">
-                Métricas de red compleja del grafo de conocimiento cinematográfico
+                Complex network metrics of the movie knowledge graph
               </p>
             </div>
           </div>
@@ -164,34 +164,34 @@ export default function TopologyPage() {
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
                 <StatCard
                   icon={Globe}
-                  label="Películas indexadas"
+                  label="Indexed movies"
                   value={data.graphSummary.totalMovies.toLocaleString()}
                 />
                 <StatCard
                   icon={GitBranch}
-                  label="Aristas estimadas"
+                  label="Estimated edges"
                   value={data.graphSummary.totalEdges.toLocaleString()}
                 />
                 <StatCard
                   icon={BarChart3}
-                  label="Grado promedio"
+                  label="Average degree"
                   value={data.graphSummary.averageDegree.toFixed(1)}
                 />
                 <StatCard
                   icon={Layers}
-                  label="Coef. clustering"
+                  label="Clustering coef."
                   value={data.graphSummary.averageClusteringCoefficient.toFixed(3)}
                 />
                 <StatCard
                   icon={Users}
-                  label="Comunidades"
+                  label="Communities"
                   value={data.graphSummary.communityCount}
                 />
                 <StatCard
                   icon={Star}
-                  label="Modularidad"
+                  label="Modularity"
                   value={data.graphSummary.modularity.toFixed(3)}
-                  sub="(mayor = mejor separación)"
+                  sub="(higher = better separation)"
                 />
               </div>
 
@@ -200,7 +200,7 @@ export default function TopologyPage() {
                 <div className="flex items-center gap-2 px-4 py-3 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-700 dark:text-emerald-400">
                   <Zap className="h-4 w-4 shrink-0" />
                   <span className="text-sm font-medium">
-                    Small-world detectado — clustering coefficient alto con diámetro reducido, propiedad característica de redes complejas reales.
+                    Small-world detected — high clustering coefficient with reduced diameter, characteristic property of real complex networks.
                   </span>
                 </div>
               )}
@@ -214,7 +214,7 @@ export default function TopologyPage() {
                       Top — Degree Centrality
                     </CardTitle>
                     <p className="text-xs text-muted-foreground">
-                      Películas con más conexiones directas
+                      Movies with most direct connections
                     </p>
                   </CardHeader>
                   <CardContent className="space-y-1">
@@ -236,7 +236,7 @@ export default function TopologyPage() {
                       Top — Betweenness Centrality
                     </CardTitle>
                     <p className="text-xs text-muted-foreground">
-                      Películas puente entre comunidades
+                      Bridge movies between communities
                     </p>
                   </CardHeader>
                   <CardContent className="space-y-1">

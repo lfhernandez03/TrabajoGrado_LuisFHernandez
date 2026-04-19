@@ -26,7 +26,7 @@ export default function LoginPage() {
     try {
       await login(formData.email, formData.password);
     } catch (error) {
-      console.error("Error en login:", error);
+      console.error("Login error:", error);
     } finally {
       setIsLoading(false);
     }
@@ -44,13 +44,13 @@ export default function LoginPage() {
             <span className="font-display text-4xl tracking-widest text-text">CINE</span>
             <span className="font-display text-4xl tracking-widest text-accent">RAPH</span>
           </Link>
-          <p className="text-xs text-muted mt-2">Recomendaciones cinematográficas inteligentes</p>
+          <p className="text-xs text-muted mt-2">Intelligent movie recommendations</p>
         </div>
 
         <div className="bg-surface border border-border2 rounded-2xl p-8">
           <div className="mb-6">
-            <h1 className="font-display text-2xl text-text">Iniciar sesión</h1>
-            <p className="text-sm text-muted mt-1">Ingresa tus credenciales para continuar</p>
+            <h1 className="font-display text-2xl text-text">Sign in</h1>
+            <p className="text-sm text-muted mt-1">Enter your credentials to continue</p>
           </div>
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
@@ -58,14 +58,14 @@ export default function LoginPage() {
               <label htmlFor="email" className="text-xs font-medium text-muted uppercase tracking-wider">Email</label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" />
-                <Input id="email" type="email" variant="default" placeholder="tu@email.com" className="pl-9"
+                <Input id="email" type="email" variant="default" placeholder="you@email.com" className="pl-9"
                   value={formData.email} onChange={(e) => handleEmailChange(e.target.value)}
                   required disabled={isLoading} />
               </div>
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <label htmlFor="password" className="text-xs font-medium text-muted uppercase tracking-wider">Contraseña</label>
+              <label htmlFor="password" className="text-xs font-medium text-muted uppercase tracking-wider">Password</label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" />
                 <Input id="password" type="password" variant="default" placeholder="••••••••" className="pl-9"
@@ -75,15 +75,15 @@ export default function LoginPage() {
             </div>
 
             <Button type="submit" variant="primary" disabled={isLoading} className="w-full mt-2">
-              {isLoading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Iniciando sesión…</>
-                : <><Sparkles className="w-4 h-4 mr-2" />Iniciar sesión</>}
+              {isLoading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Signing in…</>
+                : <><Sparkles className="w-4 h-4 mr-2" />Sign in</>}
             </Button>
           </form>
 
           <p className="text-sm text-muted text-center mt-6">
-            ¿No tienes cuenta?{" "}
+            Don't have an account?{" "}
             <Link href="/register" className="text-accent hover:text-accent/80 font-medium transition-colors">
-              Regístrate aquí
+              Sign up here
             </Link>
           </p>
         </div>

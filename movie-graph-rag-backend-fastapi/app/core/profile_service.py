@@ -84,7 +84,7 @@ def _build_archive_sparql(snapshot_id: str, ctx: UserContext, user_id: str, now:
     ]
 
     mood_es = translate_mood(ctx.mood)
-    energy_es = translate_energy(ctx.energy) or translate_energy(ctx.mood) or "medio"
+    energy_es = translate_energy(ctx.energy) or translate_energy(ctx.mood) or "medium"
     if mood_es:
         mood_es_safe = _esc(mood_es)
         energy_es_safe = _esc(energy_es)
@@ -296,11 +296,11 @@ class ProfileService:
         exploration_index = _entropy_index(list(weights.values()))
 
         if exploration_index < 0.3:
-            user_type = "especialista"
+            user_type = "specialist"
         elif exploration_index > 0.7:
-            user_type = "explorador"
+            user_type = "explorer"
         else:
-            user_type = "equilibrado"
+            user_type = "balanced"
 
         # ── Step 4: temporal trend (compare older half vs. recent half) ─────
         temporal_trend, trend_explanation = _compute_temporal_trend(
@@ -474,7 +474,7 @@ def _compute_temporal_trend(
     )
     n = len(dated)
     if n < 4:
-        return "stable", f"Insuficientes favoritos con fecha para calcular tendencia ({n} disponibles)."
+        return "stable", f"Insufficient dated favorites to compute trend ({n} available)."
 
     mid = n // 2
     older = dated[:mid]
@@ -492,18 +492,18 @@ def _compute_temporal_trend(
     if delta < -0.10:
         return (
             "specializing",
-            f"Tus {mid} favoritos mas recientes se concentran en menos comunidades "
-            f"(indice {recent_idx:.2f}) que los anteriores (indice {older_idx:.2f}).",
+            f"Your {mid} most recent favorites are concentrated in fewer communities "
+            f"(index {recent_idx:.2f}) than the earlier ones (index {older_idx:.2f}).",
         )
     if delta > 0.10:
         return (
             "diversifying",
-            f"Tus {mid} favoritos mas recientes se distribuyen en mas comunidades "
-            f"(indice {recent_idx:.2f}) que los anteriores (indice {older_idx:.2f}).",
+            f"Your {mid} most recent favorites are spread across more communities "
+            f"(index {recent_idx:.2f}) than the earlier ones (index {older_idx:.2f}).",
         )
     return (
         "stable",
-        f"Tu patron de exploracion es estable (reciente {recent_idx:.2f} vs. anterior {older_idx:.2f}).",
+        f"Your exploration pattern is stable (recent {recent_idx:.2f} vs. earlier {older_idx:.2f}).",
     )
 
 

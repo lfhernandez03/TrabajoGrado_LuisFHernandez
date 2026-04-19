@@ -372,20 +372,20 @@ def generate_cluster_labels(
         cluster_summaries = []
         for cid in batch_ids:
             top_genres = [g for g, _ in cluster_genres[cid].most_common(5)]
-            genres_str = ", ".join(top_genres) if top_genres else "desconocido"
+            genres_str = ", ".join(top_genres) if top_genres else "unknown"
             cluster_summaries.append(f'  {{"id": {cid}, "genres": "{genres_str}"}}')
 
         clusters_json = "[\n" + ",\n".join(cluster_summaries) + "\n]"
 
         prompt = (
-            "Eres un experto en cine. Se te da una lista de clusters de películas "
-            "con sus géneros dominantes. Devuelve SOLO un objeto JSON válido donde "
-            "las claves son los IDs de cluster (como strings) y los valores son "
-            "nombres descriptivos en español de máximo 5 palabras. "
-            "No incluyas explicaciones ni texto adicional fuera del JSON.\n\n"
+            "You are an expert in cinema. You are given a list of movie clusters "
+            "with their dominant genres. Return ONLY a valid JSON object where "
+            "the keys are cluster IDs (as strings) and the values are "
+            "descriptive names in English of maximum 5 words. "
+            "Do not include explanations or additional text outside the JSON.\n\n"
             f"Clusters:\n{clusters_json}\n\n"
-            "Ejemplo de respuesta esperada:\n"
-            '{"0": "Ciencia Ficción Épica", "1": "Thriller Psicológico", "2": "Comedia Romántica"}'
+            "Example of expected response:\n"
+            '{"0": "Epic Science Fiction", "1": "Psychological Thriller", "2": "Romantic Comedy"}'
         )
 
         try:
@@ -426,11 +426,11 @@ def _groq_label_per_cluster(
     labels: dict[int, str] = {}
     for cid in cluster_ids:
         top_genres = [g for g, _ in cluster_genres[cid].most_common(5)]
-        genres_str = ", ".join(top_genres) if top_genres else "desconocido"
+        genres_str = ", ".join(top_genres) if top_genres else "unknown"
         prompt = (
-            f"Genera un nombre descriptivo en español (máximo 5 palabras) para un cluster "
-            f"de películas cuyos géneros dominantes son: {genres_str}. "
-            "Solo responde con el nombre, sin explicación."
+            f"Generate a descriptive name in English (maximum 5 words) for a movie cluster "
+            f"whose dominant genres are: {genres_str}. "
+            "Only respond with the name, no explanation."
         )
         try:
             resp = client.chat.completions.create(  # type: ignore[attr-defined]

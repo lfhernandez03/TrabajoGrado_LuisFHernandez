@@ -40,7 +40,7 @@ export default function ConnectionsPage() {
 
   const handleExplore = async () => {
     if (!fromSelected || !toSelected) {
-      toast.error("Selecciona ambas películas del buscador");
+      toast.error("Select both movies from the search bar");
       return;
     }
 
@@ -55,11 +55,11 @@ export default function ConnectionsPage() {
       setResult(data);
 
       if (!data.found) {
-        toast.info("No se encontró una conexión directa entre estas películas");
+        toast.info("No direct connection found between these movies");
       }
     } catch (error) {
-      console.error("Error explorando conexiones:", error);
-      toast.error("Error al buscar conexiones");
+      console.error("Error exploring connections:", error);
+      toast.error("Error searching connections");
     } finally {
       setIsSearching(false);
     }
@@ -85,7 +85,7 @@ export default function ConnectionsPage() {
             <Link href="/">
               <Button variant="ghost" size="sm" className="mb-4 -ml-2">
                 <ArrowLeft className="h-4 w-4 mr-1" />
-                Volver al inicio
+                Back to home
               </Button>
             </Link>
 
@@ -94,9 +94,9 @@ export default function ConnectionsPage() {
                 <Network className="h-6 w-6 text-accent" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold">Explorador de Conexiones</h1>
+                <h1 className="text-2xl font-bold">Connection Explorer</h1>
                 <p className="text-sm text-muted-foreground">
-                  Descubre el camino semántico entre dos películas en el grafo de conocimiento
+                  Discover the semantic path between two movies in the knowledge graph
                 </p>
               </div>
             </div>
@@ -110,7 +110,7 @@ export default function ConnectionsPage() {
                 <div className="flex flex-col sm:flex-row items-center gap-3">
                   <div className="flex-1 w-full">
                     <label className="text-xs font-medium text-muted-foreground mb-1.5 block">
-                      Película de origen
+                      Source movie
                     </label>
                     <MovieSearchInput
                       value={fromQuery}
@@ -124,7 +124,7 @@ export default function ConnectionsPage() {
                         setFromSelected(movie);
                         setFromQuery(movie.title);
                       }}
-                      placeholder="Ej: Inception, The Matrix..."
+                      placeholder="E.g: Inception, The Matrix..."
                       disabled={isSearching}
                     />
                     {fromSelected && (
@@ -146,7 +146,7 @@ export default function ConnectionsPage() {
 
                   <div className="flex-1 w-full">
                     <label className="text-xs font-medium text-muted-foreground mb-1.5 block">
-                      Película de destino
+                      Destination movie
                     </label>
                     <MovieSearchInput
                       value={toQuery}
@@ -160,7 +160,7 @@ export default function ConnectionsPage() {
                         setToSelected(movie);
                         setToQuery(movie.title);
                       }}
-                      placeholder="Ej: Interstellar, Blade Runner..."
+                      placeholder="E.g: Interstellar, Blade Runner..."
                       disabled={isSearching}
                     />
                     {toSelected && (
@@ -188,12 +188,12 @@ export default function ConnectionsPage() {
                     {isSearching ? (
                       <>
                         <Route className="h-4 w-4 mr-2 animate-pulse" />
-                        Explorando grafo...
+                        Exploring graph...
                       </>
                     ) : (
                       <>
                         <Route className="h-4 w-4 mr-2" />
-                        Encontrar Conexión
+                        Find Connection
                       </>
                     )}
                   </Button>

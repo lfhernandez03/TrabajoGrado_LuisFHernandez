@@ -14,7 +14,7 @@ from app.domain.ports.recommendation_llm_client import RecommendationLlmClientPo
 logger = logging.getLogger(__name__)
 
 _MIN_RESULTS = 5
-_COLD_START_MMR_LAMBDA = 0.45   # diversidad > relevancia cuando no hay preferencias conocidas
+_COLD_START_MMR_LAMBDA = 0.45   # diversity > relevance when no known preferences
 
 
 def _unique_movie_count(rows: list[dict]) -> int:
@@ -49,12 +49,11 @@ def _run_strategy(attempts: list[tuple[str, str]]) -> tuple[list[dict], str]:
 
 
 def _run_cold_start_strategy(attempts: list[tuple[str, str]]) -> tuple[list[dict], str]:
-    """Agrega candidatos de TODAS las estrategias de género para cold start.
+    """Aggregate candidates from ALL genre strategies for cold start.
 
-    A diferencia de _run_strategy(), no para en el primer hit con >= _MIN_RESULTS
-    resultados. Acumula candidatos de múltiples géneros para que el scorer tenga
-    diversidad real. Para cuando lleva >= 40 películas únicas o llega a los
-    fallbacks ('centrality_ranking', 'broad').
+    Unlike _run_strategy(), does not stop at the first hit with >= _MIN_RESULTS.
+    Accumulates candidates from multiple genres so the scorer has real diversity.
+    Stops when >= 40 unique movies are found or the fallbacks ('centrality_ranking', 'broad') are reached.
     """
     all_rows: list[dict] = []
     seen_uris: set[str] = set()
@@ -62,7 +61,7 @@ def _run_cold_start_strategy(attempts: list[tuple[str, str]]) -> tuple[list[dict
 
     for name, sparql in attempts:
         if name in ("centrality_ranking", "broad"):
-            break  # fallbacks solo si la agregación no alcanzó el mínimo
+            break  # fallbacks only if aggregation did not reach the minimum
         try:
             rows = execute_select_query(sparql)
             new_rows = [r for r in rows if r.get("movie", "") not in seen_uris]
@@ -78,7 +77,7 @@ def _run_cold_start_strategy(attempts: list[tuple[str, str]]) -> tuple[list[dict
     if _unique_movie_count(all_rows) >= _MIN_RESULTS:
         return all_rows, "+".join(names_used) if names_used else "cold_start_merged"
 
-    # Fallback al comportamiento original si no hubo suficientes candidatos
+    # Fallback to original behavior if not enough candidates were found
     return _run_strategy(attempts)
 
 
@@ -132,11 +131,11 @@ class RecommendationUseCase:
         # Base time-of-day query
         hour = datetime.now().hour
         if 6 <= hour < 12:
-            time_query = "ver en la mañana"
+            time_query = "to watch in the morning"
         elif 12 <= hour < 18:
-            time_query = "ver en la tarde"
+            time_query = "to watch in the afternoon"
         else:
-            time_query = "ver en la noche"
+            time_query = "to watch in the evening"
 
         # Enrich query with user's preferred genres
         enrichment = ""
@@ -145,9 +144,9 @@ class RecommendationUseCase:
             top_genres = sorted(profile.genre_weights.items(), key=lambda x: x[1], reverse=True)[:2]
             if top_genres:
                 genre_names = [g[0] for g in top_genres]
-                enrichment = f" que sea de {' o '.join(genre_names)}"
-        
-        query = f"Recomiéndame una película para {time_query}{enrichment}"
+                enrichment = f" in the {' or '.join(genre_names)} genre"
+
+        query = f"Recommend me a movie {time_query}{enrichment}"
         return self._run(query, user_id).to_api_dict()
 
     def get_recommendation_debug(self, query: str, user_id: str) -> dict:
@@ -229,9 +228,9 @@ class RecommendationUseCase:
         except Exception as exc:
             logger.warning("explanation generation failed: %s", exc)
             return (
-                f"Encontré {len(movies)} película(s) que coinciden con tu consulta."
+                f"Found {len(movies)} movie(s) matching your query."
                 if movies
-                else "No encontré películas para esta consulta. Intenta con términos más generales."
+                else "No movies found for this query. Try using more general terms."
             )
 
 

@@ -211,9 +211,9 @@ class ChatUseCase:
                 )
             except Exception:
                 greeting = (
-                    "¡Hola! Soy CineGraph. Cuéntame qué tipo de película buscas "
-                    "y te ayudo a encontrar la perfecta. Por ejemplo: "
-                    "'algo de comedia para esta noche' o 'película de acción intensa'."
+                    "Hello! I'm CineGraph. Tell me what kind of movie you're looking for "
+                    "and I'll help you find the perfect one. For example: "
+                    "'something funny for tonight' or 'intense action movie'."
                 )
             return ChatResult(
                 session_id=session_id,

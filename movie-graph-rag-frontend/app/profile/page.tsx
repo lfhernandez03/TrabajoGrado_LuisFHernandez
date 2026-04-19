@@ -55,13 +55,13 @@ export default function ProfilePage() {
       .then(setTopology)
       .catch(() => {
         setTopologyError(true);
-        toast.error("No se pudo cargar el perfil topológico");
+        toast.error("Could not load topological profile");
       })
       .finally(() => setTopologyLoading(false));
 
     getMyFavorites()
       .then(setFavorites)
-      .catch(() => toast.error("No se pudieron cargar tus favoritos"))
+      .catch(() => toast.error("Could not load your favorites"))
       .finally(() => setFavLoading(false));
   }, []);
 
@@ -82,16 +82,16 @@ export default function ProfilePage() {
             </div>
             <div className="flex-1 min-w-0">
               <h1 className="font-display text-4xl tracking-wide text-text">
-                {user?.name ?? "Mi perfil"}
+                {user?.name ?? "My profile"}
               </h1>
               <p className="text-muted text-sm mt-1">
-                {favorites.length} favoritos · perfil cinematográfico personalizado
+                {favorites.length} favorites · personalized movie profile
               </p>
             </div>
             <Link href="/topology">
               <Button variant="secondary" size="md">
                 <Network className="h-4 w-4 mr-1.5" />
-                Dashboard topológico
+                Topology Dashboard
               </Button>
             </Link>
           </div>
@@ -103,12 +103,12 @@ export default function ProfilePage() {
             {!topologyLoading && topologyError && (
               <div className="flex flex-col items-center py-10 gap-3 text-center">
                 <AlertCircle className="h-8 w-8 text-muted opacity-50" />
-                <p className="text-sm text-muted">Perfil topológico no disponible.</p>
+                <p className="text-sm text-muted">Topological profile not available.</p>
                 <p className="text-xs text-muted">
-                  Requiere favoritos guardados y análisis de grafo ejecutado.
+                  Requires saved favorites and executed graph analysis.
                 </p>
                 <Link href="/topology">
-                  <Button variant="ghost" size="sm">Ver dashboard topológico</Button>
+                  <Button variant="ghost" size="sm">View topology dashboard</Button>
                 </Link>
               </div>
             )}
@@ -123,13 +123,13 @@ export default function ProfilePage() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Heart className="h-4 w-4 text-accent" />
-                <h2 className="font-display text-xl tracking-wide">Últimas favoritas</h2>
+                <h2 className="font-display text-xl tracking-wide">Recent Favorites</h2>
               </div>
               <Link
                 href="/favorites"
                 className="flex items-center gap-1 text-sm text-muted hover:text-teal transition-colors"
               >
-                Ver todas ({favorites.length})
+                View all ({favorites.length})
                 <ChevronRight className="h-4 w-4" />
               </Link>
             </div>
@@ -148,9 +148,9 @@ export default function ProfilePage() {
               </div>
             ) : (
               <div className="flex items-center gap-4">
-                <p className="text-sm text-muted">Aún no tienes favoritas.</p>
+                <p className="text-sm text-muted">You don't have any favorites yet.</p>
                 <Link href="/search">
-                  <Button variant="primary" size="sm">Explorar películas</Button>
+                  <Button variant="primary" size="sm">Explore movies</Button>
                 </Link>
               </div>
             )}

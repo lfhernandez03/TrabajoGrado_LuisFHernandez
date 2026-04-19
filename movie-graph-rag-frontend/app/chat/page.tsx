@@ -11,12 +11,12 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
 const QUICK_PROMPTS = [
-  { icon: "🎬", text: "Acción para ver con amigos esta noche" },
-  { icon: "🍿", text: "Algo ligero y divertido" },
-  { icon: "💕", text: "Romántica para ver en pareja" },
-  { icon: "👨‍👩‍👧", text: "Familiar apta para niños" },
-  { icon: "🧠", text: "Que me haga pensar, menos de 2 horas" },
-  { icon: "😰", text: "Estoy estresado, necesito desconectarme" },
+  { icon: "🎬", text: "Action movie to watch with friends tonight" },
+  { icon: "🍿", text: "Something light and fun" },
+  { icon: "💕", text: "Romantic movie for couples" },
+  { icon: "👨‍👩‍👧", text: "Family-friendly for kids" },
+  { icon: "🧠", text: "Makes me think, less than 2 hours" },
+  { icon: "😰", text: "I'm stressed, I need to disconnect" },
 ];
 
 const SESSIONS_KEY = "cinegraph_sessions";
@@ -109,7 +109,7 @@ export default function ChatPage() {
 
   const newSession = useCallback(() => {
     const id = genId();
-    const session: Session = { id, label: "Nueva conversación", messages: [] };
+    const session: Session = { id, label: "New conversation", messages: [] };
     setSessions((prev) => [session, ...prev]);
     setActiveId(id);
     setMessages([]);
@@ -197,7 +197,7 @@ export default function ChatPage() {
         newChips.push({ id: genId(), label: ctx.companion, type: "companion" });
       }
       if (ctx.energy) {
-        newChips.push({ id: genId(), label: `Energía ${ctx.energy}`, type: "energy" });
+        newChips.push({ id: genId(), label: `Energy ${ctx.energy}`, type: "energy" });
       }
       if (ctx.runtime_max) {
         newChips.push({ id: genId(), label: `${ctx.runtime_max} min`, type: "runtime" });
@@ -207,11 +207,11 @@ export default function ChatPage() {
       const errMsg: ChatMessage = {
         id: genId(),
         role: "assistant",
-        content: "Lo siento, hubo un error al procesar tu consulta. Por favor, intenta de nuevo.",
+        content: "Sorry, there was an error processing your query. Please try again.",
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, errMsg]);
-      toast.error("Error al obtener recomendación");
+      toast.error("Error getting recommendation");
     } finally {
       setIsLoading(false);
     }
@@ -249,7 +249,7 @@ export default function ChatPage() {
                 className="w-full flex items-center gap-2 px-3 py-2 rounded-lg bg-surface2 border border-border text-sm text-text hover:border-accent/40 hover:text-accent transition-all"
               >
                 <Plus className="w-4 h-4" />
-                Nueva conversación
+                New conversation
               </button>
             </div>
 
@@ -257,7 +257,7 @@ export default function ChatPage() {
             <div className="flex-1 p-2 flex flex-col gap-1">
               {sessions.length === 0 ? (
                 <p className="text-xs text-muted text-center py-8">
-                  Tus conversaciones aparecerán aquí
+                  Your conversations will appear here
                 </p>
               ) : (
                 sessions.map((s) => (
@@ -282,7 +282,7 @@ export default function ChatPage() {
             {/* Quick prompts */}
             <div className="p-3 border-t border-border">
               <p className="text-[10px] font-semibold text-muted uppercase tracking-wider mb-2">
-                Sugerencias rápidas
+                Quick suggestions
               </p>
               <div className="flex flex-col gap-1">
                 {QUICK_PROMPTS.slice(0, 4).map((p) => (
@@ -313,10 +313,10 @@ export default function ChatPage() {
                     <div className="w-16 h-16 rounded-full bg-teal/10 flex items-center justify-center mb-4">
                       <span className="text-2xl text-teal">✦</span>
                     </div>
-                    <h2 className="font-display text-3xl text-text mb-2">¿Qué quieres ver hoy?</h2>
+                    <h2 className="font-display text-3xl text-text mb-2">What do you want to watch today?</h2>
                     <p className="text-sm text-muted max-w-sm mb-8">
-                      Cuéntame tu estado de ánimo, con quién estás, cuánto tiempo tienes.
-                      El grafo encontrará tu película perfecta.
+                      Tell me your mood, who you're with, how much time you have.
+                      The graph will find your perfect movie.
                     </p>
                     {/* Quick chips on empty state */}
                     <div className="flex flex-wrap gap-2 justify-center">

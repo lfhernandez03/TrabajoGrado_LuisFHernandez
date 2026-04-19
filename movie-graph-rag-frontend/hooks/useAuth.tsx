@@ -29,12 +29,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = useCallback(() => {
     authService.logout();
     setUser(null);
-    toast.info("Sesión cerrada");
+    toast.info("Session closed");
     router.push("/login");
   }, [router]);
 
   useEffect(() => {
-    // Verificar si hay un usuario en el almacenamiento local
+    // Check if there is a user in local storage
     const initAuth = async () => {
       const storedUser = authService.getUser();
       const token = authService.getToken();
@@ -42,13 +42,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (storedUser && token) {
         setUser(storedUser);
         
-        // Verificar token con el backend
+        // Verify token with the backend
         try {
           const profile = await authService.getProfile();
           setUser(profile);
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         } catch (error) {
-          // Si el token es inválido, cerrar sesión
+          // If token is invalid, logout
           logout();
         }
       }
@@ -63,10 +63,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const response = await authService.login({ email, password });
       setUser(response.user);
-      toast.success("Inicio de sesión exitoso");
+      toast.success("Login successful");
       router.push("/");
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Error al iniciar sesión";
+      const message = error instanceof Error ? error.message : "Login error";
       toast.error(message);
       throw error;
     }
@@ -76,10 +76,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const response = await authService.register({ name, email, password });
       setUser(response.user);
-      toast.success("Registro exitoso");
+      toast.success("Registration successful");
       router.push("/");
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Error al registrarse";
+      const message = error instanceof Error ? error.message : "Registration error";
       toast.error(message);
       throw error;
     }
@@ -111,7 +111,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 export function useAuth() {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error("useAuth debe usarse dentro de un AuthProvider");
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
 }

@@ -28,17 +28,17 @@ const _COLD_START_GENRES = [
   "Romance", "Sci-Fi", "Horror", "Adventure",
 ] as const;
 
-// Spanish display names for each ontology genre
+// English display names for each ontology genre
 const _GENRE_DISPLAY: Record<string, string> = {
   Drama: "Drama",
-  Comedy: "Comedia",
-  Action: "Acción",
+  Comedy: "Comedy",
+  Action: "Action",
   Thriller: "Thriller",
-  Animation: "Animación",
+  Animation: "Animation",
   Romance: "Romance",
-  "Sci-Fi": "Ciencia Ficción",
-  Horror: "Terror",
-  Adventure: "Aventura",
+  "Sci-Fi": "Sci-Fi",
+  Horror: "Horror",
+  Adventure: "Adventure",
 };
 
 /**
@@ -103,11 +103,11 @@ export default function Home() {
   const [carousel2, setCarousel2] = useState<MovieCardMovie[]>([]);
   const [carousel3, setCarousel3] = useState<MovieCardMovie[]>([]);
   const [carouselLoading, setCarouselLoading] = useState(true);
-  const [carousel1Title, setCarousel1Title] = useState<string>("Porque viste");
+  const [carousel1Title, setCarousel1Title] = useState<string>("Because you watched");
   const [carousel1FavoriteTitle, setCarousel1FavoriteTitle] = useState<string>("…");
-  const [carousel2Title, setCarousel2Title] = useState<string>("Basado en tus favoritos");
+  const [carousel2Title, setCarousel2Title] = useState<string>("Based on your favorites");
   const [carousel2FavoriteTitle, setCarousel2FavoriteTitle] = useState<string>("");
-  const [carousel3Subtitle, setCarousel3Subtitle] = useState<string>("Descubre géneros nuevos basado en lo que no has explorado");
+  const [carousel3Subtitle, setCarousel3Subtitle] = useState<string>("Discover new genres based on what you haven't explored");
 
   // ── Favorites ─────────────────────────────────────────────────────────────
   const [favorites, setFavorites] = useState<FavoriteMovie[]>([]);
@@ -219,11 +219,11 @@ export default function Home() {
         const d2 = _GENRE_DISPLAY[g2] ?? g2;
         const d3 = _GENRE_DISPLAY[g3] ?? g3;
 
-        setCarousel1Title("Lo mejor de");
+        setCarousel1Title("Best of");
         setCarousel1FavoriteTitle(d1);
-        setCarousel2Title("Descubre");
+        setCarousel2Title("Discover");
         setCarousel2FavoriteTitle(d2);
-        setCarousel3Subtitle(`Empieza explorando lo mejor de ${d3}`);
+        setCarousel3Subtitle(`Start exploring the best of ${d3}`);
 
         const [c1, c2, c3] = await Promise.allSettled([
           getMoviesByCentrality(g1, 12).then((r) => r.movies.map(recToCardMovie)),
@@ -249,19 +249,19 @@ export default function Home() {
       
       // Update carousel 1 heading based on cold start status
       if (randomFavorite1) {
-        setCarousel1Title("Porque viste");
+        setCarousel1Title("Because you watched");
         setCarousel1FavoriteTitle(randomFavorite1.title);
       } else {
-        setCarousel1Title("Películas para ti");
-        setCarousel1FavoriteTitle("Para que empieces a disfrutar");
+        setCarousel1Title("Movies for you");
+        setCarousel1FavoriteTitle("To get you started");
       }
       
       // Update carousel 2 heading based on favorites availability
       if (randomFavorite2) {
-        setCarousel2Title("Como");
+        setCarousel2Title("Like");
         setCarousel2FavoriteTitle(randomFavorite2.title);
       } else {
-        setCarousel2Title("Basado en tus favoritos");
+        setCarousel2Title("Based on your favorites");
         setCarousel2FavoriteTitle("");
       }
       
@@ -335,7 +335,7 @@ export default function Home() {
       setCarousel2(centrality.status === 'fulfilled' ? centrality.value : await fallback());
       setCarousel3(serendipity.status === 'fulfilled' ? serendipity.value : await fallback());
     } catch {
-      toast.error("No se pudieron cargar las recomendaciones");
+      toast.error("Could not load recommendations");
     } finally {
       setCarouselLoading(false);
     }
@@ -375,7 +375,7 @@ export default function Home() {
         setFavorites(updated);
         toast.success(was ? `"${movie.title}" eliminado de favoritos` : `"${movie.title}" agregado a favoritos`);
         if (heroMovie && movie.title === heroMovie.title) setHeroFavorite(!was);
-      }).catch(() => toast.error("No se pudo actualizar favoritos"));
+      }).catch(() => toast.error("Could not update favorites"));
     },
     [withPending, isFavorite, heroMovie]
   );
@@ -400,7 +400,7 @@ export default function Home() {
         setSelectedMovie(fullMovie);
         setShowDetailsDialog(true);
       }
-    }).catch(() => toast.error("No se pudo cargar los detalles de la película"));
+    }).catch(() => toast.error("Could not load movie details"));
   }, [withPending, heroMovie]);
 
   // ── Render ────────────────────────────────────────────────────────────────
@@ -451,7 +451,7 @@ export default function Home() {
         />
 
         <RecommendationCarousel
-          title="Explora nuevos géneros"
+          title="Explore new genres"
           subtitle={carousel3Subtitle}
           movies={carousel3}
           isLoading={carouselLoading}

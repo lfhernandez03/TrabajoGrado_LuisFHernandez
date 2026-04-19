@@ -114,7 +114,7 @@ export function MovieCard({
               {onViewDetails && (
                 <ActionButton
                   onClick={() => onViewDetails(movie)}
-                  aria-label={`Ver detalles de ${movie.title}`}
+                  aria-label={`View details of ${movie.title}`}
                   colorClass="hover:bg-accent2/15 hover:text-accent2 hover:border-accent2/40"
                 >
                   <Info className="h-3.5 w-3.5" />
@@ -123,7 +123,7 @@ export function MovieCard({
               {onFindSimilar && (
                 <ActionButton
                   onClick={() => onFindSimilar(movie)}
-                  aria-label={`Buscar similares a ${movie.title}`}
+                  aria-label={`Find similar to ${movie.title}`}
                   colorClass="hover:bg-teal/15 hover:text-teal hover:border-teal/40"
                 >
                   <Sparkles className="h-3.5 w-3.5" />
@@ -131,7 +131,7 @@ export function MovieCard({
               )}
               <ActionButton
                 onClick={() => onToggleFavorite?.(movie)}
-                aria-label={isFavorite ? `Quitar ${movie.title} de favoritos` : `Agregar ${movie.title} a favoritos`}
+                aria-label={isFavorite ? `Remove ${movie.title} from favorites` : `Add ${movie.title} to favorites`}
                 colorClass={
                   isFavorite
                     ? 'bg-accent2/15 text-accent2 border-accent2/40'
@@ -157,7 +157,7 @@ export function MovieCard({
                 <span className="text-sm font-semibold text-text">
                   {rating!.toFixed(1)}
                 </span>
-                <span className="text-xs text-muted">Calificación</span>
+                <span className="text-xs text-muted">Rating</span>
               </>
             )}
             {movie.certification && (

@@ -83,51 +83,51 @@ async def get_activity_recommendation(
         time_context = "tarde"
         time_label = "afternoon"
     else:
-        time_context = "noche"
+        time_context = "evening"
         time_label = "evening/night"
     
     # Build intelligent query components
-    query_parts = [f"Recomiéndame una película para ver en la {time_context}"]
+    query_parts = [f"Recommend me a movie to watch in the {time_context}"]
     
     # 1. Add favorite genres if not cold start
     if basic_profile and basic_profile.genre_weights and not basic_profile.is_cold_start:
         top_genres = sorted(basic_profile.genre_weights.items(), key=lambda x: x[1], reverse=True)[:2]
         if top_genres:
             genre_names = [g[0] for g in top_genres]
-            query_parts.append(f"que sea de {' o '.join(genre_names)}")
+            query_parts.append(f"that is {' or '.join(genre_names)}")
     
     # 2. Add dominant clusters context if available
     if topo_profile and getattr(topo_profile, 'dominantClusters', None):
         top_clusters = topo_profile.dominantClusters[:2]
         cluster_names = [c.label for c in top_clusters if hasattr(c, 'label')]
         if cluster_names:
-            query_parts.append(f"tipo de {' o '.join(cluster_names)}")
+            query_parts.append(f"type of {' or '.join(cluster_names)}")
     
     # 3. Add exploration insight
     if topo_profile:
         exploration_idx = getattr(topo_profile, 'explorationIndex', 0.5)
         if exploration_idx > 0.7:
             # Explorer: suggest new clusters
-            query_parts.append("pero de un nuevo género o cluster que no he visto mucho")
+            query_parts.append("but from a new genre or cluster I haven't seen much of")
         elif exploration_idx < 0.3:
             # Specialist: deepen expertise
             temporal_trend = getattr(topo_profile, 'temporalTrend', None)
             if temporal_trend == "profundizando":
-                query_parts.append("que profundice en mis géneros favoritos")
+                query_parts.append("that deepens my favorite genres")
         
         # Add temporal context if available
         temporal_trend = getattr(topo_profile, 'temporalTrend', None)
         if temporal_trend == "explorando":
-            query_parts.append("queriendo explorar nuevas áreas")
+            query_parts.append("wanting to explore new areas")
     
     # 4. Add mood context if available
     if basic_profile and getattr(basic_profile, 'dominant_mood', None):
-        query_parts.append(f"con un ambiente {basic_profile.dominant_mood}")
+        query_parts.append(f"with a {basic_profile.dominant_mood} atmosphere")
     
     # 5. Add social context if the user prefers watching with others
     companion = getattr(basic_profile, 'dominant_companion', None) if basic_profile else None
     if companion and companion != "alone":
-        query_parts.append(f"para ver con {companion}")
+        query_parts.append(f"to watch with {companion}")
     
     # 6. If user has recent favorites, suggest similar movies
     try:
@@ -135,7 +135,7 @@ async def get_activity_recommendation(
             recent_favorite = max(favorites, key=lambda f: getattr(f, 'addedAt', datetime.min))
             recent_title = getattr(recent_favorite, 'title', '')
             if recent_title:
-                query_parts.append(f"similar a '{recent_title}' que me gustó recientemente")
+                query_parts.append(f"similar to '{recent_title}' that I liked recently")
     except Exception:
         # If there's any error getting favorites, just skip this part
         pass

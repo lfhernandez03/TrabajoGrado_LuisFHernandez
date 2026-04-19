@@ -18,10 +18,10 @@ import { useAuth } from '@/hooks/useAuth'
 import { cn } from '@/lib/utils'
 
 const NAV_LINKS = [
-  { href: '/', label: 'Inicio', icon: Home },
-  { href: '/search', label: 'Explorar', icon: Compass },
-  { href: '/chat', label: 'Chat IA', icon: MessageSquare },
-  { href: '/favorites', label: 'Favoritos', icon: Heart },
+  { href: '/', label: 'Home', icon: Home },
+  { href: '/search', label: 'Explore', icon: Compass },
+  { href: '/chat', label: 'AI Chat', icon: MessageSquare },
+  { href: '/favorites', label: 'Favorites', icon: Heart },
 ]
 
 export function Navbar() {
@@ -93,7 +93,7 @@ export function Navbar() {
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <button
-                      aria-label="Menú de usuario"
+                      aria-label="User menu"
                       className="hidden md:block rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
                     >
                       <Avatar className="h-9 w-9 border-2 border-border2 hover:border-accent transition-colors">
@@ -111,21 +111,21 @@ export function Navbar() {
                     <DropdownMenuSeparator className="bg-border" />
                     <DropdownMenuItem onClick={() => navigate('/profile')} className="flex items-center gap-2 text-text hover:text-accent cursor-pointer">
                       <User className="w-4 h-4" />
-                      Mi perfil
+                      My profile
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={logout} className="flex items-center gap-2 text-accent2 hover:text-accent2 cursor-pointer focus:text-accent2">
                       <LogOut className="w-4 h-4" />
-                      Cerrar sesión
+                      Sign out
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               ) : (
                 <div className="hidden md:flex items-center gap-2">
                   <Button variant="ghost" size="sm" asChild>
-                    <Link href="/login">Iniciar sesión</Link>
+                    <Link href="/login">Sign in</Link>
                   </Button>
                   <Button variant="primary" size="sm" asChild>
-                    <Link href="/register">Registrarse</Link>
+                    <Link href="/register">Sign up</Link>
                   </Button>
                 </div>
               )}
@@ -133,7 +133,7 @@ export function Navbar() {
               {/* Hamburger — mobile only */}
               <button
                 onClick={() => setMobileOpen((prev) => !prev)}
-                aria-label={mobileOpen ? 'Cerrar menú' : 'Abrir menú'}
+                aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
                 className="md:hidden p-2 rounded-md text-muted hover:text-text hover:bg-surface2/60 transition-colors"
               >
                 {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -190,23 +190,23 @@ export function Navbar() {
                   className="flex items-center justify-center gap-3 px-4 py-3 rounded-md text-sm font-medium text-muted hover:text-text hover:bg-surface2/60 transition-all duration-200 w-full"
                 >
                   <User className="w-5 h-5" />
-                  Mi perfil
+                  My profile
                 </button>
                 <button
                   onClick={() => { logout(); setMobileOpen(false) }}
                   className="w-full flex items-center justify-center gap-3 px-4 py-3 rounded-md text-sm font-medium text-accent2 hover:bg-surface2/60 transition-all duration-200"
                 >
                   <LogOut className="w-5 h-5" />
-                  Cerrar sesión
+                  Sign out
                 </button>
               </>
             ) : (
               <div className="flex flex-col gap-2 px-2">
                 <Button variant="ghost" size="sm" asChild className="justify-center">
-                  <Link href="/login">Iniciar sesión</Link>
+                  <Link href="/login">Sign in</Link>
                 </Button>
                 <Button variant="primary" size="sm" asChild>
-                  <Link href="/register">Registrarse</Link>
+                  <Link href="/register">Sign up</Link>
                 </Button>
               </div>
             )}

@@ -10,10 +10,10 @@ import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 
 function validatePassword(pw: string) {
-  if (pw.length < 8) return "Mínimo 8 caracteres";
-  if (!/[A-Z]/.test(pw)) return "Debe tener al menos una mayúscula";
-  if (!/[a-z]/.test(pw)) return "Debe tener al menos una minúscula";
-  if (!/[0-9]/.test(pw)) return "Debe tener al menos un número";
+  if (pw.length < 8) return "Minimum 8 characters";
+  if (!/[A-Z]/.test(pw)) return "Must have at least one uppercase letter";
+  if (!/[a-z]/.test(pw)) return "Must have at least one lowercase letter";
+  if (!/[0-9]/.test(pw)) return "Must have at least one number";
   return "";
 }
 
@@ -45,21 +45,21 @@ export default function RegisterPage() {
     // Use the new confirmPassword value for comparison with current formData.password
     setErrors((e) => ({ 
       ...e, 
-      confirmPassword: confirmPassword !== formData.password ? "Las contraseñas no coinciden" : "" 
+      confirmPassword: confirmPassword !== formData.password ? "Passwords don't match" : "" 
     }));
   }, [formData.password]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (errors.password || errors.confirmPassword) {
-      toast.error("Corrige los errores del formulario");
+      toast.error("Fix form errors");
       return;
     }
     setIsLoading(true);
     try {
       await register(formData.name, formData.email, formData.password);
     } catch (error) {
-      console.error("Error en registro:", error);
+      console.error("Registration error:", error);
     } finally {
       setIsLoading(false);
     }
@@ -77,21 +77,21 @@ export default function RegisterPage() {
             <span className="font-display text-4xl tracking-widest text-text">CINE</span>
             <span className="font-display text-4xl tracking-widest text-accent">RAPH</span>
           </Link>
-          <p className="text-xs text-muted mt-2">Recomendaciones cinematográficas inteligentes</p>
+          <p className="text-xs text-muted mt-2">Intelligent movie recommendations</p>
         </div>
 
         <div className="bg-surface border border-border2 rounded-2xl p-8">
           <div className="mb-6">
-            <h1 className="font-display text-2xl text-text">Crear cuenta</h1>
-            <p className="text-sm text-muted mt-1">Completa el formulario para empezar</p>
+            <h1 className="font-display text-2xl text-text">Create account</h1>
+            <p className="text-sm text-muted mt-1">Complete the form to get started</p>
           </div>
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             <div className="flex flex-col gap-1.5">
-              <label htmlFor="name" className="text-xs font-medium text-muted uppercase tracking-wider">Nombre completo</label>
+              <label htmlFor="name" className="text-xs font-medium text-muted uppercase tracking-wider">Full name</label>
               <div className="relative">
                 <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" />
-                <Input id="name" type="text" variant="default" placeholder="Juan Pérez" className="pl-9"
+                <Input id="name" type="text" variant="default" placeholder="John Doe" className="pl-9"
                   value={formData.name} onChange={(e) => handleNameChange(e.target.value)}
                   required disabled={isLoading} />
               </div>
@@ -101,14 +101,14 @@ export default function RegisterPage() {
               <label htmlFor="email" className="text-xs font-medium text-muted uppercase tracking-wider">Email</label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" />
-                <Input id="email" type="email" variant="default" placeholder="tu@email.com" className="pl-9"
+                <Input id="email" type="email" variant="default" placeholder="you@email.com" className="pl-9"
                   value={formData.email} onChange={(e) => handleEmailChange(e.target.value)}
                   required disabled={isLoading} />
               </div>
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <label htmlFor="password" className="text-xs font-medium text-muted uppercase tracking-wider">Contraseña</label>
+              <label htmlFor="password" className="text-xs font-medium text-muted uppercase tracking-wider">Password</label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" />
                 <Input id="password" type="password" variant="default" placeholder="••••••••" 
@@ -120,7 +120,7 @@ export default function RegisterPage() {
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <label htmlFor="confirmPassword" className="text-xs font-medium text-muted uppercase tracking-wider">Confirmar contraseña</label>
+              <label htmlFor="confirmPassword" className="text-xs font-medium text-muted uppercase tracking-wider">Confirm password</label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" />
                 <Input id="confirmPassword" type="password" variant="default" placeholder="••••••••"
@@ -132,15 +132,15 @@ export default function RegisterPage() {
             </div>
 
             <Button type="submit" variant="primary" disabled={isLoading} className="w-full mt-2">
-              {isLoading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Creando cuenta…</>
-                : <><Sparkles className="w-4 h-4 mr-2" />Crear cuenta</>}
+              {isLoading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Creating account…</>
+                : <><Sparkles className="w-4 h-4 mr-2" />Create account</>}
             </Button>
           </form>
 
           <p className="text-sm text-muted text-center mt-6">
-            ¿Ya tienes cuenta?{" "}
+            Already have an account?{" "}
             <Link href="/login" className="text-accent hover:text-accent/80 font-medium transition-colors">
-              Inicia sesión aquí
+              Sign in here
             </Link>
           </p>
         </div>

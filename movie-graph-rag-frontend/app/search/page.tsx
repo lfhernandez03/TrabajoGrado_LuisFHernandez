@@ -31,9 +31,9 @@ function toCardMovie(m: Movie): MovieCardMovie {
 }
 
 const SEARCH_MODES: { value: SearchMode; label: string; icon: React.ElementType; placeholder: string }[] = [
-  { value: 'title',    label: 'Título',   icon: Film, placeholder: 'Buscar por título de película…' },
-  { value: 'director', label: 'Director', icon: User, placeholder: 'Buscar por nombre de director…' },
-  { value: 'genre',    label: 'Género',   icon: Tag,  placeholder: 'Buscar por género (Drama, Acción, Comedia…)' },
+  { value: 'title',    label: 'Title',   icon: Film, placeholder: 'Search movies by title…' },
+  { value: 'director', label: 'Director', icon: User, placeholder: 'Search by director name…' },
+  { value: 'genre',    label: 'Genre',   icon: Tag,  placeholder: 'Search by genre (Drama, Action, Comedy…)' },
 ];
 
 function ExploreContent() {
@@ -105,9 +105,9 @@ function ExploreContent() {
       setExecutionTime(Date.now() - t0);
       setResults(allResults);
       setHasSearched(true);
-      if (allResults.length === 0) toast.info("No se encontraron películas");
+      if (allResults.length === 0) toast.info("No movies found");
     } catch {
-      toast.error("Error al buscar películas");
+      toast.error("Error searching movies");
     } finally {
       setIsSearching(false);
     }
@@ -130,9 +130,9 @@ function ExploreContent() {
         ? await removeMyFavorite(movie.uri)
         : await addMyFavorite(movie as Movie);
       setFavorites(updated);
-      toast.success(was ? `"${movie.title}" eliminado de favoritos` : `"${movie.title}" agregado a favoritos`);
+      toast.success(was ? `"${movie.title}" removed from favorites` : `"${movie.title}" added to favorites`);
     } catch {
-      toast.error("No se pudo actualizar favoritos");
+      toast.error("Could not update favorites");
     } finally {
       pendingFavs.current.delete(movie.uri);
     }
@@ -166,8 +166,8 @@ function ExploreContent() {
   const currentModeConfig = SEARCH_MODES.find((m) => m.value === mode) ?? SEARCH_MODES[0];
   const modeLabel =
     mode === 'director' ? 'director' :
-    mode === 'genre'    ? 'género' :
-                          'título';
+    mode === 'genre'    ? 'genre' :
+                          'title';
 
   return (
     <ProtectedRoute>
@@ -215,7 +215,7 @@ function ExploreContent() {
               disabled={isSearching || !query.trim()}
             >
               <Search className="w-4 h-4 mr-1.5" />
-              Buscar
+              Search
             </Button>
           </div>
 
@@ -233,8 +233,8 @@ function ExploreContent() {
                 </h1>
                 <p className="text-sm text-muted flex items-center gap-3 mt-1">
                   <span>
-                    {directResultCount} resultado{directResultCount !== 1 ? "s" : ""}
-                    {results.length > directResultCount && ` + ${results.length - directResultCount} similares`}
+                    {directResultCount} result{directResultCount !== 1 ? "s" : ""}
+                    {results.length > directResultCount && ` + ${results.length - directResultCount} similar`}
                   </span>
                   <span className="flex items-center gap-1">
                     <Clock className="w-3 h-3" />{executionTime}ms
@@ -249,7 +249,7 @@ function ExploreContent() {
                   className="flex items-center gap-1.5 text-xs text-muted hover:text-accent transition-colors"
                 >
                   <Code2 className="w-3.5 h-3.5" />
-                  {showSparql ? "Ocultar" : "Ver"} SPARQL
+                  {showSparql ? "Hide" : "Show"} SPARQL
                   {showSparql ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
                 </button>
               )}
@@ -280,8 +280,8 @@ function ExploreContent() {
               onFindSimilar={handleFindSimilar}
               emptyMessage={
                 hasSearched
-                  ? `No se encontraron películas con ese ${modeLabel}.`
-                  : `Usa el buscador para encontrar películas por ${modeLabel}.`
+                  ? `No movies found with that ${modeLabel}.`
+                  : `Use the search bar to find movies by ${modeLabel}.`
               }
             />
 

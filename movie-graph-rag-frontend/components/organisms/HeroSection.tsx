@@ -337,14 +337,14 @@ function HorizontalMovieCard({
               className="flex-1 bg-accent2 hover:bg-accent2/90"
             >
               <ExternalLink className="w-4 h-4 mr-2" />
-              Ver detalles
+              View details
             </Button>
             <Button
               variant="ghost"
               size="icon"
               onClick={onToggleFavorite}
               aria-label={
-                isFavorite ? "Quitar de favoritos" : "Agregar a favoritos"
+                isFavorite ? "Remove from favorites" : "Add to favorites"
               }
               className="hover:bg-surface2"
             >
