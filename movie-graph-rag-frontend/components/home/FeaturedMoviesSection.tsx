@@ -19,9 +19,9 @@ export function FeaturedMoviesSection({
   return (
     <section className="mb-10">
       <div className="mb-6">
-        <h2 className="text-2xl font-semibold">Películas Destacadas</h2>
+        <h2 className="text-2xl font-semibold">Featured Movies</h2>
         <p className="text-muted-foreground text-sm mt-1">
-          Explora nuestro catálogo de películas
+          Explore our movie catalog
         </p>
       </div>
 

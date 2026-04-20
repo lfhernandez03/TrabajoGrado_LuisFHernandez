@@ -25,7 +25,7 @@ export function MovieGrid({
   onToggleFavorite,
   onViewDetails,
   onFindSimilar,
-  emptyMessage = 'No se encontraron películas con esos filtros.',
+  emptyMessage = 'No movies found matching those filters.',
   className,
 }: MovieGridProps) {
   const gridClass = cn('grid gap-4 grid-cols-1 sm:grid-cols-2 xl:grid-cols-3', className)

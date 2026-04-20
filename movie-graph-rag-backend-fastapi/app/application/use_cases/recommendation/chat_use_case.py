@@ -142,7 +142,7 @@ class ChatUseCase:
             return ChatResult(
                 session_id=session_id,
                 movies=[],
-                explanation="No se encontró ningún mensaje del usuario en la conversación.",
+                explanation="No user message found in the conversation.",
                 strategy_used="empty",
                 context=UserContext(session_id=session_id),
                 execution_ms=0,
@@ -162,7 +162,7 @@ class ChatUseCase:
         # ── 4. Get topological profile (requires favorites_raw) ─────────────
         dominant_cluster_ids: list[str] = []
         adjacent_cluster_ids: list[str] = []
-        topological_type = "equilibrado"
+        topological_type = "balanced"
         dominant_cluster_labels: list[str] = []
         topo_profile = None
 
@@ -274,9 +274,9 @@ class ChatUseCase:
         except Exception as exc:
             logger.warning("Explanation generation failed: %s", exc)
             explanation = (
-                f"Encontré {len(movies)} película(s) basándome en tu consulta."
+                f"Found {len(movies)} movie(s) based on your query."
                 if movies
-                else "No encontré películas que coincidan con tu consulta actual. Intenta ser más específico."
+                else "No movies found matching your query. Try being more specific."
             )
 
         # ── 11. Update session ───────────────────────────────────────────────
@@ -348,16 +348,16 @@ class ChatUseCase:
 def _build_context_summary(ctx: UserContext) -> str:
     parts: list[str] = []
     if ctx.mood:
-        parts.append(f"Estado de ánimo: {ctx.mood}")
+        parts.append(f"Mood: {ctx.mood}")
     if ctx.companion:
-        parts.append(f"Compañía: {ctx.companion}")
+        parts.append(f"Companion: {ctx.companion}")
     if ctx.genres:
-        parts.append(f"Géneros: {', '.join(ctx.genres)}")
+        parts.append(f"Genres: {', '.join(ctx.genres)}")
     if ctx.runtime_max:
-        parts.append(f"Duración máxima: {ctx.runtime_max} min")
+        parts.append(f"Max runtime: {ctx.runtime_max} min")
     if ctx.exclusions:
-        parts.append(f"Excluir: {', '.join(ctx.exclusions)}")
-    return "; ".join(parts) if parts else "consulta general"
+        parts.append(f"Exclude: {', '.join(ctx.exclusions)}")
+    return "; ".join(parts) if parts else "general query"
 
 
 def _build_context_summary_with_graph(
@@ -369,10 +369,10 @@ def _build_context_summary_with_graph(
     base = _build_context_summary(ctx)
     extras: list[str] = []
     if favorites_sample:
-        extras.append(f"Favoritos recientes: {', '.join(favorites_sample)}")
+        extras.append(f"Recent favorites: {', '.join(favorites_sample)}")
     if topo_profile:
         if topo_profile.dominantClusters:
             top = topo_profile.dominantClusters[0]
-            extras.append(f"Cluster principal: {top.label} ({top.moviesSeen} películas)")
-        extras.append(f"Perfil: {topo_profile.userType}")
+            extras.append(f"Main cluster: {top.label} ({top.moviesSeen} movies)")
+        extras.append(f"Profile: {topo_profile.userType}")
     return "; ".join([base] + extras) if extras else base

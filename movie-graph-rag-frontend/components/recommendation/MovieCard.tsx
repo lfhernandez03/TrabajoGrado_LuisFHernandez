@@ -37,7 +37,7 @@ export function MovieCard({
   const descriptionText =
     movie.description ||
     movie.relationReason ||
-    "Recomendación personalizada basada en tu actividad reciente.";
+    "Personalized recommendation based on your recent activity.";
 
   return (
     <div
@@ -72,7 +72,7 @@ export function MovieCard({
           {hasPoster ? (
             <Image
               src={normalizedPosterUrl as string}
-              alt={`Póster de ${movie.title}`}
+              alt={`Poster of ${movie.title}`}
               fill
               sizes="128px"
               className="object-cover"

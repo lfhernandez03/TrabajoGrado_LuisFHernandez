@@ -258,7 +258,7 @@ export default function TopologyPage() {
                       Top — PageRank
                     </CardTitle>
                     <p className="text-xs text-muted-foreground">
-                      Películas de mayor influencia global
+                      Most globally influential movies
                     </p>
                   </CardHeader>
                   <CardContent className="space-y-1">
@@ -279,10 +279,10 @@ export default function TopologyPage() {
                 <CardHeader className="pb-2">
                   <CardTitle className="text-base flex items-center gap-2">
                     <Users className="h-4 w-4 text-emerald-500" />
-                    Comunidades detectadas (Louvain)
+                    Detected Communities (Louvain)
                   </CardTitle>
                   <p className="text-xs text-muted-foreground">
-                    Grupos de películas con alta cohesión interna. Generadas offline con NetworkX + Gemini.
+                    Movie groups with high internal cohesion. Generated offline with NetworkX + Gemini.
                   </p>
                 </CardHeader>
                 <CardContent>
@@ -291,9 +291,9 @@ export default function TopologyPage() {
                       <thead>
                         <tr className="border-b text-muted-foreground">
                           <th className="text-left pb-2 pr-4 font-medium">ID</th>
-                          <th className="text-left pb-2 pr-4 font-medium">Etiqueta</th>
-                          <th className="text-right pb-2 font-medium">Películas</th>
-                          <th className="text-right pb-2 font-medium pl-4">Proporción</th>
+                          <th className="text-left pb-2 pr-4 font-medium">Label</th>
+                          <th className="text-right pb-2 font-medium">Movies</th>
+                          <th className="text-right pb-2 font-medium pl-4">Proportion</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -337,7 +337,7 @@ export default function TopologyPage() {
           {!loading && !data && (
             <div className="flex flex-col items-center justify-center py-24 text-muted-foreground gap-3">
               <Network className="h-12 w-12 opacity-30" />
-              <p>No se pudieron cargar las métricas topológicas.</p>
+              <p>Could not load topological metrics.</p>
               <p className="text-sm">
                 Ejecuta <code className="bg-muted px-1 rounded">scripts/compute_network_metrics.py</code> y vuelve a intentarlo.
               </p>

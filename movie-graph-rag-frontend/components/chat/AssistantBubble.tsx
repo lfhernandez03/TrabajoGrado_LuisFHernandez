@@ -42,8 +42,8 @@ export function AssistantBubble({ message }: AssistantBubbleProps) {
           <div className="space-y-2">
             <p className="text-xs text-muted-foreground font-medium flex items-center gap-1 ml-1">
               <Sparkles className="h-3 w-3" />
-              {rec.movies.length} película{rec.movies.length !== 1 ? "s" : ""}{" "}
-              encontrada{rec.movies.length !== 1 ? "s" : ""}
+              {rec.movies.length} movie{rec.movies.length !== 1 ? "s" : ""}{" "}
+              found
             </p>
             {rec.movies.map((movie, idx) => (
               <MovieRecommendationCard key={idx} movie={movie} />
@@ -67,7 +67,7 @@ export function AssistantBubble({ message }: AssistantBubbleProps) {
             )}
             {rec.turn_count > 1 && (
               <Badge variant="outline" className="text-[10px]">
-                Turno {rec.turn_count}
+                Turn {rec.turn_count}
               </Badge>
             )}
             {rec.sparql_query && (

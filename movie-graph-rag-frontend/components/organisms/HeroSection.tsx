@@ -23,18 +23,16 @@ function generateMetrics(movie: HeroMovie | null | undefined) {
     metrics.push({ label: "Compatibilidad", value: 0.85 });
   }
 
-  // Estado de ánimo: from contextExtracted.moodDescription
   if (movie?.contextExtracted?.moodDescription) {
-    metrics.push({ label: "Estado de ánimo", value: 0.85 });
+    metrics.push({ label: "Mood", value: 0.85 });
   } else {
-    metrics.push({ label: "Estado de ánimo", value: 0.60 });
+    metrics.push({ label: "Mood", value: 0.60 });
   }
 
-  // Momento del día: from contextExtracted.availableTime
   if (movie?.contextExtracted?.availableTime) {
-    metrics.push({ label: "Momento del día", value: 0.88 });
+    metrics.push({ label: "Time of day", value: 0.88 });
   } else {
-    metrics.push({ label: "Momento del día", value: 0.70 });
+    metrics.push({ label: "Time of day", value: 0.70 });
   }
 
   return metrics;
@@ -131,11 +129,11 @@ export function HeroSection({
               <p className="text-sm md:text-base text-muted max-w-2xl leading-relaxed">
                 {isColdStart ? (
                   <>
-                    Guarda películas que te gusten — <span className="font-bold" style={{ color: 'var(--color-purple)' }}>cada favorita mejora tus recomendaciones</span>. Por ahora te sugerimos lo mejor del catálogo.
+                    Save movies you like — <span className="font-bold" style={{ color: 'var(--color-purple)' }}>each favorite improves your recommendations</span>. For now we suggest the best of the catalog.
                   </>
                 ) : (
                   <>
-                    El grafo conoce tu historial — <span className="font-bold" style={{ color: 'var(--color-purple)' }}>{featuredMovie?.genres?.slice(0, 3).join(", ") || "películas de calidad"}</span>. Eligió esto para ti ahora mismo.
+                    The graph knows your history — <span className="font-bold" style={{ color: 'var(--color-purple)' }}>{featuredMovie?.genres?.slice(0, 3).join(", ") || "quality films"}</span>. It chose this for you right now.
                   </>
                 )}
               </p>
@@ -165,17 +163,17 @@ export function HeroSection({
               <div className="shrink-0 w-full lg:w-64 flex flex-col gap-4 pt-0 lg:pt-4">
                 <div className="space-y-2">
                   <h3 className="text-xs font-bold text-teal tracking-widest">
-                    {isColdStart ? "POR QUÉ TE" : "POR QUÉ EL GRAFO"}
+                    {isColdStart ? "WHY WE" : "WHY THE GRAPH"}
                   </h3>
                   <h3 className="text-xs font-bold text-teal tracking-widest">
-                    {isColdStart ? "LA RECOMENDAMOS" : "ELIGIÓ ESTO"}
+                    {isColdStart ? "RECOMMEND THIS" : "CHOSE THIS"}
                   </h3>
                 </div>
                 <p className="text-xs text-muted leading-relaxed">
                   {featuredMovie?.explanation ||
                     (isColdStart
-                      ? "Seleccionada por su popularidad y calidad general. Guarda películas que te gusten para que el sistema aprenda tus preferencias y te recomiende con mayor precisión."
-                      : "Basado en tu historial de neo-noir psicológico (Memento, Prestige) y preferencia por worldbuilding ciencia ficción (Blade Runner 1982, Alien). El contexto temporal sugiere una experiencia larga e inmersiva.")}
+                      ? "Selected for its overall popularity and quality. Save movies you like so the system can learn your preferences and recommend with more precision."
+                      : "Based on your psychological neo-noir history (Memento, Prestige) and preference for sci-fi worldbuilding (Blade Runner 1982, Alien). The temporal context suggests a long, immersive experience.")}
                 </p>
               </div>
             </div>
@@ -186,10 +184,10 @@ export function HeroSection({
                 <BookOpen className="w-4 h-4 text-accent2/70 shrink-0 mt-0.5" />
                 <div className="space-y-1">
                   <p className="text-xs font-semibold text-accent2/80">
-                    Recomendaciones en modo exploración
+                    Recommendations in exploration mode
                   </p>
                   <p className="text-xs text-muted leading-relaxed">
-                    Aún no tenemos suficiente información sobre tus gustos. Guarda películas como favoritas para que el grafo aprenda tu perfil y ajuste las recomendaciones a ti.
+                    We don&apos;t have enough information about your taste yet. Save movies as favorites so the graph can learn your profile and tailor recommendations to you.
                   </p>
                 </div>
               </div>
@@ -257,7 +255,7 @@ function HorizontalMovieCard({
           {hasPoster ? (
             <Image
               src={posterUrl as string}
-              alt={`Póster de ${movie.title}`}
+              alt={`Poster of ${movie.title}`}
               fill
               priority
               sizes="200px"
@@ -316,7 +314,7 @@ function HorizontalMovieCard({
         {/* Synopsis */}
         <p className="text-sm text-muted/90 line-clamp-3 leading-relaxed">
           {movie.description ||
-            "Un thriller psicológico de ciencia ficción que explora los límites de la identidad y la memoria en un futuro distópico."}
+            "A psychological science fiction thriller that explores the limits of identity and memory in a dystopian future."}
         </p>
 
         {/* Score and Actions */}

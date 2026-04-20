@@ -116,7 +116,7 @@ export function RecommendationCarousel({
               key={i}
               type="button"
               onClick={() => setPage(i)}
-              aria-label={`Página ${i + 1}`}
+              aria-label={`Page ${i + 1}`}
               className={cn(
                 'rounded-full transition-all duration-200',
                 i === page

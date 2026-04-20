@@ -28,7 +28,7 @@ export function MovieSearchInput({
   onChange: controlledOnChange,
   onSelect,
   onSubmit,
-  placeholder = "Buscar película...",
+  placeholder = "Search movie...",
   disabled = false,
   className,
   mode = "title",

@@ -25,9 +25,6 @@ class AuthService {
   private readonly TOKEN_KEY = "auth_token";
   private readonly USER_KEY = "auth_user";
 
-  /**
-   * Inicia sesión
-   */
   async login(credentials: LoginDto): Promise<AuthResponse> {
     try {
       const response = await api.post<AuthResponse>("/auth/login", credentials);
@@ -39,16 +36,13 @@ class AuthService {
         const message =
           error.response?.data?.detail ||
           error.response?.data?.message ||
-          "Error al iniciar sesión";
+          "Login error";
         throw new Error(message);
       }
-      throw new Error("Error de conexión con el servidor");
+      throw new Error("Connection error");
     }
   }
 
-  /**
-   * Registra un nuevo usuario
-   */
   async register(userData: RegisterDto): Promise<AuthResponse> {
     try {
       const response = await api.post<AuthResponse>("/auth/register", userData);
@@ -60,20 +54,17 @@ class AuthService {
         const message =
           error.response?.data?.detail ||
           error.response?.data?.message ||
-          "Error al registrarse";
+          "Registration error";
         throw new Error(message);
       }
-      throw new Error("Error de conexión con el servidor");
+      throw new Error("Connection error");
     }
   }
 
-  /**
-   * Obtiene el perfil del usuario actual
-   */
   async getProfile(): Promise<AuthResponse["user"]> {
     const token = this.getToken();
     if (!token) {
-      throw new Error("No hay sesión activa");
+      throw new Error("No active session");
     }
 
     try {
@@ -87,9 +78,6 @@ class AuthService {
     }
   }
 
-  /**
-   * Guarda la sesión en localStorage
-   */
   private setSession(data: AuthResponse): void {
     if (typeof window === "undefined") return;
 
@@ -97,25 +85,16 @@ class AuthService {
     localStorage.setItem(this.USER_KEY, JSON.stringify(data.user));
   }
 
-  /**
-   * Guarda el usuario en localStorage
-   */
   private setUser(user: AuthResponse["user"]): void {
     if (typeof window === "undefined") return;
     localStorage.setItem(this.USER_KEY, JSON.stringify(user));
   }
 
-  /**
-   * Obtiene el token de autenticación
-   */
   getToken(): string | null {
     if (typeof window === "undefined") return null;
     return localStorage.getItem(this.TOKEN_KEY);
   }
 
-  /**
-   * Obtiene el usuario almacenado
-   */
   getUser(): AuthResponse["user"] | null {
     if (typeof window === "undefined") return null;
 
@@ -129,9 +108,6 @@ class AuthService {
     }
   }
 
-  /**
-   * Cierra la sesión
-   */
   logout(): void {
     if (typeof window === "undefined") return;
 
@@ -139,9 +115,6 @@ class AuthService {
     localStorage.removeItem(this.USER_KEY);
   }
 
-  /**
-   * Verifica si hay una sesión activa
-   */
   isAuthenticated(): boolean {
     return !!this.getToken();
   }

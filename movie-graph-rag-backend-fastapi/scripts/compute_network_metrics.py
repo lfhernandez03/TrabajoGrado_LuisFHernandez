@@ -317,7 +317,7 @@ def generate_cluster_labels(
     partition: dict[str, int],
     uri_to_genre: dict[str, str],
 ) -> dict[int, str]:
-    """Generate Spanish descriptive labels for each cluster via Groq.
+    """Generate descriptive labels in English for each cluster via Groq.
 
     All clusters are labelled in a single batched JSON request to minimise
     API calls and stay within the free-tier rate limits.

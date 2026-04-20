@@ -72,17 +72,11 @@ export interface MovieSuggestion {
   director?: string;
 }
 
-/**
- * Obtiene películas de ejemplo para mostrar en la página principal
- */
 export const getMovieExamples = (limit: number = 3): Promise<Movie[]> =>
   withCache(`examples:${limit}`, TTL.LONG, () =>
     api.get<Movie[]>('/movies/examples', { params: { limit } }).then(r => r.data)
   );
 
-/**
- * Autocompletado de títulos de películas
- */
 export const autocompleteMovies = async (
   q: string,
   limit: number = 8
@@ -94,9 +88,6 @@ export const autocompleteMovies = async (
   return response.data;
 };
 
-/**
- * Busca películas según diferentes criterios
- */
 export const searchMovies = async (
   params: SearchMovieParams
 ): Promise<Movie[]> => {
@@ -104,9 +95,6 @@ export const searchMovies = async (
   return response.data;
 };
 
-/**
- * Explora conexiones entre dos películas en el grafo de conocimiento
- */
 export const findConnections = async (
   params: ConnectionExplorerParams
 ): Promise<ConnectionExplorerResponse> => {

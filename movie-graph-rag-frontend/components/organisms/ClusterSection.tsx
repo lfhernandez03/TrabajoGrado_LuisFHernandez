@@ -94,13 +94,13 @@ export function ClusterSection({ data, className }: ClusterSectionProps) {
             <div className="flex items-center gap-2 mb-1">
               <Layers className="h-4 w-4 text-teal shrink-0" />
               <span className="text-xs font-medium text-muted uppercase tracking-wider">
-                Comunidad
+                Community
               </span>
             </div>
             <h3 className="font-display text-xl tracking-wide text-text">{cluster.label}</h3>
           </div>
           <Badge variant="teal" size="md" className="shrink-0">
-            {cluster.size} películas
+            {cluster.size} movie{cluster.size !== 1 ? "s" : ""}
           </Badge>
         </div>
 
@@ -118,7 +118,7 @@ export function ClusterSection({ data, className }: ClusterSectionProps) {
       {intraCluster.length > 0 && (
         <div className="space-y-1">
           <p className="text-xs font-medium text-muted uppercase tracking-wider mb-3">
-            Películas de la misma comunidad
+            Movies in the same community
           </p>
           <div className="divide-y divide-border">
             {intraCluster.slice(0, 8).map((movie) => (
@@ -132,7 +132,7 @@ export function ClusterSection({ data, className }: ClusterSectionProps) {
       {adjacentClusters.length > 0 && (
         <div className="space-y-3">
           <p className="text-xs font-medium text-muted uppercase tracking-wider">
-            Comunidades adyacentes
+            Adjacent communities
           </p>
           <div className="space-y-3">
             {adjacentClusters.slice(0, 3).map((adj) => (

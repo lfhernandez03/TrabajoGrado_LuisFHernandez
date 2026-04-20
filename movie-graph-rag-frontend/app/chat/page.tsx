@@ -363,7 +363,7 @@ export default function ChatPage() {
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
                     onKeyDown={handleKeyDown}
-                    placeholder="Describe qué tipo de película buscas…"
+                    placeholder="Describe what kind of movie you're looking for…"
                     disabled={isLoading}
                     rows={1}
                     className={cn(
@@ -402,7 +402,7 @@ export default function ChatPage() {
           <aside className="hidden xl:flex flex-col w-65 shrink-0 border-l border-border bg-surface overflow-y-auto">
             <div className="p-4 border-b border-border">
               <p className="text-xs font-semibold text-muted uppercase tracking-wider">
-                Contexto extraído
+                Extracted context
               </p>
             </div>
 
@@ -410,59 +410,59 @@ export default function ChatPage() {
               <div className="p-4 flex flex-col gap-4 text-xs">
                 {/* Emotional context */}
                 {(ctx?.mood || ctx?.energy) && (
-                  <ContextPanel label="Estado emocional">
+                  <ContextPanel label="Emotional state">
                     {ctx.mood && <Row label="Mood" value={ctx.mood} />}
-                    {ctx.energy && <Row label="Energía" value={ctx.energy} />}
+                    {ctx.energy && <Row label="Energy" value={ctx.energy} />}
                   </ContextPanel>
                 )}
 
                 {/* Social context */}
                 {ctx?.companion && (
-                  <ContextPanel label="Contexto social">
-                    <Row label="Compañía" value={ctx.companion} />
-                    {ctx.has_children && <Row label="Niños" value="Sí" />}
+                  <ContextPanel label="Social context">
+                    <Row label="Companion" value={ctx.companion} />
+                    {ctx.has_children && <Row label="Children" value="Yes" />}
                   </ContextPanel>
                 )}
 
                 {/* Preferences */}
                 {(ctx?.genres?.length || ctx?.runtime_max || ctx?.exclusions?.length) ? (
-                  <ContextPanel label="Preferencias">
+                  <ContextPanel label="Preferences">
                     {ctx.genres && ctx.genres.length > 0 && (
-                      <Row label="Géneros" value={ctx.genres.join(", ")} />
+                      <Row label="Genres" value={ctx.genres.join(", ")} />
                     )}
                     {ctx.runtime_max && (
-                      <Row label="Duración máx." value={`${ctx.runtime_max} min`} />
+                      <Row label="Max runtime" value={`${ctx.runtime_max} min`} />
                     )}
                     {ctx.exclusions && ctx.exclusions.length > 0 && (
-                      <Row label="Excluir" value={ctx.exclusions.join(", ")} />
+                      <Row label="Exclude" value={ctx.exclusions.join(", ")} />
                     )}
                   </ContextPanel>
                 ) : null}
 
                 {/* Metrics */}
-                <ContextPanel label="Métricas">
-                  <Row label="Películas" value={String(lastRec.movies.length)} />
-                  <Row label="Tiempo" value={`${lastRec.execution_ms}ms`} />
-                  <Row label="Turno" value={String(lastRec.turn_count)} />
+                <ContextPanel label="Metrics">
+                  <Row label="Movies" value={String(lastRec.movies.length)} />
+                  <Row label="Time" value={`${lastRec.execution_ms}ms`} />
+                  <Row label="Turn" value={String(lastRec.turn_count)} />
                   {lastRec.strategy_used && (
-                    <Row label="Estrategia" value={lastRec.strategy_used} />
+                    <Row label="Strategy" value={lastRec.strategy_used} />
                   )}
                   {ctx?.confidence !== undefined && (
-                    <Row label="Confianza" value={`${Math.round(ctx.confidence * 100)}%`} />
+                    <Row label="Confidence" value={`${Math.round(ctx.confidence * 100)}%`} />
                   )}
                 </ContextPanel>
 
                 {/* Strategy indicator */}
                 <div className="flex items-center gap-1.5 text-teal">
                   <Sparkles className="w-3.5 h-3.5" />
-                  <span className="font-medium">GraphRAG activo</span>
+                  <span className="font-medium">GraphRAG active</span>
                 </div>
               </div>
             ) : (
               <div className="flex flex-col items-center justify-center flex-1 text-center p-6">
                 <Clock className="w-8 h-8 text-muted/30 mb-2" />
                 <p className="text-xs text-muted">
-                  El contexto extraído de tu consulta aparecerá aquí.
+                  The context extracted from your query will appear here.
                 </p>
               </div>
             )}

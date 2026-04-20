@@ -96,10 +96,6 @@ export interface ChatMessage {
   recommendation?: ChatResponse;
 }
 
-/**
- * Envía el historial completo de mensajes al endpoint conversacional.
- * El backend acumula contexto entre turnos usando session_id.
- */
 export const sendChatConversation = async (
   sessionId: string,
   messages: { role: 'user' | 'assistant'; content: string }[]
@@ -107,14 +103,11 @@ export const sendChatConversation = async (
   const response = await api.post<ChatResponse>(
     '/recommendation/chat',
     { session_id: sessionId, messages },
-    { timeout: 180000 } // 3 minutos - el pipeline GraphRAG hace múltiples llamadas LLM
+    { timeout: 180000 }
   );
   return response.data;
 };
 
-/**
- * Obtiene recomendación personalizada basada en actividad del usuario
- */
 export const getActivityRecommendation = (): Promise<ChatRecommendationResponse> =>
   withCache('activity-recommendation', TTL.SHORT, () =>
     api.get<ChatRecommendationResponse>('/recommendation/activity', { timeout: 180000 })

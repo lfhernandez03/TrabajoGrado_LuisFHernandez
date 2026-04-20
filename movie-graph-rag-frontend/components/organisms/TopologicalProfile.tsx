@@ -11,20 +11,20 @@ import { cn } from '@/lib/utils'
 
 const USER_TYPE_CONFIG = {
   especialista: {
-    label: 'Especialista',
-    description: 'Te especializas en géneros concretos',
+    label: 'Specialist',
+    description: 'You focus on specific genres',
     icon: Brain,
     color: 'text-accent bg-accent/10 border-accent/30',
   },
   equilibrado: {
-    label: 'Equilibrado',
-    description: 'Balanceas exploración y preferencias',
+    label: 'Balanced',
+    description: 'You balance exploration and preferences',
     icon: User,
     color: 'text-teal bg-teal/10 border-teal/30',
   },
   explorador: {
-    label: 'Explorador',
-    description: 'Disfrutas la diversidad cinematográfica',
+    label: 'Explorer',
+    description: 'You enjoy cinematic diversity',
     icon: Compass,
     color: 'text-accent2 bg-accent2/10 border-accent2/30',
   },
@@ -32,22 +32,22 @@ const USER_TYPE_CONFIG = {
 
 const TREND_CONFIG = {
   specializing: {
-    label: 'Especializándote',
+    label: 'Specializing',
     icon: TrendingDown,
     color: 'text-accent',
-    description: 'Tus gustos se están concentrando',
+    description: 'Your tastes are narrowing',
   },
   diversifying: {
-    label: 'Diversificando',
+    label: 'Diversifying',
     icon: TrendingUp,
     color: 'text-teal',
-    description: 'Estás expandiendo tus horizontes',
+    description: 'You are expanding your horizons',
   },
   stable: {
-    label: 'Estable',
+    label: 'Stable',
     icon: Minus,
     color: 'text-muted',
-    description: 'Patrón de consumo consistente',
+    description: 'Consistent viewing pattern',
   },
 }
 
@@ -107,8 +107,8 @@ function ExplorationIndex({ profile }: { profile: TopologicalProfileResponse }) 
   return (
     <div className="bg-surface2 rounded-xl p-4 space-y-3 border border-border">
       <div className="flex items-center justify-between">
-        <p className="text-xs font-medium text-muted uppercase tracking-wider">Índice de exploración</p>
-        <span className="text-xs text-muted">Especialista → Explorador</span>
+        <p className="text-xs font-medium text-muted uppercase tracking-wider">Exploration index</p>
+        <span className="text-xs text-muted">Specialist → Explorer</span>
       </div>
       <ScoreBar
         score={profile.explorationIndex}
@@ -117,8 +117,8 @@ function ExplorationIndex({ profile }: { profile: TopologicalProfileResponse }) 
         variant={profile.explorationIndex > 0.6 ? 'teal' : profile.explorationIndex > 0.3 ? 'gradient' : 'accent'}
       />
       <div className="flex justify-between text-xs text-muted">
-        <span>Enfocado</span>
-        <span>Diverso</span>
+        <span>Focused</span>
+        <span>Diverse</span>
       </div>
     </div>
   )
@@ -128,7 +128,7 @@ function DominantClusters({ profile }: { profile: TopologicalProfileResponse }) 
   if (profile.dominantClusters.length === 0) return null
   return (
     <div className="space-y-3">
-      <p className="text-xs font-medium text-muted uppercase tracking-wider">Comunidades dominantes</p>
+      <p className="text-xs font-medium text-muted uppercase tracking-wider">Dominant communities</p>
       <div className="space-y-2.5">
         {profile.dominantClusters.slice(0, 5).map((cluster, i) => {
           const pct = Math.round(cluster.weight * 100)
@@ -141,7 +141,7 @@ function DominantClusters({ profile }: { profile: TopologicalProfileResponse }) 
                   {cluster.label}
                 </span>
                 <div className="flex items-center gap-2 shrink-0 ml-2">
-                  <span className="text-xs text-muted">{cluster.moviesSeen} vistas</span>
+                  <span className="text-xs text-muted">{cluster.moviesSeen} seen</span>
                   <span className={cn('text-xs font-semibold tabular-nums', isTop ? 'text-teal' : 'text-muted')}>
                     {pct}%
                   </span>
@@ -165,7 +165,7 @@ function UnexploredAdjacent({ profile }: { profile: TopologicalProfileResponse }
   if (profile.unexploredAdjacent.length === 0) return null
   return (
     <div className="space-y-2">
-      <p className="text-xs font-medium text-muted uppercase tracking-wider">Comunidades adyacentes sin explorar</p>
+      <p className="text-xs font-medium text-muted uppercase tracking-wider">Unexplored adjacent communities</p>
       <div className="flex flex-wrap gap-2">
         {profile.unexploredAdjacent.map((cluster) => (
           <Tag key={cluster.clusterId} label={cluster.label} variant="static" />
@@ -193,11 +193,11 @@ function TrendAndStats({ profile, trendConfig, clusteredPct }: {
       <div className="grid grid-cols-2 gap-3">
         <div className="bg-surface2 rounded-lg p-3 text-center border border-border">
           <p className="text-2xl font-bold font-display text-text">{profile.totalFavorites}</p>
-          <p className="text-xs text-muted mt-0.5">Favoritos totales</p>
+          <p className="text-xs text-muted mt-0.5">Total favorites</p>
         </div>
         <div className="bg-surface2 rounded-lg p-3 text-center border border-border">
           <p className="text-2xl font-bold font-display text-teal">{clusteredPct}%</p>
-          <p className="text-xs text-muted mt-0.5">En comunidades</p>
+          <p className="text-xs text-muted mt-0.5">In communities</p>
         </div>
       </div>
     </div>

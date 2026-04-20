@@ -89,7 +89,7 @@ export function MovieCard({
           {hasPoster ? (
             <Image
               src={posterUrl as string}
-              alt={`Póster de ${movie.title}`}
+              alt={`Poster of ${movie.title}`}
               fill
               sizes="128px"
               className="object-cover w-full h-full"

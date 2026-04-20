@@ -55,16 +55,16 @@ PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 
 SELECT DISTINCT ?movie ?title ?directorName ?genreName ?rating ?description ?matchScore ?relationReason
 WHERE {
-  # 1. Coincidencia directa por título
+  # 1. Direct title match
   {
     ?movie rdf:type movie:FeatureFilm ;
            movie:hasTitle ?title .
     FILTER(CONTAINS(LCASE(?title), "${safe}"))
     BIND(200 AS ?baseScore)
-    BIND("Coincidencia exacta con tu búsqueda" AS ?relationReason)
+    BIND("Exact match with your search" AS ?relationReason)
   }
   UNION
-  # 2. Películas del mismo director
+  # 2. Movies by the same director
   {
     ?seed rdf:type movie:FeatureFilm ;
           movie:hasTitle ?seedTitle .
@@ -74,10 +74,10 @@ WHERE {
     ?movie movie:hasDirector ?dir .
     FILTER(?seed != ?movie)
     BIND(80 AS ?relScore)
-    BIND(CONCAT("Comparten el director ", ?sharedDirector) AS ?relationReason)
+    BIND(CONCAT("Same director: ", ?sharedDirector) AS ?relationReason)
   }
   UNION
-  # 3. Películas del mismo género
+  # 3. Movies of the same genre
   {
     ?seed rdf:type movie:FeatureFilm ;
           movie:hasTitle ?seedTitle .
@@ -86,7 +86,7 @@ WHERE {
     ?movie movie:hasMainGenre ?g .
     FILTER(?seed != ?movie)
     BIND(40 AS ?relScore)
-    BIND("Comparten género" AS ?relationReason)
+    BIND("Same genre" AS ?relationReason)
   }
 
   ?movie movie:hasTitle ?title .

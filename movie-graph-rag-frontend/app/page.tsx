@@ -304,7 +304,7 @@ export default function Home() {
               director: n.director ?? undefined,
             } as MovieCardMovie)))
           : getMoviesByCentrality(undefined, 12).then((r) => r.movies.map(recToCardMovie)),
-        // "Explora nuevos géneros" — from least-explored cluster or fallback to serendipity
+        // "Explore new genres" — from least-explored cluster or fallback to serendipity
         (async () => {
           const clusterId = await getUnexploredClusterId();
           if (clusterId) {

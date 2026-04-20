@@ -31,7 +31,7 @@ export function MovieRecommendationCard({ movie }: MovieRecommendationCardProps)
         {hasPoster && normalizedPosterUrl ? (
           <Image
             src={normalizedPosterUrl as string}
-            alt={`Póster de ${movie.title}`}
+            alt={`Poster of ${movie.title}`}
             width={40}
             height={56}
             className="h-full w-full object-contain"

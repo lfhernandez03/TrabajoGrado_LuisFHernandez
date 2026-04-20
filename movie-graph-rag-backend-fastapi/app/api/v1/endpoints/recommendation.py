@@ -77,15 +77,12 @@ async def get_activity_recommendation(
     # Build time-of-day context
     hour = datetime.now().hour
     if 6 <= hour < 12:
-        time_context = "mañana"
-        time_label = "morning"
+        time_context = "morning"
     elif 12 <= hour < 18:
-        time_context = "tarde"
-        time_label = "afternoon"
+        time_context = "afternoon"
     else:
         time_context = "evening"
-        time_label = "evening/night"
-    
+
     # Build intelligent query components
     query_parts = [f"Recommend me a movie to watch in the {time_context}"]
     
@@ -112,12 +109,12 @@ async def get_activity_recommendation(
         elif exploration_idx < 0.3:
             # Specialist: deepen expertise
             temporal_trend = getattr(topo_profile, 'temporalTrend', None)
-            if temporal_trend == "profundizando":
+            if temporal_trend == "specializing":
                 query_parts.append("that deepens my favorite genres")
-        
+
         # Add temporal context if available
         temporal_trend = getattr(topo_profile, 'temporalTrend', None)
-        if temporal_trend == "explorando":
+        if temporal_trend == "diversifying":
             query_parts.append("wanting to explore new areas")
     
     # 4. Add mood context if available
