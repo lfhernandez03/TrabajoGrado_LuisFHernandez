@@ -63,10 +63,10 @@ QUERY_TYPE_INSTRUCTIONS: dict[str, str] = {
         "Mention plot or atmosphere details that connect to the user's search."
     ),
     "activity": (
-        "The user received these recommendations based on their recent activity and historical preferences. "
-        "Explain in detail (5-7 sentences) what patterns in their previous searches are reflected in these suggestions. "
-        "Mention genres, directors or styles the user has explored and how they connect with these movies. "
-        "Highlight what makes these recommendations especially aligned with their profile."
+        "The user received this recommendation based on their recent activity and historical preferences. "
+        "Explain in 3-4 sentences why THIS specific movie is the perfect pick for them right now. "
+        "Mention the genre, tone, or style elements that align with their profile and the time of day. "
+        "Be direct and personal — speak as if you chose this one film just for them tonight."
     ),
     "cold_start": (
         "This is the user's first interaction with the system, so these recommendations are based on their query context. "
@@ -302,7 +302,7 @@ class GeminiRecommendationLlmAdapter(RecommendationLlmClientPort):
             )
 
         top: list[str] = []
-        for movie in movies_with_scores[:5]:
+        for movie in movies_with_scores:
             hints: list[str] = []
             # Individual semantic scores are top-level fields in to_response_dict()
             mood_score = movie.get("moodMatchScore")
@@ -353,7 +353,7 @@ class GeminiRecommendationLlmAdapter(RecommendationLlmClientPort):
             )
 
         titles_with_genres = []
-        for movie in movies_with_scores[:5]:
+        for movie in movies_with_scores:
             title = movie.get("title", "No title")
             genre = movie.get("genreName", "")
             year = movie.get("releaseDate", "")

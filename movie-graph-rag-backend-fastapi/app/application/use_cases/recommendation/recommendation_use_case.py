@@ -113,8 +113,8 @@ class RecommendationUseCase:
         self._llm = llm_client
         self._profile_svc = profile_service
 
-    def get_recommendation(self, query: str, user_id: str) -> dict:
-        return self._run(query, user_id).to_api_dict()
+    def get_recommendation(self, query: str, user_id: str, n: int = 5) -> dict:
+        return self._run(query, user_id, n=n).to_api_dict()
 
     def get_activity_recommendation(self, user_id: str) -> dict:
         """Deprecated: use endpoint's intelligent query building instead.
@@ -157,7 +157,7 @@ class RecommendationUseCase:
 
     # ── Pipeline ────────────────────────────────────────────────────────────
 
-    def _run(self, query: str, user_id: str) -> _Result:
+    def _run(self, query: str, user_id: str, n: int = 5) -> _Result:
         start = perf_counter()
 
         ctx = self._llm.extract_user_context(query)
@@ -166,11 +166,11 @@ class RecommendationUseCase:
         attempts = build_strategy(ctx, profile)
         if profile.is_cold_start:
             candidates, strategy = _run_cold_start_strategy(attempts)
-            movies = score_and_select(candidates, ctx, profile, n=5,
+            movies = score_and_select(candidates, ctx, profile, n=n,
                                       mmr_lambda=_COLD_START_MMR_LAMBDA)
         else:
             candidates, strategy = _run_strategy(attempts)
-            movies = score_and_select(candidates, ctx, profile, n=5)
+            movies = score_and_select(candidates, ctx, profile, n=n)
         metrics = compute_metrics(movies, profile)
 
         query_type = _query_type(ctx, profile.is_cold_start)
