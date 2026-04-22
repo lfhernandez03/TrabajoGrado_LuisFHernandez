@@ -16,7 +16,7 @@ function generateMetrics(movie: HeroMovie | null | undefined) {
   // Compatibilidad: from compatibilityScore
   if (movie?.compatibilityScore !== undefined) {
     metrics.push({
-      label: "Compatibilidad",
+      label: "Compatibility",
       value: Math.min(Math.max(movie.compatibilityScore, 0), 1),
     });
   } else {
@@ -96,14 +96,14 @@ export function HeroSection({
                 <div className="flex items-center gap-2 w-fit px-3 py-1.5 rounded-full border border-accent2/40 bg-accent2/5">
                   <Sparkles className="w-3 h-3 text-accent2" />
                   <span className="text-xs font-semibold text-accent2 tracking-wide">
-                    DESCUBRIENDO TU PERFIL
+                    DISCOVERING YOUR PROFILE
                   </span>
                 </div>
               ) : (
                 <div className="flex items-center gap-2 w-fit px-3 py-1.5 rounded-full border border-teal/40 bg-teal/5">
                   <span className="w-1.5 h-1.5 rounded-full bg-teal animate-pulse" />
                   <span className="text-xs font-semibold text-teal tracking-wide">
-                    RECOMENDACIÓN DEL MOMENTO
+                    TODAY&lsquo;S PICK
                   </span>
                 </div>
               )}
@@ -111,16 +111,16 @@ export function HeroSection({
               <h1 className="font-display tracking-tight text-6xl md:text-7xl lg:text-8xl font-extrabold leading-tight">
                 {isColdStart ? (
                   <>
-                    <span className="block text-text">EMPIEZA A</span>
+                    <span className="block text-text">START</span>
                     <span className="block bg-linear-to-r from-accent2 via-accent2/80 to-accent2/60 bg-clip-text text-transparent">
-                      EXPLORAR
+                      EXPLORING
                     </span>
                   </>
                 ) : (
                   <>
-                    <span className="block text-text">TU PELÍCULA</span>
+                    <span className="block text-text">YOUR MOVIE</span>
                     <span className="block bg-linear-to-r from-accent2 via-accent2/80 to-accent2/60 bg-clip-text text-transparent">
-                      DE ESTA NOCHE
+                      FOR TONIGHT
                     </span>
                   </>
                 )}
@@ -277,14 +277,14 @@ function HorizontalMovieCard({
           <div className="flex items-center gap-1.5 w-fit px-2.5 py-1 rounded-full bg-accent2/10 border border-accent2/30">
             <Sparkles className="w-2.5 h-2.5 text-accent2" />
             <span className="text-[10px] font-bold text-accent2 tracking-wide">
-              SELECCIÓN DE EXPLORACIÓN
+              EXPLORATION PICK
             </span>
           </div>
         ) : (
           <div className="flex items-center gap-1.5 w-fit px-2.5 py-1 rounded-full bg-teal/10 border border-teal/40">
             <span className="w-1 h-1 rounded-full bg-teal animate-pulse" />
             <span className="text-[10px] font-bold text-teal tracking-wide">
-              ELEGIDA PARA TI - ESTA NOCHE
+              CHOSEN FOR YOU - TONIGHT
             </span>
           </div>
         )}
@@ -322,7 +322,7 @@ function HorizontalMovieCard({
           {typeof movie.compatibilityScore === "number" && (
             <ScoreBar
               score={movie.compatibilityScore}
-              label="Compatibilidad"
+              label="Compatibility"
               animated
               variant="gradient"
             />
