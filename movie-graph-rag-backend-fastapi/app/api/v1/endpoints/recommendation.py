@@ -141,7 +141,7 @@ async def get_activity_recommendation(
     query = " ".join(query_parts)
     
     # Delegate to main recommendation pipeline — activity hero needs exactly 1 movie
-    return RecommendationResponse(**use_case.get_recommendation(query, current_user.id, n=1))
+    return RecommendationResponse(**use_case.get_recommendation(query, current_user.id, n=1, query_type_override="activity"))
 
 
 @router.post("/debug", response_model=RecommendationDebugResponse)

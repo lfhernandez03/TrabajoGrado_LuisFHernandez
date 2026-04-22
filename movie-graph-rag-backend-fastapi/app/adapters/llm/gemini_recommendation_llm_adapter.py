@@ -63,10 +63,10 @@ QUERY_TYPE_INSTRUCTIONS: dict[str, str] = {
         "Mention plot or atmosphere details that connect to the user's search."
     ),
     "activity": (
-        "The user received this recommendation based on their recent activity and historical preferences. "
-        "Explain in 3-4 sentences why THIS specific movie is the perfect pick for them right now. "
-        "Mention the genre, tone, or style elements that align with their profile and the time of day. "
-        "Be direct and personal — speak as if you chose this one film just for them tonight."
+        "Write exactly 2 sentences. "
+        "First sentence: what makes this specific movie a great match — mention its genre, tone, or a standout element. "
+        "Second sentence: why it fits the user's taste or the time of day. "
+        "Never mention favorites, marking, or improving recommendations. No filler."
     ),
     "cold_start": (
         "This is the user's first interaction with the system, so these recommendations are based on their query context. "
@@ -393,12 +393,11 @@ class GeminiRecommendationLlmAdapter(RecommendationLlmClientPort):
                 contents=prompt,
                 config=genai.types.GenerateContentConfig(
                     system_instruction=(
-                        "You are an expert movie recommendation assistant with deep knowledge of cinema. "
-                        "Your task is to explain why the recommended movies are perfect for the user. "
+                        "You are a concise movie recommendation assistant. "
+                        "Follow the length and format instructions in the prompt exactly — do not exceed them. "
                         "Always respond in English. "
-                        "Be passionate, detailed, and specific. "
-                        "Explain plot elements, atmosphere, tone, and why they connect with what the user is looking for. "
-                        "Avoid being generic: make each explanation personal and convincing."
+                        "Be specific: mention the movie title, genre, tone, or a concrete plot element. "
+                        "Never add filler sentences about marking favorites, improving recommendations, or exploring more."
                     ),
                     temperature=0.5,
                     max_output_tokens=600,

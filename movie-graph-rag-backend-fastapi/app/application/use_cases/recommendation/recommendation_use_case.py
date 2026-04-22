@@ -113,8 +113,8 @@ class RecommendationUseCase:
         self._llm = llm_client
         self._profile_svc = profile_service
 
-    def get_recommendation(self, query: str, user_id: str, n: int = 5) -> dict:
-        return self._run(query, user_id, n=n).to_api_dict()
+    def get_recommendation(self, query: str, user_id: str, n: int = 5, query_type_override: str | None = None) -> dict:
+        return self._run(query, user_id, n=n, query_type_override=query_type_override).to_api_dict()
 
     def get_activity_recommendation(self, user_id: str) -> dict:
         """Deprecated: use endpoint's intelligent query building instead.
@@ -157,7 +157,7 @@ class RecommendationUseCase:
 
     # ── Pipeline ────────────────────────────────────────────────────────────
 
-    def _run(self, query: str, user_id: str, n: int = 5) -> _Result:
+    def _run(self, query: str, user_id: str, n: int = 5, query_type_override: str | None = None) -> _Result:
         start = perf_counter()
 
         ctx = self._llm.extract_user_context(query)
@@ -173,7 +173,7 @@ class RecommendationUseCase:
             movies = score_and_select(candidates, ctx, profile, n=n)
         metrics = compute_metrics(movies, profile)
 
-        query_type = _query_type(ctx, profile.is_cold_start)
+        query_type = query_type_override or _query_type(ctx, profile.is_cold_start)
         explanation = self._explain(query, ctx, movies, query_type)
 
         self._profile_svc.archive_context(user_id, ctx)
