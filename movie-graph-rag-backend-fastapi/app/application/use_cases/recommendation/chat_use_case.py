@@ -216,7 +216,7 @@ class ChatUseCase:
                 )
             except Exception:
                 greeting = (
-                    "Hello! I'm CineGraph. Tell me what kind of movie you're looking for "
+                    "Hello! I'm Moviq. Tell me what kind of movie you're looking for "
                     "and I'll help you find the perfect one. For example: "
                     "'something funny for tonight' or 'intense action movie'."
                 )

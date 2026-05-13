@@ -9,11 +9,11 @@ export default function DesignSystem() {
         {/* Header */}
         <div className="mb-16">
           <h1 className="font-display text-6xl mb-4">
-            <span className="text-text">CineGraph</span>{' '}
+            <span className="text-text">Moviq</span>{' '}
             <span className="text-accent">Design System</span>
           </h1>
           <p className="text-muted text-lg">
-            Design tokens and component reference for the CineGraph frontend.
+            Design tokens and component reference for the Moviq frontend.
           </p>
         </div>
 
@@ -267,7 +267,7 @@ export default function DesignSystem() {
 
         {/* Footer */}
         <div className="mt-16 pt-8 border-t border-border text-center text-muted">
-          <p className="text-sm">CineGraph Design System — Phase 0 Configuration</p>
+          <p className="text-sm">Moviq Design System — Phase 0 Configuration</p>
           <p className="text-xs mt-2">Last updated: {new Date().toLocaleDateString()}</p>
         </div>
       </div>

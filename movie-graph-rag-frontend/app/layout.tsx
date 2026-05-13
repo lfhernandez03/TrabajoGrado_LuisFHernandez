@@ -4,7 +4,7 @@ import { Providers } from "@/components/shared/Providers";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "CineGraph — Intelligent Movie Recommendations",
+  title: "Moviq — Intelligent Movie Recommendations",
   description: "Movie recommendation system powered by knowledge graphs and generative AI.",
 };
 

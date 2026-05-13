@@ -29,7 +29,7 @@ export function setCSSVariable(varName: string, value: string): void {
 }
 
 /**
- * CineGraph color tokens for easy access
+ * Moviq color tokens for easy access
  */
 export const COLORS = {
   bg: "var(--bg)",

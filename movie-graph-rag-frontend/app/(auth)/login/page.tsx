@@ -35,14 +35,14 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen bg-bg flex items-center justify-center p-4">
       <div className="fixed inset-0 pointer-events-none">
-        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[400px] bg-accent/5 rounded-full blur-3xl" />
+        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-150 h-100 bg-accent/5 rounded-full blur-3xl" />
       </div>
 
       <div className="relative w-full max-w-sm animate-fade-in">
         <div className="text-center mb-8">
           <Link href="/" className="inline-flex items-center gap-1">
-            <span className="font-display text-4xl tracking-widest text-text">CINE</span>
-            <span className="font-display text-4xl tracking-widest text-accent">RAPH</span>
+            <span className="font-display text-4xl tracking-widest text-text">MOV</span>
+            <span className="font-display text-4xl tracking-widest text-accent">IQ</span>
           </Link>
           <p className="text-xs text-muted mt-2">Intelligent movie recommendations</p>
         </div>

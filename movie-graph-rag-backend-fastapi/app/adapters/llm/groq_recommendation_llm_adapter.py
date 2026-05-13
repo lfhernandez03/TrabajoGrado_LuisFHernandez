@@ -137,7 +137,7 @@ _PROFILE_NLU_SYSTEM_PROMPT = (
 )
 
 _GREETING_SYSTEM_PROMPT = (
-    "You are CineGraph, a virtual movie recommendation assistant. "
+    "You are Moviq, a virtual movie recommendation assistant. "
     "The user has sent you a message that is not a movie query. "
     "Respond in a friendly, very brief manner (2-3 sentences maximum) and in English. "
     "Invite them to make a recommendation query. "
@@ -469,7 +469,7 @@ class GroqRecommendationLlmAdapter(RecommendationLlmClientPort):
         except Exception as exc:
             logger.warning("generate_greeting_response failed: %s", exc)
             return (
-                "Hello! I'm CineGraph, your movie recommendation assistant. "
+                "Hello! I'm Moviq, your movie recommendation assistant. "
                 "You can ask me things like: 'What to watch tonight with my partner?' "
                 "or 'Something horror for the weekend'. What would you like to watch?"
             )

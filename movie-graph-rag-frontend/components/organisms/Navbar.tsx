@@ -68,8 +68,8 @@ export function Navbar() {
 
             {/* Logo */}
             <button onClick={() => navigate('/')} className="flex items-center gap-1 shrink-0">
-              <span className="font-display text-2xl tracking-widest text-text">CINE</span>
-              <span className="font-display text-2xl tracking-widest text-accent">RAPH</span>
+              <span className="font-display text-2xl tracking-widest text-text">MOV</span>
+              <span className="font-display text-2xl tracking-widest text-accent">IQ</span>
             </button>
 
             {/* Nav links — desktop */}

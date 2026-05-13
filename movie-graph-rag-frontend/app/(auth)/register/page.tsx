@@ -74,8 +74,8 @@ export default function RegisterPage() {
       <div className="relative w-full max-w-sm animate-fade-in">
         <div className="text-center mb-8">
           <Link href="/" className="inline-flex items-center gap-1">
-            <span className="font-display text-4xl tracking-widest text-text">CINE</span>
-            <span className="font-display text-4xl tracking-widest text-accent">RAPH</span>
+            <span className="font-display text-4xl tracking-widest text-text">MOV</span>
+            <span className="font-display text-4xl tracking-widest text-accent">IQ</span>
           </Link>
           <p className="text-xs text-muted mt-2">Intelligent movie recommendations</p>
         </div>

@@ -19,8 +19,8 @@ const QUICK_PROMPTS = [
   { icon: "😰", text: "I'm stressed, I need to disconnect" },
 ];
 
-const SESSIONS_KEY = "cinegraph_sessions";
-const ACTIVE_KEY = "cinegraph_active_session";
+const SESSIONS_KEY = "moviq_sessions";
+const ACTIVE_KEY = "moviq_active_session";
 const MAX_SESSIONS = 20;
 
 function genId() {
