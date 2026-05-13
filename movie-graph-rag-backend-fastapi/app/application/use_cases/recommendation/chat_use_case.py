@@ -180,6 +180,10 @@ class ChatUseCase:
         accumulated = session.accumulated_context
 
         # ── 6. Profile-aware NLU ─────────────────────────────────────────────
+        # All messages except the last user turn — used as conversation history
+        # fallback when the in-memory session has expired (e.g. server restart).
+        prior_messages = messages[:-1] if len(messages) > 1 else []
+
         try:
             recent_queries = self._get_recent_queries(user_id, limit=5)
             new_ctx = self._llm.extract_user_context_with_profile(
@@ -191,6 +195,7 @@ class ChatUseCase:
                 dominant_cluster_labels=dominant_cluster_labels,
                 accumulated_context=accumulated,
                 now=now,
+                conversation_history=prior_messages,
             )
             new_ctx = replace(new_ctx, session_id=session_id)
         except Exception as exc:

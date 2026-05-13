@@ -38,8 +38,13 @@ class RecommendationLlmClientPort(Protocol):
         dominant_cluster_labels: list[str],
         accumulated_context: "UserContext | None",
         now: datetime | None = None,
+        conversation_history: list[dict] | None = None,
     ) -> "UserContext":
         """Profile-aware NLU: infer intent from query enriched with user history.
+
+        ``conversation_history`` is the full message list from the client
+        (excluding the current user message). Used as a fallback when
+        ``accumulated_context`` is None (e.g. after a server restart).
 
         Sets off_topic=True when the message is clearly not a movie query.
         Never raises — falls back to keyword extraction on any LLM failure.

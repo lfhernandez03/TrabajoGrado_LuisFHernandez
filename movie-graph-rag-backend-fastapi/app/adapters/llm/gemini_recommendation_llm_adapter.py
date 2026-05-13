@@ -371,6 +371,22 @@ class GeminiRecommendationLlmAdapter(RecommendationLlmClientPort):
             "If you like any of them, mark it as favorite to improve future recommendations."
         )
 
+    def _build_activity_prompt(self, movies_with_scores: list[dict], context_summary: str) -> str:
+        """Focused pitch prompt for the hero section — 2-3 sentences that sell the movie."""
+        movie = movies_with_scores[0] if movies_with_scores else {}
+        title = movie.get("title", "this movie")
+        genre = movie.get("genreName", "")
+        genre_part = f" ({genre})" if genre else ""
+        return (
+            f"Write a 2-3 sentence movie pitch for '{title}'{genre_part} that makes someone want to watch it right now.\n\n"
+            "Rules:\n"
+            "- Hook with the premise or tone in the first sentence.\n"
+            "- Mention one concrete element: a plot beat, a standout performance, or the film's atmosphere.\n"
+            "- End with what kind of viewer or mood it is perfect for.\n"
+            "- No spoilers. No filler phrases like 'this film offers' or 'a unique experience'. No score data. No 'based on your preferences'.\n"
+            "- Max 60 words total."
+        )
+
     def generate_recommendation_explanation(
         self,
         query: str,
@@ -379,14 +395,17 @@ class GeminiRecommendationLlmAdapter(RecommendationLlmClientPort):
         semantic_hint: str = "",
         query_type: str = "general",
     ) -> str:
+        is_activity = query_type == "activity"
         try:
-            prompt = self._build_prompt(
-                query,
-                context_summary,
-                movies_with_scores,
-                semantic_hint,
-                query_type,
-            )
+            if is_activity:
+                prompt = self._build_activity_prompt(movies_with_scores, context_summary)
+                max_tokens = 150
+            else:
+                prompt = self._build_prompt(
+                    query, context_summary, movies_with_scores, semantic_hint, query_type,
+                )
+                max_tokens = 600
+
             client = genai.Client(api_key=settings.gemini_api_key)
             response = client.models.generate_content(
                 model=settings.gemini_model,
@@ -400,7 +419,7 @@ class GeminiRecommendationLlmAdapter(RecommendationLlmClientPort):
                         "Never add filler sentences about marking favorites, improving recommendations, or exploring more."
                     ),
                     temperature=0.5,
-                    max_output_tokens=600,
+                    max_output_tokens=max_tokens,
                 ),
             )
             return response.text
@@ -417,9 +436,44 @@ class GeminiRecommendationLlmAdapter(RecommendationLlmClientPort):
         dominant_cluster_labels: list[str],
         accumulated_context,
         now=None,
+        conversation_history: list[dict] | None = None,
     ):
-        """Stub: delegates to extract_user_context ignoring profile context."""
-        return self.extract_user_context(query, now=now)
+        """NLU enriched with accumulated conversation context.
+
+        Prepends established context from previous turns so the LLM can
+        resolve references like "shorter", "something similar", "no more horror"
+        without needing the full message history in the system prompt.
+        """
+        prefix_parts: list[str] = []
+
+        if accumulated_context:
+            acc: list[str] = []
+            if accumulated_context.mood:
+                acc.append(f"mood={accumulated_context.mood}")
+            if accumulated_context.genres:
+                acc.append(f"genres={accumulated_context.genres}")
+            if accumulated_context.companion:
+                acc.append(f"companion={accumulated_context.companion}")
+            if accumulated_context.runtime_max:
+                acc.append(f"max_runtime={accumulated_context.runtime_max}")
+            if accumulated_context.exclusions:
+                acc.append(f"excluded={accumulated_context.exclusions}")
+            if acc:
+                prefix_parts.append(
+                    f"[Established in this conversation: {', '.join(acc)}]"
+                )
+        elif conversation_history:
+            prior_user = [
+                m["content"]
+                for m in conversation_history
+                if m.get("role") == "user"
+            ][-3:]
+            if prior_user:
+                joined = " | ".join(prior_user)
+                prefix_parts.append(f"[Previous messages: {joined}]")
+
+        enriched = f"{' '.join(prefix_parts)} {query}".strip() if prefix_parts else query
+        return self.extract_user_context(enriched, now=now)
 
     def generate_greeting_response(
         self,

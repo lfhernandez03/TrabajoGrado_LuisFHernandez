@@ -111,6 +111,7 @@ def merge_contexts(accumulated: UserContext | None, new: UserContext) -> UserCon
     Rules:
     - Non-None fields in ``new`` overwrite ``accumulated``.
     - None fields in ``new`` preserve the previous value.
+    - ``genres`` accumulate (union, preserving order) — "action" then "fantasy" = both.
     - ``exclusions`` accumulate (union, preserving order).
     - ``time_of_day`` always taken from ``new`` (server clock).
     - ``confidence`` grows with each turn (capped at 0.95).
@@ -126,6 +127,15 @@ def merge_contexts(accumulated: UserContext | None, new: UserContext) -> UserCon
         accumulated.exclusions + [e for e in new.exclusions if e not in accumulated.exclusions]
     ))
 
+    # Genres accumulate across turns (union): "action" then "fantasy" → ["Action","Fantasy"].
+    # Any genre that ends up in merged_exclusions is dropped so the two lists stay consistent.
+    excl_lower = {e.strip().lower() for e in merged_exclusions}
+    merged_genres = list(dict.fromkeys(
+        g for g in
+        (accumulated.genres or []) + [g for g in (new.genres or []) if g not in (accumulated.genres or [])]
+        if g.strip().lower() not in excl_lower
+    ))
+
     new_confidence = min(0.95, max(accumulated.confidence, new.confidence) + 0.05)
 
     return UserContext(
@@ -133,7 +143,7 @@ def merge_contexts(accumulated: UserContext | None, new: UserContext) -> UserCon
         companion=pick(accumulated.companion, new.companion),
         has_children=new.has_children or accumulated.has_children,
         energy=pick(accumulated.energy, new.energy),
-        genres=new.genres if new.genres else accumulated.genres,
+        genres=merged_genres,
         runtime_max=pick(accumulated.runtime_max, new.runtime_max),
         exclusions=merged_exclusions,
         confidence=new_confidence,

@@ -281,29 +281,35 @@ export default function Home() {
         return null;
       };
       
+      // Helper: neighborhood with fallback to centrality when results are sparse
+      const neighborhoodOrCentrality = async (
+        fav: FavoriteMovie | null,
+        fallbackGenre?: string,
+      ): Promise<MovieCardMovie[]> => {
+        if (!fav) return getMovieExamples(12).then((arr) => arr.map(toCardMovie));
+        const r = await getMovieNeighborhood(fav.title, 2);
+        // Filter out the center node itself (always first in the list)
+        const neighbours = r.nodes
+          .filter((n) => n.title.trim().toLowerCase() !== fav.title.trim().toLowerCase())
+          .map((n) => ({
+            uri: n.uri, title: n.title, posterUrl: n.posterUrl ?? undefined,
+            year: n.year ?? undefined,
+            genres: n.genre ? [n.genre] : undefined, rating: n.rating ?? undefined,
+            runtime: n.runtime ?? undefined,
+            description: n.description ?? undefined,
+            director: n.director ?? undefined,
+          } as MovieCardMovie));
+        if (neighbours.length >= 4) return neighbours;
+        // Sparse neighborhood — fall back to centrality for the same genre
+        const genre = fallbackGenre ?? fav.genres?.[0];
+        return getMoviesByCentrality(genre, 12).then((r) => r.movies.map(recToCardMovie));
+      };
+
       const [neighborhood, centrality, serendipity] = await Promise.allSettled([
-        // "Porque viste X" — neighborhood of a random favorite (backend excludes center node)
-        randomFavorite1
-          ? getMovieNeighborhood(randomFavorite1.title, 1).then((r) => r.nodes.map((n) => ({
-              uri: n.uri, title: n.title, posterUrl: n.posterUrl ?? undefined,
-              year: n.year ?? undefined,
-              genres: n.genre ? [n.genre] : undefined, rating: n.rating ?? undefined,
-              runtime: n.runtime ?? undefined,
-              description: n.description ?? undefined,
-              director: n.director ?? undefined,
-            } as MovieCardMovie)))
-          : getMovieExamples(12).then((arr) => arr.map(toCardMovie)),
-        // "Como Y" — neighborhood of another random favorite (backend excludes center node)
-        randomFavorite2
-          ? getMovieNeighborhood(randomFavorite2.title, 1).then((r) => r.nodes.map((n) => ({
-              uri: n.uri, title: n.title, posterUrl: n.posterUrl ?? undefined,
-              year: n.year ?? undefined,
-              genres: n.genre ? [n.genre] : undefined, rating: n.rating ?? undefined,
-              runtime: n.runtime ?? undefined,
-              description: n.description ?? undefined,
-              director: n.director ?? undefined,
-            } as MovieCardMovie)))
-          : getMoviesByCentrality(undefined, 12).then((r) => r.movies.map(recToCardMovie)),
+        // "Because you watched X" — 2-hop neighborhood with centrality fallback
+        neighborhoodOrCentrality(randomFavorite1),
+        // "Like Y" — 2-hop neighborhood with centrality fallback
+        neighborhoodOrCentrality(randomFavorite2),
         // "Explore new genres" — from least-explored cluster or fallback to serendipity
         (async () => {
           const clusterId = await getUnexploredClusterId();

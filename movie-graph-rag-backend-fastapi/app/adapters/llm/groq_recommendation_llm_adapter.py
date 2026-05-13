@@ -70,10 +70,10 @@ QUERY_TYPE_INSTRUCTIONS: dict[str, str] = {
         "Mention plot or atmosphere details that connect to the user's search."
     ),
     "activity": (
-        "The user received these recommendations based on their recent activity and historical preferences. "
-        "Explain in detail (5-7 sentences) what patterns in their previous searches are reflected in these suggestions. "
-        "Mention genres, directors or styles the user has explored and how they connect with these movies. "
-        "Highlight what makes these recommendations especially aligned with their profile."
+        "Write a 2-3 sentence pitch (max 90 words) that makes someone want to watch this movie right now. "
+        "Hook with the premise or tone. Mention one concrete element: a plot beat, atmosphere, or standout performance. "
+        "End with what kind of viewer or mood it suits. "
+        "No filler phrases. No score data. No 'based on your preferences'."
     ),
     "cold_start": (
         "This is the user's first interaction with the system, so these recommendations are based on their query context. "
@@ -343,6 +343,7 @@ class GroqRecommendationLlmAdapter(RecommendationLlmClientPort):
         dominant_cluster_labels: list[str],
         accumulated_context: "UserContext | None",
         now: "datetime | None" = None,
+        conversation_history: list[dict] | None = None,
     ) -> UserContext:
         # Build enriched user message with profile context
         genre_info = ", ".join(
@@ -360,7 +361,22 @@ class GroqRecommendationLlmAdapter(RecommendationLlmClientPort):
                 acc_parts.append(f"genres={accumulated_context.genres}")
             if accumulated_context.companion:
                 acc_parts.append(f"companion={accumulated_context.companion}")
+            if accumulated_context.runtime_max:
+                acc_parts.append(f"max_runtime={accumulated_context.runtime_max}")
+            if accumulated_context.exclusions:
+                acc_parts.append(f"excluded={accumulated_context.exclusions}")
         acc_summary = ", ".join(acc_parts) or "no previous context"
+
+        # Fallback: if no accumulated context but we have the raw message history,
+        # summarize the last 3 user turns so the LLM has some prior context.
+        if not acc_parts and conversation_history:
+            prior_user = [
+                m["content"]
+                for m in conversation_history
+                if m.get("role") == "user"
+            ][-3:]
+            if prior_user:
+                acc_summary = "prior messages: " + " | ".join(prior_user)
 
         user_message = (
             f"USER CONTEXT:\n"
@@ -552,6 +568,7 @@ class GroqRecommendationLlmAdapter(RecommendationLlmClientPort):
         semantic_hint: str = "",
         query_type: str = "general",
     ) -> str:
+        max_tokens = 200 if query_type == "activity" else 600
         try:
             prompt = self._build_prompt(
                 query, context_summary, movies_with_scores, semantic_hint, query_type
@@ -564,7 +581,7 @@ class GroqRecommendationLlmAdapter(RecommendationLlmClientPort):
                     {"role": "user", "content": prompt},
                 ],
                 temperature=0.5,
-                max_tokens=600,
+                max_tokens=max_tokens,
             )
             return response.choices[0].message.content
         except Exception as exc:
