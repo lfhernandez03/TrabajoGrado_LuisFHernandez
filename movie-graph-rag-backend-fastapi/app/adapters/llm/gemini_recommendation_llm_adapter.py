@@ -387,24 +387,25 @@ class GeminiRecommendationLlmAdapter(RecommendationLlmClientPort):
             "- Max 60 words total."
         )
 
-    def generate_recommendation_explanation(
+    def _generate_explanation_once(
         self,
-        query: str,
-        context_summary: str,
         movies_with_scores: list[dict],
-        semantic_hint: str = "",
-        query_type: str = "general",
-    ) -> str:
+        context_summary: str,
+        query: str,
+        semantic_hint: str,
+        query_type: str,
+        extra_hint: str = "",
+    ) -> str | None:
         is_activity = query_type == "activity"
         try:
             if is_activity:
-                prompt = self._build_activity_prompt(movies_with_scores, context_summary)
-                max_tokens = 150
+                base_prompt = self._build_activity_prompt(movies_with_scores, context_summary)
             else:
-                prompt = self._build_prompt(
-                    query, context_summary, movies_with_scores, semantic_hint, query_type,
+                base_prompt = self._build_prompt(
+                    query, context_summary, movies_with_scores, semantic_hint, query_type
                 )
-                max_tokens = 600
+            prompt = base_prompt + extra_hint if extra_hint else base_prompt
+            max_tokens = 150 if is_activity else 600
 
             client = genai.Client(api_key=settings.gemini_api_key)
             response = client.models.generate_content(
@@ -424,7 +425,71 @@ class GeminiRecommendationLlmAdapter(RecommendationLlmClientPort):
             )
             return response.text
         except Exception:
+            return None
+
+    def _call_judge(
+        self, explanation: str, title: str, context_summary: str, query_type: str
+    ) -> float:
+        from app.adapters.llm.explanation_evaluator import build_judge_prompt, parse_judge_score
+
+        prompt = build_judge_prompt(explanation, title, context_summary, query_type)
+        try:
+            client = genai.Client(api_key=settings.gemini_api_key)
+            response = client.models.generate_content(
+                model=settings.gemini_model,
+                contents=prompt,
+                config=genai.types.GenerateContentConfig(
+                    temperature=0.1,
+                    max_output_tokens=100,
+                    response_mime_type="application/json",
+                ),
+            )
+            return parse_judge_score(response.text)
+        except Exception:
+            return 1.0
+
+    def generate_recommendation_explanation(
+        self,
+        query: str,
+        context_summary: str,
+        movies_with_scores: list[dict],
+        semantic_hint: str = "",
+        query_type: str = "general",
+    ) -> str:
+        from app.adapters.llm.explanation_evaluator import (
+            validate_text, build_retry_hint, JUDGE_THRESHOLD,
+        )
+
+        title = movies_with_scores[0].get("title", "") if movies_with_scores else ""
+
+        # --- Initial generation ---
+        text = self._generate_explanation_once(
+            movies_with_scores, context_summary, query, semantic_hint, query_type
+        )
+        if not text:
             return self._fallback_explanation(query, context_summary, movies_with_scores)
+
+        # --- Static validation (word count, title presence, forbidden phrases) ---
+        eval_result = validate_text(text, title, query_type)
+        if eval_result.issues:
+            retry = self._generate_explanation_once(
+                movies_with_scores, context_summary, query, semantic_hint, query_type,
+                extra_hint=build_retry_hint(eval_result.issues),
+            )
+            if retry:
+                text = retry
+
+        # --- LLM-as-a-judge ---
+        judge_score = self._call_judge(text, title, context_summary, query_type)
+        if judge_score < JUDGE_THRESHOLD:
+            retry = self._generate_explanation_once(
+                movies_with_scores, context_summary, query, semantic_hint, query_type,
+                extra_hint=build_retry_hint(["low_quality"]),
+            )
+            if retry:
+                text = retry
+
+        return text
 
     def extract_user_context_with_profile(
         self,

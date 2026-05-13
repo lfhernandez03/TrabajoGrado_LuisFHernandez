@@ -560,19 +560,21 @@ class GroqRecommendationLlmAdapter(RecommendationLlmClientPort):
             "If you like any of them, mark it as favorite to improve future recommendations."
         )
 
-    def generate_recommendation_explanation(
+    def _generate_explanation_once(
         self,
         query: str,
         context_summary: str,
         movies_with_scores: list[dict],
-        semantic_hint: str = "",
-        query_type: str = "general",
-    ) -> str:
+        semantic_hint: str,
+        query_type: str,
+        extra_hint: str = "",
+    ) -> str | None:
         max_tokens = 200 if query_type == "activity" else 600
         try:
-            prompt = self._build_prompt(
+            base_prompt = self._build_prompt(
                 query, context_summary, movies_with_scores, semantic_hint, query_type
             )
+            prompt = base_prompt + extra_hint if extra_hint else base_prompt
             client = Groq(api_key=settings.groq_api_key)
             response = client.chat.completions.create(
                 model=settings.groq_model,
@@ -585,7 +587,74 @@ class GroqRecommendationLlmAdapter(RecommendationLlmClientPort):
             )
             return response.choices[0].message.content
         except Exception as exc:
-            import traceback
-            print(f"[GROQ] explanation FAILED: {type(exc).__name__}: {exc}", flush=True)
-            traceback.print_exc()
+            logger.warning("Groq _generate_explanation_once failed: %s", exc)
+            return None
+
+    def _call_judge(
+        self, explanation: str, title: str, context_summary: str, query_type: str
+    ) -> float:
+        from app.adapters.llm.explanation_evaluator import build_judge_prompt, parse_judge_score
+
+        prompt = build_judge_prompt(explanation, title, context_summary, query_type)
+        try:
+            client = Groq(api_key=settings.groq_api_key)
+            response = client.chat.completions.create(
+                model=settings.groq_model,
+                messages=[
+                    {
+                        "role": "system",
+                        "content": "You are a movie explanation quality judge. Respond only with valid JSON.",
+                    },
+                    {"role": "user", "content": prompt},
+                ],
+                temperature=0.1,
+                max_tokens=100,
+                response_format={"type": "json_object"},
+            )
+            return parse_judge_score(response.choices[0].message.content)
+        except Exception as exc:
+            logger.warning("Groq judge call failed: %s", exc)
+            return 1.0
+
+    def generate_recommendation_explanation(
+        self,
+        query: str,
+        context_summary: str,
+        movies_with_scores: list[dict],
+        semantic_hint: str = "",
+        query_type: str = "general",
+    ) -> str:
+        from app.adapters.llm.explanation_evaluator import (
+            validate_text, build_retry_hint, JUDGE_THRESHOLD,
+        )
+
+        title = movies_with_scores[0].get("title", "") if movies_with_scores else ""
+
+        # --- Initial generation ---
+        text = self._generate_explanation_once(
+            query, context_summary, movies_with_scores, semantic_hint, query_type
+        )
+        if not text:
             return self._fallback_explanation(query, context_summary, movies_with_scores)
+
+        # --- Static validation (word count, title presence, forbidden phrases) ---
+        eval_result = validate_text(text, title, query_type)
+        if eval_result.issues:
+            retry = self._generate_explanation_once(
+                query, context_summary, movies_with_scores, semantic_hint, query_type,
+                extra_hint=build_retry_hint(eval_result.issues),
+            )
+            if retry:
+                text = retry
+
+        # --- LLM-as-a-judge ---
+        judge_score = self._call_judge(text, title, context_summary, query_type)
+        if judge_score < JUDGE_THRESHOLD:
+            retry = self._generate_explanation_once(
+                query, context_summary, movies_with_scores, semantic_hint, query_type,
+                extra_hint=build_retry_hint(["low_quality"]),
+            )
+            if retry:
+                text = retry
+
+        return text
