@@ -31,8 +31,8 @@ export function AssistantBubble({ message }: AssistantBubbleProps) {
       </div>
       <div className="max-w-[85%] space-y-3">
         {/* Explanation text */}
-        <div className="bg-muted rounded-2xl rounded-bl-md px-4 py-3">
-          <p className="text-sm whitespace-pre-wrap leading-relaxed">
+        <div className="bg-surface2 border border-border rounded-2xl rounded-bl-md px-4 py-3">
+          <p className="text-sm text-text whitespace-pre-wrap leading-relaxed">
             {message.content}
           </p>
         </div>
