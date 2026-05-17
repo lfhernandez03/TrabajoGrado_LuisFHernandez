@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { Search, Code2, ChevronDown, ChevronUp, Clock, Film, User, Tag } from "lucide-react";
+import { Search, SearchX, Code2, ChevronDown, ChevronUp, Clock, Film, User, Tag } from "lucide-react";
 import { Navbar } from "@/components/organisms/Navbar";
 import { MovieGrid } from "@/components/organisms/MovieGrid";
 import { type MovieCardMovie } from "@/components/organisms/MovieCard";
@@ -270,31 +270,20 @@ function ExploreContent() {
           )}
 
           {/* Main grid */}
-          <div className="w-full">
-            <MovieGrid
-              movies={results.map(toCardMovie)}
-              isLoading={isSearching}
-              isFavorite={isFavorite}
-              onToggleFavorite={handleToggleFavorite}
-              onViewDetails={handleViewDetails}
-              onFindSimilar={handleFindSimilar}
-              emptyMessage={
-                hasSearched
-                  ? `No movies found with that ${modeLabel}.`
-                  : `Use the search bar to find movies by ${modeLabel}.`
-              }
-            />
-
-            {/* Empty initial state */}
-            {!hasSearched && !isSearching && (
-              <div className="flex flex-col items-center justify-center py-32 text-center">
-                <currentModeConfig.icon className="w-14 h-14 text-muted/20 mb-4" />
-                <p className="text-muted text-sm max-w-xs">
-                  {currentModeConfig.placeholder}
-                </p>
-              </div>
-            )}
-          </div>
+          <MovieGrid
+            movies={results.map(toCardMovie)}
+            isLoading={isSearching}
+            isFavorite={isFavorite}
+            onToggleFavorite={handleToggleFavorite}
+            onViewDetails={handleViewDetails}
+            onFindSimilar={handleFindSimilar}
+            emptyMessage={
+              hasSearched
+                ? `No movies found with that ${modeLabel}.`
+                : currentModeConfig.placeholder
+            }
+            emptyIcon={hasSearched ? SearchX : currentModeConfig.icon}
+          />
         </main>
 
         {/* Movie details dialog */}
