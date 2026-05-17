@@ -26,6 +26,7 @@ class RecommendationRequest(BaseModel):
 # ---------------------------------------------------------------------------
 
 class RecommendedMovieResponse(BaseModel):
+    uri: str | None = None
     title: str
     posterUrl: str | None = None
     runtime: int | None = None

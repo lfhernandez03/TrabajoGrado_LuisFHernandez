@@ -1,8 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import Link from 'next/link'
-import { ChevronLeft, ChevronRight, ArrowRight } from 'lucide-react'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { MovieCard, type MovieCardMovie } from './MovieCard'
 import { SkeletonMovieCard } from '@/components/atoms/Loader'
 import { cn } from '@/lib/utils'
@@ -12,7 +11,6 @@ export interface RecommendationCarouselProps {
   subtitle?: string
   movies: MovieCardMovie[]
   isLoading?: boolean
-  viewAllHref?: string
   isFavorite?: (uri: string) => boolean
   onToggleFavorite?: (movie: MovieCardMovie) => void
   onViewDetails?: (movie: MovieCardMovie) => void
@@ -28,7 +26,6 @@ export function RecommendationCarousel({
   subtitle,
   movies,
   isLoading = false,
-  viewAllHref,
   isFavorite,
   onToggleFavorite,
   onViewDetails,
@@ -80,15 +77,6 @@ export function RecommendationCarousel({
             <ChevronRight className="w-4 h-4" />
           </button>
 
-          {viewAllHref && (
-            <Link
-              href={viewAllHref}
-              className="hidden sm:flex items-center gap-1 ml-2 text-xs text-muted hover:text-accent transition-colors"
-            >
-              Ver todo
-              <ArrowRight className="w-3 h-3" />
-            </Link>
-          )}
         </div>
       </div>
 

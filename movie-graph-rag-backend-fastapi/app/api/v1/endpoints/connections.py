@@ -40,6 +40,7 @@ def get_connection_explorer() -> ConnectionExplorer:
 
 def _movie_to_response(movie: Movie) -> RecommendedMovieResponse:
     return RecommendedMovieResponse(
+        uri=movie.uri or None,
         title=movie.title,
         posterUrl=movie.poster_url,
         runtime=movie.runtime,

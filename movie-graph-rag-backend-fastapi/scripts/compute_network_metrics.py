@@ -459,6 +459,7 @@ _DELETE_QUERIES = [
     "DELETE WHERE {{ ?m <{ns}clusteringCoefficient> ?v }}",
     "DELETE WHERE {{ ?m <{ns}belongsToCluster> ?v }}",
     "DELETE WHERE {{ ?m <{ns}clusterLabel> ?v }}",
+    "DELETE WHERE {{ ?m <{ns}communityModularity> ?v }}",
 ]
 
 _PREFIXES = f"""\
@@ -494,6 +495,7 @@ def write_to_fuseki(
     metrics: dict[str, dict[str, float]],
     partition: dict[str, int],
     labels: dict[int, str],
+    modularity: float = 0.0,
     batch_size: int = 500,
 ) -> None:
     """Write all computed metrics to Fuseki in batches."""
@@ -555,6 +557,19 @@ def write_to_fuseki(
         log(f"  Written batch {batch_num} ({min(sent, total)}/{total} triples) ...")
 
     log(f"  All {total} triples written in {batch_num} batches.")
+
+    # Write graph-level modularity on the first movie node so the backend can retrieve it
+    if nodes and modularity > 0.0:
+        first_uri = nodes[0]
+        mod_body = (
+            _PREFIXES
+            + f'INSERT DATA {{ <{first_uri}> <{MOVIE_NS}communityModularity> "{modularity:.8f}"^^xsd:float }}'
+        )
+        try:
+            fuseki_update(mod_body, timeout=60)
+            log(f"  Modularity triple written: {modularity:.6f}"  )
+        except Exception as exc:  # noqa: BLE001
+            log(f"  [WARN] Could not write modularity triple: {exc}")
 
 
 # ---------------------------------------------------------------------------
@@ -624,7 +639,7 @@ def main() -> None:
 
     # Step 6: Write to Fuseki
     try:
-        write_to_fuseki(G, metrics, partition, labels)
+        write_to_fuseki(G, metrics, partition, labels, modularity=modularity)
     except Exception as exc:
         log(f"[ERROR] Writing to Fuseki failed: {exc}")
         sys.exit(1)

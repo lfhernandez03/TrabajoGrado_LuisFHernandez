@@ -4,6 +4,7 @@ from pydantic import BaseModel
 
 
 class ClusterMovie(BaseModel):
+    uri: str | None = None
     title: str
     rating: float | None = None
     imdbRating: float | None = None

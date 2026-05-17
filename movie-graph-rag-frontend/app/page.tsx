@@ -74,7 +74,7 @@ function toCardMovie(movie: Movie | FavoriteMovie): MovieCardMovie {
 
 function recToCardMovie(movie: RecommendedMovie): MovieCardMovie {
   return {
-    uri: '',
+    uri: movie.uri ?? '',
     title: movie.title,
     posterUrl: movie.posterUrl ?? undefined,
     year: movie.year ?? undefined,
@@ -436,7 +436,6 @@ export default function Home() {
           subtitle={carousel1FavoriteTitle}
           movies={carousel1}
           isLoading={carouselLoading}
-          viewAllHref="/search"
           showLiveIndicator
           isFavorite={isFavorite}
           onToggleFavorite={handleToggleFavorite}
@@ -449,7 +448,6 @@ export default function Home() {
           subtitle={carousel2FavoriteTitle}
           movies={carousel2}
           isLoading={carouselLoading}
-          viewAllHref="/favorites"
           isFavorite={isFavorite}
           onToggleFavorite={handleToggleFavorite}
           onViewDetails={handleViewDetails}
@@ -461,7 +459,6 @@ export default function Home() {
           subtitle={carousel3Subtitle}
           movies={carousel3}
           isLoading={carouselLoading}
-          viewAllHref="/search"
           showLiveIndicator
           isFavorite={isFavorite}
           onToggleFavorite={handleToggleFavorite}

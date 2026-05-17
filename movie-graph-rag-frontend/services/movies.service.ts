@@ -108,6 +108,7 @@ export const findConnections = async (
 // ===== Phase 5/6 — Connections v2 (neighborhood, centrality, path) =====
 
 export interface RecommendedMovie {
+  uri?: string | null;
   title: string;
   posterUrl?: string | null;
   runtime?: number | null;

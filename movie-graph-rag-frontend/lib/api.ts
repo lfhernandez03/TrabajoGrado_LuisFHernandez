@@ -52,7 +52,14 @@ api.interceptors.response.use(
       let message = 'Unknown error';
       if (typeof responseData === 'object' && responseData !== null) {
         const data = responseData as Record<string, any>;
-        message = data.detail || data.message || data.msg || error.message || message;
+        const raw = data.detail ?? data.message ?? data.msg ?? error.message ?? message;
+        if (Array.isArray(raw)) {
+          message = raw.map((e: any) => (typeof e === 'object' ? e.msg ?? JSON.stringify(e) : String(e))).join(', ');
+        } else if (typeof raw === 'string') {
+          message = raw;
+        } else {
+          message = error.message || message;
+        }
       } else if (typeof responseData === 'string') {
         message = responseData;
       } else {

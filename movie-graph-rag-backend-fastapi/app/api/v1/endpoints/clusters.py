@@ -65,10 +65,10 @@ def _row_to_cluster_movie(row: dict) -> ClusterMovie:
             runtime = int(row["runtime"])
     except (ValueError, TypeError):
         pass
-    # Parse comma-separated genres from GROUP_CONCAT
     genres_str = row.get("genres") or ""
     genres = [g.strip() for g in genres_str.split(",") if g.strip()] if genres_str else []
     return ClusterMovie(
+        uri=row.get("uri") or None,
         title=row.get("title", ""),
         rating=rating,
         imdbRating=imdb_rating,
@@ -352,7 +352,7 @@ def get_cluster_movies(
     safe_cid = _escape(cluster_id)
     query = (
         _PREFIXES
-        + "SELECT ?title ?rating ?imdbRating ?posterUrl ?runtime ?description ?directorName (GROUP_CONCAT(DISTINCT ?genreName; separator=\", \") AS ?genres) WHERE {\n"
+        + "SELECT ?m ?title ?rating ?imdbRating ?posterUrl ?runtime ?description ?directorName (GROUP_CONCAT(DISTINCT ?genreName; separator=\", \") AS ?genres) WHERE {\n"
         f'  ?m movie:belongsToCluster "{safe_cid}" ;\n'
         "     movie:hasTitle ?title .\n"
         "  OPTIONAL { ?m movie:hasAverageRating ?rating }\n"
@@ -362,7 +362,7 @@ def get_cluster_movies(
         "  OPTIONAL { ?m movie:runtime ?runtime }\n"
         "  OPTIONAL { ?m movie:hasPlotSummary ?description }\n"
         "  OPTIONAL { ?m movie:hasDirector/movie:hasName ?directorName }\n"
-        f"}} GROUP BY ?title ?rating ?imdbRating ?posterUrl ?runtime ?description ?directorName ORDER BY DESC(?rating) LIMIT {limit}"
+        f"}} GROUP BY ?m ?title ?rating ?imdbRating ?posterUrl ?runtime ?description ?directorName ORDER BY DESC(?rating) LIMIT {limit}"
     )
     try:
         rows = execute_select_query(query)

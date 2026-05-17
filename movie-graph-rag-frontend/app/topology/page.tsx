@@ -38,24 +38,26 @@ function CentralityBar({
 }) {
   const pct = maxValue > 0 ? (entry.value / maxValue) * 100 : 0;
   return (
-    <div className="flex items-center gap-3 py-1">
-      <div className="w-40 shrink-0 text-sm truncate text-right text-muted-foreground" title={entry.title}>
+    <div className="flex items-center gap-2 py-1.5">
+      <span className="w-32 shrink-0 text-sm truncate text-left text-muted-foreground" title={entry.title}>
         {entry.title}
-      </div>
-      <div className="flex-1 h-5 bg-muted rounded overflow-hidden">
+      </span>
+      <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
         <div
-          className={`h-full rounded transition-all duration-500 ${color}`}
+          className={`h-full rounded-full transition-all duration-500 ${color}`}
           style={{ width: `${pct}%` }}
         />
       </div>
-      <span className="text-xs text-muted-foreground w-16 text-right">
+      <span className="text-xs text-muted-foreground w-14 text-right tabular-nums shrink-0">
         {entry.value.toFixed(4)}
       </span>
-      {entry.genre && (
-        <Badge variant="outline" className="text-xs shrink-0">
-          {entry.genre}
-        </Badge>
-      )}
+      <div className="w-20 shrink-0 flex justify-end">
+        {entry.genre && (
+          <Badge variant="outline" className="text-xs">
+            {entry.genre}
+          </Badge>
+        )}
+      </div>
     </div>
   );
 }
@@ -161,7 +163,7 @@ export default function TopologyPage() {
             <div className="space-y-6">
 
               {/* Summary cards */}
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                 <StatCard
                   icon={Globe}
                   label="Indexed movies"
