@@ -235,34 +235,16 @@ function TrendAndStats({
 }) {
   const TrendIcon = trendConfig.icon
   return (
-    <div className="space-y-3">
-      <div className="flex items-start gap-3 p-3 rounded-xl bg-surface2 border border-border">
-        <div className={cn('p-1.5 rounded-lg shrink-0 mt-0.5', trendConfig.bg)}>
-          <TrendIcon className={cn('h-4 w-4', trendConfig.color)} />
-        </div>
-        <div className="min-w-0">
-          <p className={cn('text-sm font-semibold', trendConfig.color)}>{trendConfig.label}</p>
-          <p className="text-[11px] text-muted mt-1 leading-relaxed">{profile.trendExplanation}</p>
-        </div>
+    <div className="flex items-start gap-3 p-3 rounded-xl bg-surface2 border border-border">
+      <div className={cn('p-1.5 rounded-lg shrink-0 mt-0.5', trendConfig.bg)}>
+        <TrendIcon className={cn('h-4 w-4', trendConfig.color)} />
       </div>
-
-      <div className="grid grid-cols-2 gap-2.5">
-        <div className="bg-surface2 rounded-xl p-3.5 text-center border border-border">
-          <p className="text-2xl font-bold font-display text-text leading-none">{profile.totalFavorites}</p>
-          <p className="text-[11px] text-muted mt-1.5 leading-tight">
-            Total
-            <br />
-            favorites
-          </p>
-        </div>
-        <div className="bg-surface2 rounded-xl p-3.5 text-center border border-border">
-          <p className="text-2xl font-bold font-display text-teal leading-none">{clusteredPct}%</p>
-          <p className="text-[11px] text-muted mt-1.5 leading-tight">
-            In
-            <br />
-            communities
-          </p>
-        </div>
+      <div className="min-w-0 flex-1">
+        <p className={cn('text-sm font-semibold', trendConfig.color)}>{trendConfig.label}</p>
+        <p className="text-[11px] text-muted mt-1 leading-relaxed">{profile.trendExplanation}</p>
+        <p className="text-[11px] text-muted/60 mt-2">
+          <span className="font-semibold text-teal">{clusteredPct}%</span> of favorites mapped to graph clusters
+        </p>
       </div>
     </div>
   )

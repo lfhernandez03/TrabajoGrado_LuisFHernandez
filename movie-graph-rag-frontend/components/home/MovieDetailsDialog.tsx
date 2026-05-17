@@ -99,17 +99,16 @@ export function MovieDetailsDialog({
             </span>
           </div>
 
-          {/* Rating — always shown, placeholder when missing */}
+          {/* Rating */}
           <div>
             <p className="text-xs font-bold text-muted tracking-widest mb-1.5 flex items-center gap-1.5">
               <Star className="w-3.5 h-3.5" />
-              IMDB RATING
+              RATING
             </p>
-            {movie.rating != null ? (
-              <RatingBar rating={movie.rating} />
-            ) : (
-              <p className="text-sm text-muted/50 italic">Not available</p>
-            )}
+            {movie.rating != null
+              ? <RatingBar rating={movie.rating} />
+              : <p className="text-sm text-muted/50 italic">Not rated</p>
+            }
           </div>
 
           {/* Description + actions */}

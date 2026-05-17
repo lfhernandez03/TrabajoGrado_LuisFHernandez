@@ -118,7 +118,7 @@ def _cached_cluster_list() -> ClusterListResponse:
         + "SELECT ?clusterId ?title ?rating WHERE {\n"
         "  ?m movie:belongsToCluster ?clusterId ;\n"
         "     movie:hasTitle ?title .\n"
-        "  OPTIONAL { ?m movie:hasAverageRating ?rating }\n"
+        "  OPTIONAL { ?m movie:hasRating ?rating }\n"
         "} ORDER BY ?clusterId DESC(?rating)\n"
         "LIMIT 3000"
     )
@@ -202,7 +202,7 @@ def _get_movie_cluster(title: str) -> MovieClusterResponse:
         + "SELECT DISTINCT ?title ?rating ?imdbRating ?genreName ?posterUrl ?runtime ?description ?directorName WHERE {\n"
         f'  ?m movie:belongsToCluster "{safe_cid}" ;\n'
         "     movie:hasTitle ?title .\n"
-        "  OPTIONAL { ?m movie:hasAverageRating ?rating }\n"
+        "  OPTIONAL { ?m movie:hasRating ?rating }\n"
         "  OPTIONAL { ?m movie:hasIMDbRating ?imdbRating }\n"
         "  OPTIONAL { ?m movie:hasMainGenre/movie:genreName ?genreName }\n"
         "  OPTIONAL { ?m schema1:image ?posterUrl }\n"
@@ -259,7 +259,7 @@ def _get_movie_cluster(title: str) -> MovieClusterResponse:
                 "  ?m movie:hasMainGenre/movie:genreName ?sharedGenre ;\n"
                 f'     movie:belongsToCluster "{safe_adj}" ;\n'
                 "     movie:hasTitle ?title .\n"
-                "  OPTIONAL { ?m movie:hasAverageRating ?rating }\n"
+                "  OPTIONAL { ?m movie:hasRating ?rating }\n"
                 "  OPTIONAL { ?m movie:hasIMDbRating ?imdbRating }\n"
                 "  OPTIONAL { ?m schema1:image ?posterUrl }\n"
                 "  OPTIONAL { ?m movie:runtime ?runtime }\n"
@@ -355,7 +355,7 @@ def get_cluster_movies(
         + "SELECT ?m ?title ?rating ?imdbRating ?posterUrl ?runtime ?description ?directorName (GROUP_CONCAT(DISTINCT ?genreName; separator=\", \") AS ?genres) WHERE {\n"
         f'  ?m movie:belongsToCluster "{safe_cid}" ;\n'
         "     movie:hasTitle ?title .\n"
-        "  OPTIONAL { ?m movie:hasAverageRating ?rating }\n"
+        "  OPTIONAL { ?m movie:hasRating ?rating }\n"
         "  OPTIONAL { ?m movie:hasIMDbRating ?imdbRating }\n"
         "  OPTIONAL { ?m movie:hasMainGenre/movie:genreName ?genreName }\n"
         "  OPTIONAL { ?m schema1:image ?posterUrl }\n"

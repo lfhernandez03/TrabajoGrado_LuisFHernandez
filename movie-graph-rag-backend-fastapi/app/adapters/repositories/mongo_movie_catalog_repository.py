@@ -223,7 +223,7 @@ class MongoMovieCatalogRepositoryAdapter:
             "  OPTIONAL { ?movie movie:hasPosterUrl ?posterUrl }\n"
             "  OPTIONAL { ?movie movie:runtime ?runtime }\n"
             "  OPTIONAL { ?movie movie:releaseDate ?releaseDate }\n"
-            "  OPTIONAL { ?movie movie:hasAverageRating ?rating }\n"
+            "  OPTIONAL { ?movie movie:hasRating ?rating }\n"
             "  OPTIONAL { ?movie movie:hasIMDbRating ?imdbRating }\n"
             "  OPTIONAL { ?movie movie:hasPlotSummary ?description }\n"
             "  OPTIONAL { ?movie movie:hasDirector/movie:hasName ?directorName }\n"

@@ -154,15 +154,12 @@ export function MovieCard({
             {hasRating && (
               <>
                 <Star className="h-3.5 w-3.5 text-accent fill-accent shrink-0" />
-                <span className="text-sm font-semibold text-text">
-                  {rating!.toFixed(1)}
-                </span>
-                <span className="text-xs text-muted">Rating</span>
+                <span className="text-sm font-semibold text-text">{rating!.toFixed(1)}</span>
               </>
             )}
             {movie.certification && (
               <>
-                <span className="text-muted/50">·</span>
+                {hasRating && <span className="text-muted/50">·</span>}
                 <span className="text-xs text-muted">{movie.certification}</span>
               </>
             )}

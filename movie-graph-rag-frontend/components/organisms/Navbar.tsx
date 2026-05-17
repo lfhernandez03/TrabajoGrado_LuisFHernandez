@@ -103,18 +103,33 @@ export function Navbar() {
                       </Avatar>
                     </button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-52 bg-surface border-border2">
-                    <DropdownMenuLabel className="text-muted text-xs font-normal">
-                      <p className="text-text font-semibold text-sm">{user.name}</p>
-                      <p className="text-muted text-xs">{user.email}</p>
-                    </DropdownMenuLabel>
-                    <DropdownMenuSeparator className="bg-border" />
-                    <DropdownMenuItem onClick={() => navigate('/profile')} className="flex items-center gap-2 text-text hover:text-accent cursor-pointer">
-                      <User className="w-4 h-4" />
+                  <DropdownMenuContent align="end" className="w-56 bg-surface border-border2 shadow-xl p-1">
+                    {/* User header */}
+                    <div className="flex items-center gap-3 px-2 py-2.5">
+                      <Avatar className="h-8 w-8 shrink-0 border border-border2">
+                        <AvatarFallback className="bg-surface2 text-accent text-xs font-semibold">
+                          {getInitials(user.name)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="min-w-0">
+                        <p className="text-text font-semibold text-sm leading-tight truncate">{user.name}</p>
+                        <p className="text-muted text-xs truncate">{user.email}</p>
+                      </div>
+                    </div>
+                    <DropdownMenuSeparator className="bg-border my-1" />
+                    <DropdownMenuItem
+                      onClick={() => navigate('/profile')}
+                      className="flex items-center gap-2 text-sm text-muted hover:text-text cursor-pointer rounded-md px-2 py-2 focus:bg-surface2 focus:text-text"
+                    >
+                      <User className="w-4 h-4 shrink-0" />
                       My profile
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={logout} className="flex items-center gap-2 text-accent2 hover:text-accent2 cursor-pointer focus:text-accent2">
-                      <LogOut className="w-4 h-4" />
+                    <DropdownMenuSeparator className="bg-border my-1" />
+                    <DropdownMenuItem
+                      onClick={logout}
+                      className="flex items-center gap-2 text-sm text-red-400 hover:text-red-300 cursor-pointer rounded-md px-2 py-2 focus:bg-red-500/10 focus:text-red-300"
+                    >
+                      <LogOut className="w-4 h-4 shrink-0" />
                       Sign out
                     </DropdownMenuItem>
                   </DropdownMenuContent>

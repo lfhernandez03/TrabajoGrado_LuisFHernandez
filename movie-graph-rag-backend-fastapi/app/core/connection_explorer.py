@@ -112,7 +112,7 @@ def _movies_by_genre(genre: str, exclude_uris: set[str], limit: int = 30) -> lis
         + "  ?movie rdf:type movie:FeatureFilm ; movie:hasTitle ?title .\n"
         + f'  ?movie movie:hasMainGenre/movie:genreName "{_esc(genre)}" .\n'
         + "  OPTIONAL { ?movie movie:hasMainGenre/movie:genreName ?genreName }\n"
-        + "  OPTIONAL { ?movie movie:hasAverageRating ?rating }\n"
+        + "  OPTIONAL { ?movie movie:hasRating ?rating }\n"
         + "  OPTIONAL { ?movie movie:hasIMDbRating ?imdbRating }\n"
         + "  OPTIONAL { ?movie schema1:image ?posterUrl }\n"
         + "  OPTIONAL { ?movie movie:hasPlotSummary ?description }\n"
@@ -141,7 +141,7 @@ def _movies_by_director(director_uri: str, exclude_uris: set[str], limit: int = 
         + "  ?movie rdf:type movie:FeatureFilm ; movie:hasTitle ?title .\n"
         + f"  ?movie movie:hasDirector <{director_uri}> .\n"
         + "  OPTIONAL { ?movie movie:hasMainGenre/movie:genreName ?genreName }\n"
-        + "  OPTIONAL { ?movie movie:hasAverageRating ?rating }\n"
+        + "  OPTIONAL { ?movie movie:hasRating ?rating }\n"
         + "  OPTIONAL { ?movie movie:hasIMDbRating ?imdbRating }\n"
         + "  OPTIONAL { ?movie schema1:image ?posterUrl }\n"
         + "  OPTIONAL { ?movie movie:hasPlotSummary ?description }\n"
@@ -170,7 +170,7 @@ def _movies_by_mood_profile(mood: str, exclude_uris: set[str], limit: int = 20) 
         + "  ?movie rdf:type movie:FeatureFilm ; movie:hasTitle ?title .\n"
         + f'  ?movie bridge:compatibleMood "{_esc(mood)}" .\n'
         + "  OPTIONAL { ?movie movie:hasMainGenre/movie:genreName ?genreName }\n"
-        + "  OPTIONAL { ?movie movie:hasAverageRating ?rating }\n"
+        + "  OPTIONAL { ?movie movie:hasRating ?rating }\n"
         + "  OPTIONAL { ?movie movie:hasIMDbRating ?imdbRating }\n"
         + "  OPTIONAL { ?movie schema1:image ?posterUrl }\n"
         + "  OPTIONAL { ?movie movie:hasPlotSummary ?description }\n"
@@ -399,7 +399,7 @@ class ConnectionExplorer:
             "  ?movie movie:hasMainGenre/movie:genreName ?genreName .\n"
             + genre_filter
             + "  OPTIONAL { ?movie movie:runtime ?runtime }\n"
-            "  OPTIONAL { ?movie movie:hasAverageRating ?rating }\n"
+            "  OPTIONAL { ?movie movie:hasRating ?rating }\n"
             "  OPTIONAL { ?movie movie:hasIMDbRating ?imdbRating }\n"
             "  OPTIONAL { ?movie schema1:image ?posterUrl }\n"
             "  OPTIONAL { ?movie movie:releaseDate ?releaseDate }\n"
