@@ -4,13 +4,14 @@ import Image from "next/image";
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Film, Star, Clock } from "lucide-react";
-import type { ChatRecommendationResponse } from "@/services/chat.service";
+import type { ChatRecommendationResponse, ChatMovieResponse } from "@/services/chat.service";
 
 interface MovieRecommendationCardProps {
   movie: ChatRecommendationResponse["moviesWithScores"][0];
+  onViewDetails?: (movie: ChatMovieResponse) => void;
 }
 
-export function MovieRecommendationCard({ movie }: MovieRecommendationCardProps) {
+export function MovieRecommendationCard({ movie, onViewDetails }: MovieRecommendationCardProps) {
   const [imageError, setImageError] = useState(false);
   const score = movie.compatibilityScore ?? 0;
   const scoreColor =
@@ -26,7 +27,10 @@ export function MovieRecommendationCard({ movie }: MovieRecommendationCardProps)
   const hasPoster = Boolean(normalizedPosterUrl && !imageError);
 
   return (
-    <div className="bg-background/60 border border-border/50 rounded-lg p-3 flex items-center gap-3">
+    <div
+      onClick={() => onViewDetails?.(movie)}
+      className={`bg-background/60 border border-border/50 rounded-lg p-3 flex items-center gap-3${onViewDetails ? " cursor-pointer hover:border-border transition-colors" : ""}`}
+    >
       <div className="shrink-0 h-14 w-10 bg-primary/10 rounded-md overflow-hidden flex items-center justify-center p-1">
         {hasPoster && normalizedPosterUrl ? (
           <Image

@@ -13,7 +13,7 @@ export function LoadingBubble() {
           <div className="flex items-center gap-2">
             <Loader2 className="h-4 w-4 animate-spin text-primary" />
             <span className="text-sm text-muted-foreground">
-              Analizando tu consulta con el grafo de conocimiento...
+              Analyzing your query with the knowledge graph...
             </span>
           </div>
         </div>

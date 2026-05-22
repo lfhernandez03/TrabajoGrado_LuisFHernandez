@@ -5,13 +5,14 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Bot, Clock, Code2, ChevronDown, ChevronUp, Sparkles, Copy, Check } from "lucide-react";
 import { MovieRecommendationCard } from "./MovieRecommendationCard";
-import type { ChatMessage } from "@/services/chat.service";
+import type { ChatMessage, ChatMovieResponse } from "@/services/chat.service";
 
 interface AssistantBubbleProps {
   message: ChatMessage;
+  onViewDetails?: (movie: ChatMovieResponse) => void;
 }
 
-export function AssistantBubble({ message }: AssistantBubbleProps) {
+export function AssistantBubble({ message, onViewDetails }: AssistantBubbleProps) {
   const [showSparql, setShowSparql] = useState(false);
   const [copied, setCopied] = useState(false);
 
@@ -46,7 +47,7 @@ export function AssistantBubble({ message }: AssistantBubbleProps) {
               found
             </p>
             {rec.movies.map((movie, idx) => (
-              <MovieRecommendationCard key={idx} movie={movie} />
+              <MovieRecommendationCard key={idx} movie={movie} onViewDetails={onViewDetails} />
             ))}
           </div>
         )}

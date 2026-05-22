@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useState } from "react";
 import { Movie } from "@/services/movies.service";
-import { CircleAlert, Sparkles, Star, Heart, Film } from "lucide-react";
+import { Sparkles, Star, Heart, Film } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface MovieCardProps {
@@ -41,12 +41,14 @@ export function MovieCard({
 
   return (
     <div
+      onClick={() => onViewDetails?.(movie)}
       className={cn(
         "group relative overflow-hidden rounded-xl",
         "border border-white/10",
         "transition-all duration-300",
         "hover:scale-[1.015] hover:-translate-y-0.5",
-        "hover:border-white/20 hover:shadow-2xl hover:shadow-black/60"
+        "hover:border-white/20 hover:shadow-2xl hover:shadow-black/60",
+        onViewDetails && "cursor-pointer"
       )}
     >
       {/* Background: dark base + blurred poster on top */}
@@ -95,15 +97,6 @@ export function MovieCard({
             </h3>
 
             <div className="shrink-0 flex items-center gap-1.5">
-              {onViewDetails && (
-                <ActionButton
-                  onClick={() => onViewDetails(movie)}
-                  aria-label={`View details of ${movie.title}`}
-                  colorClass="hover:bg-accent2/15 hover:text-accent2 hover:border-accent2/40"
-                >
-                  <CircleAlert className="h-3.5 w-3.5" />
-                </ActionButton>
-              )}
               {onRecommendSimilar && (
                 <ActionButton
                   onClick={() => onRecommendSimilar(movie)}

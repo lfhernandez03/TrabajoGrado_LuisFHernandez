@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import Image from 'next/image'
-import { Heart, Film, Star, Info, Sparkles } from 'lucide-react'
+import { Heart, Film, Star, Sparkles } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 export interface MovieCardMovie {
@@ -57,12 +57,14 @@ export function MovieCard({
 
   return (
     <div
+      onClick={() => onViewDetails?.(movie)}
       className={cn(
         'group relative overflow-hidden rounded-xl',
         'border border-white/15',
         'transition-all duration-300',
         'hover:scale-[1.02] hover:-translate-y-1',
         'hover:border-white/25 hover:shadow-2xl hover:shadow-black/70',
+        onViewDetails && 'cursor-pointer',
         className
       )}
     >
@@ -111,15 +113,6 @@ export function MovieCard({
               {movie.title}
             </h3>
             <div className="shrink-0 flex items-center gap-1.5">
-              {onViewDetails && (
-                <ActionButton
-                  onClick={() => onViewDetails(movie)}
-                  aria-label={`View details of ${movie.title}`}
-                  colorClass="hover:bg-accent2/15 hover:text-accent2 hover:border-accent2/40"
-                >
-                  <Info className="h-3.5 w-3.5" />
-                </ActionButton>
-              )}
               {onFindSimilar && (
                 <ActionButton
                   onClick={() => onFindSimilar(movie)}

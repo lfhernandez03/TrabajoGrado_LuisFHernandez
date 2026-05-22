@@ -97,7 +97,7 @@ def _get_movie_info(title: str) -> dict | None:
         rows = execute_select_query(query)
         return rows[0] if rows else None
     except Exception as exc:
-        logger.warning("_get_movie_info failed for '%s': %s", title, exc)
+        logger.debug("_get_movie_info failed for '%s': %s", title, exc)
         return None
 
 
@@ -126,7 +126,7 @@ def _movies_by_genre(genre: str, exclude_uris: set[str], limit: int = 30) -> lis
     try:
         return execute_select_query(query)
     except Exception as exc:
-        logger.warning("_movies_by_genre failed for '%s': %s", genre, exc)
+        logger.debug("_movies_by_genre failed for '%s': %s", genre, exc)
         return []
 
 
@@ -155,7 +155,7 @@ def _movies_by_director(director_uri: str, exclude_uris: set[str], limit: int = 
     try:
         return execute_select_query(query)
     except Exception as exc:
-        logger.warning("_movies_by_director failed for '%s': %s", director_uri, exc)
+        logger.debug("_movies_by_director failed for '%s': %s", director_uri, exc)
         return []
 
 
@@ -181,7 +181,7 @@ def _movies_by_mood_profile(mood: str, exclude_uris: set[str], limit: int = 20) 
     try:
         return execute_select_query(query)
     except Exception as exc:
-        logger.warning("_movies_by_mood_profile failed for '%s': %s", mood, exc)
+        logger.debug("_movies_by_mood_profile failed for '%s': %s", mood, exc)
         return []
 
 

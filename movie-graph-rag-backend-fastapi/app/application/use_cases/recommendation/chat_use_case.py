@@ -234,13 +234,13 @@ class ChatUseCase:
         merged_ctx = merge_contexts(accumulated, new_ctx)
 
         # ── 8. Build SPARQL strategy with cluster IDs ────────────────────────
-        # Exclude movies already shown in previous turns so the user always gets
-        # fresh recommendations, not the same titles repeated.
-        query_ctx = merged_ctx
-        if session.recommended_titles:
-            seen = {t.strip().lower() for t in session.recommended_titles if t.strip()}
-            existing_excl = {e.strip().lower() for e in (merged_ctx.exclusions or []) if e.strip()}
-            query_ctx = replace(merged_ctx, exclusions=list(existing_excl | seen))
+        # Exclude: (a) movies already shown this session, (b) user's favorites —
+        # so recommendations are always fresh and never repeat what the user saved.
+        seen = {t.strip().lower() for t in session.recommended_titles if t.strip()}
+        fav_excl = {t.strip().lower() for t in favorites_titles if t.strip()}
+        existing_excl = {e.strip().lower() for e in (merged_ctx.exclusions or []) if e.strip()}
+        all_excl = existing_excl | seen | fav_excl
+        query_ctx = replace(merged_ctx, exclusions=list(all_excl)) if all_excl else merged_ctx
 
         attempts = build_strategy(
             query_ctx,
@@ -259,12 +259,13 @@ class ChatUseCase:
             dominant_cluster_ids=dominant_cluster_ids or None,
             adjacent_cluster_ids=adjacent_cluster_ids or None,
         )
-        metrics = compute_metrics(movies, profile)
+        from app.core.connection_explorer import ConnectionExplorer
+        metrics = compute_metrics(movies, profile, explorer=ConnectionExplorer(), candidates=candidates)
 
         # ── 10. Generate explanation with enriched context ───────────────────
         query_type = _query_type(merged_ctx, profile.is_cold_start)
         context_summary = _build_context_summary_with_graph(
-            merged_ctx, topo_profile, favorites_titles[:3]
+            merged_ctx, topo_profile, favorites_titles[:3], profile
         )
         movies_payload = [m.to_response_dict() for m in movies]
 
@@ -322,6 +323,8 @@ class ChatUseCase:
                     "semantic_precision": metrics.semantic_precision,
                     "cold_start_threshold": metrics.cold_start_threshold,
                     "graph_diversity_score": metrics.graph_diversity_score,
+                    "novelty": metrics.novelty,
+                    "onto_recall": metrics.onto_recall,
                 },
             },
         )
@@ -369,6 +372,7 @@ def _build_context_summary_with_graph(
     ctx: UserContext,
     topo_profile,           # TopologicalProfileResponse | None
     favorites_sample: list[str],
+    profile=None,
 ) -> str:
     """Extended context summary including graph topology for the explanation LLM."""
     base = _build_context_summary(ctx)
@@ -380,4 +384,9 @@ def _build_context_summary_with_graph(
             top = topo_profile.dominantClusters[0]
             extras.append(f"Main cluster: {top.label} ({top.moviesSeen} movies)")
         extras.append(f"Profile: {topo_profile.userType}")
+    if profile and getattr(profile, "genre_weights", None) and not getattr(profile, "is_cold_start", True):
+        top_genres = sorted(profile.genre_weights.items(), key=lambda x: x[1], reverse=True)[:3]
+        if top_genres:
+            genre_info = ", ".join(f"{g} ({int(w * 100)}%)" for g, w in top_genres)
+            extras.append(f"Preferred genres: {genre_info}")
     return "; ".join([base] + extras) if extras else base

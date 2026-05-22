@@ -51,6 +51,13 @@ class ListMetrics:
         semantic_threshold:   The cutoff used to compute *semantic_precision*
                               (stored here for transparency).
         movie_count:          Number of movies in the list (≤ n).
+        novelty:              Average genre novelty across the list (0–1).
+                              1.0 means all recommendations are from genres
+                              absent or rare in the user's history.
+        onto_recall:          Fraction of semantically-compatible candidates
+                              (compatibilityScore > 0 in SPARQL pool) that
+                              made it into the final list.  1.0 when the system
+                              operated in pure fallback mode (no semantic pool).
     """
 
     ild: float
@@ -59,6 +66,8 @@ class ListMetrics:
     semantic_threshold: float
     movie_count: int
     graph_diversity_score: float = 0.0
+    novelty: float = 0.5
+    onto_recall: float = 1.0
 
 
 # ---------------------------------------------------------------------------
@@ -190,6 +199,77 @@ def compute_graph_diversity(
 
 
 # ---------------------------------------------------------------------------
+# Novelty
+# ---------------------------------------------------------------------------
+
+def compute_novelty(movies: list[Movie], profile: UserProfile) -> float:
+    """Average genre novelty across the recommendation list.
+
+    novelty(movie) = 1 − genre_weight in user profile.
+    A movie whose genre dominates the user's history scores 0; an unseen genre
+    scores 1.  Returns neutral 0.5 for empty lists or profiles with no history.
+    """
+    if not movies or not profile.genre_weights:
+        return 0.5
+    total = 0.0
+    for movie in movies:
+        if not movie.genre:
+            total += 0.5
+        else:
+            weight = profile.genre_weights.get(movie.genre, 0.0)
+            total += max(0.0, 1.0 - weight)
+    return total / len(movies)
+
+
+# ---------------------------------------------------------------------------
+# Onto-recall
+# ---------------------------------------------------------------------------
+
+def compute_onto_recall(movies: list[Movie], candidates: list[dict]) -> float:
+    """Fraction of semantically-compatible candidates retained in the final list.
+
+    Semantic candidates = raw SPARQL rows where the bridge ontology assigned
+    a non-zero compatibilityScore (field ``overallCompatibility`` or
+    ``compatibilityScore``).  This measures how well the scoring + MMR
+    pipeline preserves ontologically-relevant movies.
+
+    Returns 1.0 when no semantic candidates exist (system is in pure fallback
+    mode, so no semantic filtering occurred).
+    Returns 0.0 for an empty final list with a non-empty semantic pool.
+    """
+    if not movies:
+        return 0.0
+
+    # Collect URIs of candidates that carry a bridge-ontology semantic score.
+    semantic_uris: set[str] = set()
+    for row in candidates:
+        uri = row.get("movie", "")
+        if not uri:
+            continue
+        try:
+            compat = (
+                float(row.get("overallCompatibility") or 0)
+                or float(row.get("compatibilityScore") or 0)
+                or float(row.get("bridgeScore") or 0)
+            )
+        except (TypeError, ValueError):
+            compat = 0.0
+        if compat > 0.0:
+            semantic_uris.add(uri)
+
+    if not semantic_uris:
+        # Pure fallback — no ontology filtering applied; recall is vacuously 1.
+        return 1.0
+
+    # Count final movies whose URI came from the semantic pool.
+    semantic_in_final = sum(
+        1 for m in movies
+        if (m.uri and m.uri in semantic_uris) or m.compatibility_score > 0.0
+    )
+    return min(semantic_in_final / len(semantic_uris), 1.0)
+
+
+# ---------------------------------------------------------------------------
 # Convenience: compute all metrics at once
 # ---------------------------------------------------------------------------
 
@@ -197,22 +277,32 @@ def compute_metrics(
     movies: list[Movie],
     profile: UserProfile,
     semantic_threshold: float = _SEMANTIC_PRECISION_THRESHOLD,
-    explorer: ConnectionExplorer | None = None,
+    explorer: "ConnectionExplorer | None" = None,
+    candidates: list[dict] | None = None,
 ) -> ListMetrics:
-    """Compute ILD, semantic precision, and adaptive cold-start threshold.
+    """Compute all quality metrics for a single recommendation result.
 
     Args:
         movies:             Final recommendation list from the scorer.
-        profile:            User profile (used for cold-start threshold).
+        profile:            User profile (for cold-start threshold and novelty).
         semantic_threshold: Minimum compatibility_score for a "precise" hit.
+        explorer:           ConnectionExplorer instance for BFS graph diversity.
+                            When None, graph_diversity_score is 0.0.
+        candidates:         Raw SPARQL candidate rows (for onto-recall).
+                            When None, onto_recall defaults to 1.0.
 
     Returns:
-        A :class:`ListMetrics` with all three quality signals populated.
+        A :class:`ListMetrics` with all quality signals populated.
     """
     graph_diversity = (
         compute_graph_diversity(movies, explorer)
         if explorer is not None
         else 0.0
+    )
+    onto_recall = (
+        compute_onto_recall(movies, candidates)
+        if candidates is not None
+        else 1.0
     )
     return ListMetrics(
         ild=compute_ild(movies),
@@ -221,4 +311,6 @@ def compute_metrics(
         semantic_threshold=semantic_threshold,
         movie_count=len(movies),
         graph_diversity_score=graph_diversity,
+        novelty=compute_novelty(movies, profile),
+        onto_recall=onto_recall,
     )

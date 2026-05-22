@@ -11,6 +11,22 @@ from groq import Groq
 logger = logging.getLogger(__name__)
 
 from app.core.config import settings
+
+_GROQ_NLU_TIMEOUT = 15  # seconds per NLU call
+
+
+def ping_groq(timeout_seconds: int = 5) -> bool:
+    """Return True if the Groq API is reachable and the API key is valid.
+
+    Uses the Groq SDK to list models — zero token cost, same auth path as
+    real calls.  Returns False on any network or auth error.
+    """
+    try:
+        client = Groq(api_key=settings.groq_api_key, timeout=timeout_seconds)
+        client.models.list()
+        return True
+    except Exception:
+        return False
 from app.core.conversation_context import get_time_of_day, infer_children_age_hint
 from app.domain.entities.query_context import QueryContext
 from app.domain.entities.recommendation_models import UserContext
@@ -243,7 +259,7 @@ class GroqRecommendationLlmAdapter(RecommendationLlmClientPort):
 
     def _call_nlu_with_system(self, system_prompt: str, user_message: str) -> dict:
         """Generic Groq NLU call with a custom system prompt and pre-built user message."""
-        client = Groq(api_key=settings.groq_api_key)
+        client = Groq(api_key=settings.groq_api_key, timeout=_GROQ_NLU_TIMEOUT)
         response = client.chat.completions.create(
             model=settings.groq_model,
             messages=[
@@ -258,7 +274,7 @@ class GroqRecommendationLlmAdapter(RecommendationLlmClientPort):
 
     def _call_nlu(self, query: str) -> dict:
         print(f"[GROQ] _call_nlu called — model={settings.groq_model} key_len={len(settings.groq_api_key)}", flush=True)
-        client = Groq(api_key=settings.groq_api_key)
+        client = Groq(api_key=settings.groq_api_key, timeout=_GROQ_NLU_TIMEOUT)
         response = client.chat.completions.create(
             model=settings.groq_model,
             messages=[

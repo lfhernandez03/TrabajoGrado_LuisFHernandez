@@ -1,6 +1,7 @@
 from dataclasses import replace
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from datetime import datetime
+from time import perf_counter
 
 from app.api.di import (
     get_current_user_di as get_current_user,
@@ -12,6 +13,10 @@ from app.api.schemas.recommendation import (
     ChatMovieResponse,
     ChatRequest,
     ChatResponse,
+    MetricsReportRequest,
+    MetricsReportQueryResult,
+    MetricsReportResponse,
+    MetricsReportSummary,
     RecommendationDebugResponse,
     RecommendationMetricsResponse,
     RecommendationRequest,
@@ -20,6 +25,7 @@ from app.api.schemas.recommendation import (
 from app.application.use_cases.recommendation import RecommendationUseCase
 from app.application.use_cases.recommendation.chat_use_case import ChatUseCase
 from app.application.use_cases.users import UserFavoritesUseCase
+from app.core.fuseki_client import ping_fuseki
 from app.core.profile_service import ProfileService
 from app.domain.entities.auth_user import AuthUser
 
@@ -31,8 +37,10 @@ def get_recommendation_get(
     query: str = Query(..., min_length=1),
     current_user: AuthUser = Depends(get_current_user),
     use_case: RecommendationUseCase = Depends(get_recommendation_use_case),
+    favorites_use_case: UserFavoritesUseCase = Depends(get_user_favorites_use_case_di),
 ) -> RecommendationResponse:
-    return RecommendationResponse(**use_case.get_recommendation(query, current_user.id))
+    fav_titles = {f.title for f in favorites_use_case.get_my_favorites(current_user.id) if f.title}
+    return RecommendationResponse(**use_case.get_recommendation(query, current_user.id, excluded_titles=fav_titles))
 
 
 @router.post("", response_model=RecommendationResponse)
@@ -40,9 +48,11 @@ def get_recommendation_post(
     payload: RecommendationRequest,
     current_user: AuthUser = Depends(get_current_user),
     use_case: RecommendationUseCase = Depends(get_recommendation_use_case),
+    favorites_use_case: UserFavoritesUseCase = Depends(get_user_favorites_use_case_di),
 ) -> RecommendationResponse:
+    fav_titles = {f.title for f in favorites_use_case.get_my_favorites(current_user.id) if f.title}
     return RecommendationResponse(
-        **use_case.get_recommendation(payload.query, current_user.id)
+        **use_case.get_recommendation(payload.query, current_user.id, excluded_titles=fav_titles)
     )
 
 
@@ -139,9 +149,12 @@ async def get_activity_recommendation(
     
     # Combine all components into final query
     query = " ".join(query_parts)
-    
+
+    # Exclude favorites so the hero card never shows something the user already saved
+    fav_titles = {f.title for f in favorites if f.title}
+
     # Delegate to main recommendation pipeline — activity hero needs exactly 1 movie
-    return RecommendationResponse(**use_case.get_recommendation(query, current_user.id, n=1, query_type_override="activity"))
+    return RecommendationResponse(**use_case.get_recommendation(query, current_user.id, n=1, query_type_override="activity", excluded_titles=fav_titles))
 
 
 @router.post("/debug", response_model=RecommendationDebugResponse)
@@ -207,9 +220,12 @@ def chat(
     if result.metrics is not None:
         metrics_response = RecommendationMetricsResponse(
             ild=result.metrics.ild,
+            graphDiversityScore=result.metrics.graph_diversity_score,
             semanticPrecision=result.metrics.semantic_precision,
             coldStartThreshold=result.metrics.cold_start_threshold,
             movieCount=result.metrics.movie_count,
+            novelty=result.metrics.novelty,
+            ontoRecall=result.metrics.onto_recall,
         )
 
     return ChatResponse(
@@ -223,3 +239,70 @@ def chat(
         turn_count=len([m for m in payload.messages if m.role == "user"]),
         metrics=metrics_response,
     )
+
+
+@router.post("/metrics-report", response_model=MetricsReportResponse)
+def get_metrics_report(
+    payload: MetricsReportRequest,
+    current_user: AuthUser = Depends(get_current_user),
+    use_case: RecommendationUseCase = Depends(get_recommendation_use_case),
+) -> MetricsReportResponse:
+    """Batch evaluation endpoint for thesis quality metrics.
+
+    Runs each query through the full recommendation pipeline using a neutral
+    cold-start profile so results are reproducible regardless of who calls it.
+    Returns 503 if Fuseki is unreachable.
+    """
+    if not ping_fuseki():
+        raise HTTPException(
+            status_code=503,
+            detail="Fuseki is not reachable. Start Apache Jena Fuseki and load the dataset before running the metrics report.",
+        )
+
+    results: list[MetricsReportQueryResult] = []
+
+    for query in payload.queries:
+        t0 = perf_counter()
+        try:
+            raw = use_case.get_recommendation(query, "__metrics_eval__")
+            m = raw.get("metrics", {})
+            results.append(MetricsReportQueryResult(
+                query=query,
+                ild=m.get("ild", 0.0),
+                graphDiversityScore=m.get("graphDiversityScore", 0.0),
+                semanticPrecision=m.get("semanticPrecision", 0.0),
+                novelty=m.get("novelty", 0.5),
+                ontoRecall=m.get("ontoRecall", 1.0),
+                coldStartThreshold=m.get("coldStartThreshold", 5),
+                movieCount=m.get("movieCount", 0),
+                strategy=raw.get("strategyUsed", ""),
+                isColdStart=raw.get("isColdStart", False),
+                executionMs=int((perf_counter() - t0) * 1000),
+                movies=[mv["title"] for mv in raw.get("moviesWithScores", []) if mv.get("title")],
+            ))
+        except Exception:
+            results.append(MetricsReportQueryResult(
+                query=query,
+                ild=0.0, graphDiversityScore=0.0, semanticPrecision=0.0,
+                novelty=0.0, ontoRecall=0.0, coldStartThreshold=5, movieCount=0,
+                strategy="error", isColdStart=False,
+                executionMs=int((perf_counter() - t0) * 1000),
+                movies=[],
+            ))
+
+    valid = [r for r in results if r.strategy != "error"]
+    count = len(valid) or 1
+
+    summary = MetricsReportSummary(
+        queriesEvaluated=len(results),
+        avgILD=round(sum(r.ild for r in valid) / count, 4),
+        avgGraphDiversity=round(sum(r.graphDiversityScore for r in valid) / count, 4),
+        avgSemanticPrecision=round(sum(r.semanticPrecision for r in valid) / count, 4),
+        avgNovelty=round(sum(r.novelty for r in valid) / count, 4),
+        avgOntoRecall=round(sum(r.ontoRecall for r in valid) / count, 4),
+        minILD=round(min((r.ild for r in valid), default=0.0), 4),
+        maxILD=round(max((r.ild for r in valid), default=0.0), 4),
+        coldStartDetections=sum(1 for r in valid if r.isColdStart),
+    )
+
+    return MetricsReportResponse(summary=summary, perQuery=results)

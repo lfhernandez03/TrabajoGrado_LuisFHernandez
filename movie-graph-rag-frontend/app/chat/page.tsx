@@ -6,7 +6,9 @@ import { Navbar } from "@/components/organisms/Navbar";
 import { ProtectedRoute } from "@/components/shared/ProtectedRoute";
 import { UserBubble, AssistantBubble, LoadingBubble } from "@/components/chat";
 import { ContextChips, type ContextChip } from "@/components/molecules/ContextChips";
-import { sendChatConversation, type ChatMessage, type ChatResponse } from "@/services/chat.service";
+import { sendChatConversation, type ChatMessage, type ChatResponse, type ChatMovieResponse } from "@/services/chat.service";
+import { MovieDetailsDialog } from "@/components/home/MovieDetailsDialog";
+import type { Movie } from "@/services/movies.service";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
@@ -79,6 +81,24 @@ export default function ChatPage() {
     return last?.recommendation ?? null;
   });
   const [contextChips, setContextChips] = useState<ContextChip[]>([]);
+  const [selectedMovie, setSelectedMovie] = useState<Movie | null>(null);
+  const [movieDialogOpen, setMovieDialogOpen] = useState(false);
+
+  const handleViewDetails = (chatMovie: ChatMovieResponse) => {
+    setSelectedMovie({
+      uri: chatMovie.uri ?? "",
+      title: chatMovie.title,
+      posterUrl: chatMovie.posterUrl,
+      year: chatMovie.year,
+      runtime: chatMovie.runtime,
+      certification: chatMovie.certification,
+      director: chatMovie.director,
+      genres: chatMovie.genres ?? (chatMovie.genreName ? [chatMovie.genreName] : undefined),
+      description: chatMovie.description,
+      rating: chatMovie.averageRating,
+    });
+    setMovieDialogOpen(true);
+  };
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -341,7 +361,7 @@ export default function ChatPage() {
                   msg.role === "user" ? (
                     <UserBubble key={msg.id} message={msg} />
                   ) : (
-                    <AssistantBubble key={msg.id} message={msg} />
+                    <AssistantBubble key={msg.id} message={msg} onViewDetails={handleViewDetails} />
                   )
                 )}
                 {isLoading && <LoadingBubble />}
@@ -470,6 +490,12 @@ export default function ChatPage() {
 
         </div>
       </div>
+      <MovieDetailsDialog
+        movie={selectedMovie}
+        open={movieDialogOpen}
+        onOpenChange={setMovieDialogOpen}
+        onRecommendSimilar={() => setMovieDialogOpen(false)}
+      />
     </ProtectedRoute>
   );
 }
