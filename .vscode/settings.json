@@ -1,6 +1,0 @@
-{
-    "python.terminal.activateEnvironment": false,
-    "python.analysis.extraPaths": [
-        "./Ontologies/DATA/scripts/config"
-    ]
-}
