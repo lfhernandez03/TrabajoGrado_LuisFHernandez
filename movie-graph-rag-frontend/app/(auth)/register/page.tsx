@@ -146,7 +146,7 @@ export default function RegisterPage() {
         </div>
 
         <p className="text-center text-[11px] text-muted/50 mt-6">
-          Trabajo de grado · Universidad del Valle · 2025
+          Trabajo de grado · Universidad del Valle · 2026
         </p>
       </div>
     </div>

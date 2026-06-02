@@ -10,24 +10,18 @@
 ## Tabla de Contenidos
 
 1. [Descripción General del Sistema](#1-descripción-general-del-sistema)
-2. [Guía de Despliegue](#2-guía-de-despliegue) *(Para evaluadores técnicos)*
-   - 2.1 [Prerrequisitos](#21-prerrequisitos)
-   - 2.2 [Configuración de Variables de Entorno](#22-configuración-de-variables-de-entorno)
-   - 2.3 [Despliegue con Docker Compose](#23-despliegue-con-docker-compose)
-   - 2.4 [Despliegue Local para Desarrollo](#24-despliegue-local-para-desarrollo)
-   - 2.5 [Verificación del Despliegue](#25-verificación-del-despliegue)
-3. [Guía de Uso de la Aplicación](#3-guía-de-uso-de-la-aplicación) *(Para usuarios finales)*
-   - 3.1 [Acceso al Sistema](#31-acceso-al-sistema)
-   - 3.2 [Registro e Inicio de Sesión](#32-registro-e-inicio-de-sesión)
-   - 3.3 [Página Principal (Home)](#33-página-principal-home)
-   - 3.4 [Chat de Recomendación](#34-chat-de-recomendación)
-   - 3.5 [Búsqueda Avanzada de Películas](#35-búsqueda-avanzada-de-películas)
-   - 3.6 [Explorador de Conexiones](#36-explorador-de-conexiones)
-   - 3.7 [Favoritos](#37-favoritos)
-   - 3.8 [Perfil de Usuario](#38-perfil-de-usuario)
-   - 3.9 [Topología del Grafo](#39-topología-del-grafo)
-4. [Glosario de Términos](#4-glosario-de-términos)
-5. [Solución de Problemas Frecuentes](#5-solución-de-problemas-frecuentes)
+2. [Guía de Uso de la Aplicación](#2-guía-de-uso-de-la-aplicación)
+   - 2.1 [Acceso al Sistema](#21-acceso-al-sistema)
+   - 2.2 [Registro e Inicio de Sesión](#22-registro-e-inicio-de-sesión)
+   - 2.3 [Página Principal (Home)](#23-página-principal-home)
+   - 2.4 [Chat de Recomendación](#24-chat-de-recomendación)
+   - 2.5 [Búsqueda Avanzada de Películas](#25-búsqueda-avanzada-de-películas)
+   - 2.6 [Explorador de Conexiones](#26-explorador-de-conexiones)
+   - 2.7 [Favoritos](#27-favoritos)
+   - 2.8 [Perfil de Usuario](#28-perfil-de-usuario)
+   - 2.9 [Topología del Grafo](#29-topología-del-grafo)
+3. [Glosario de Términos](#3-glosario-de-términos)
+4. [Solución de Problemas Frecuentes](#4-solución-de-problemas-frecuentes)
 
 ---
 
@@ -71,155 +65,11 @@ Respuesta: 5 películas recomendadas con justificación personalizada
 
 ---
 
-## 2. Guía de Despliegue
+## 2. Guía de Uso de la Aplicación
 
-> Esta sección está dirigida a **evaluadores técnicos, docentes o jurados** que necesiten instalar y ejecutar el sistema en un entorno local o de pruebas.
+### 2.1 Acceso al Sistema
 
-### 2.1 Prerrequisitos
-
-Antes de desplegar el sistema, asegúrese de tener instalados los siguientes programas:
-
-| Herramienta | Versión mínima | Uso |
-|---|---|---|
-| [Docker Desktop](https://www.docker.com/products/docker-desktop/) | 24.x | Contenedores del sistema |
-| [Docker Compose](https://docs.docker.com/compose/) | 2.x | Orquestación de servicios |
-| [Node.js](https://nodejs.org/) | 18.x | Ejecución del frontend (solo modo local) |
-| [Python](https://www.python.org/) | 3.11+ | Ejecución del backend (solo modo local) |
-| Git | — | Clonación del repositorio |
-
-Adicionalmente, se requieren **claves API** de los siguientes servicios gratuitos:
-
-- **Google AI Studio** ([aistudio.google.com](https://aistudio.google.com)) → API Key para Gemini Flash 2.5.
-- **Groq Cloud** ([console.groq.com](https://console.groq.com)) → API Key para Llama 3.3 70B.
-
-### 2.2 Configuración de Variables de Entorno
-
-1. Navegue al directorio del backend:
-
-```bash
-cd movie-graph-rag-backend-fastapi
-```
-
-2. Copie el archivo de configuración de ejemplo:
-
-```bash
-# Linux / macOS
-cp .env.example .env
-
-# Windows PowerShell
-Copy-Item .env.example .env
-```
-
-3. Abra el archivo `.env` en un editor de texto y complete los valores requeridos:
-
-```ini
-# ── LLMs (REQUERIDO) ──────────────────────────────────────────────
-GEMINI_API_KEY=<su_clave_de_google_ai_studio>
-GROQ_API_KEY=<su_clave_de_groq_cloud>
-
-# ── Seguridad (CAMBIAR EN PRODUCCIÓN) ─────────────────────────────
-JWT_SECRET=una_clave_secreta_larga_y_aleatoria
-
-# ── Administrador ─────────────────────────────────────────────────
-# El primer usuario que se registre con este email recibirá rol admin
-ADMIN_EMAILS=su_email@ejemplo.com
-
-# ── Los demás valores pueden dejarse con sus valores por defecto ──
-```
-
-> **Nota**: Los valores de MongoDB, Fuseki y otros servicios de infraestructura están preconfigurados para el entorno Docker y no requieren modificación para un despliegue estándar.
-
-### 2.3 Despliegue con Docker Compose
-
-Este es el método **recomendado**. Levanta todos los servicios (API, MongoDB, Fuseki) con un único comando.
-
-```bash
-# Desde el directorio: movie-graph-rag-backend-fastapi/
-docker-compose up -d
-```
-
-El proceso descargará las imágenes necesarias (solo la primera vez) e iniciará los contenedores. Espere entre 1 y 2 minutos hasta que todos los servicios estén activos.
-
-Para iniciar el **frontend**, abra una segunda terminal:
-
-```bash
-cd movie-graph-rag-frontend
-
-# Cree el archivo de configuración local
-# Windows PowerShell:
-Set-Content .env.local "NEXT_PUBLIC_API_URL=http://localhost:8000`nNEXT_PUBLIC_API_PREFIX=/api/v1"
-
-npm install
-npm run dev
-```
-
-La aplicación estará disponible en: **http://localhost:3000**
-
-Para detener todos los servicios:
-
-```bash
-# Desde movie-graph-rag-backend-fastapi/
-docker-compose down
-```
-
-### 2.4 Despliegue Local para Desarrollo
-
-Use esta opción si prefiere ejecutar los servicios sin Docker o si desea modificar el código.
-
-**Backend:**
-
-```bash
-cd movie-graph-rag-backend-fastapi
-
-# Crear y activar entorno virtual
-python -m venv .venv
-
-# Windows PowerShell
-.venv\Scripts\Activate.ps1
-
-# Linux / macOS
-source .venv/bin/activate
-
-# Instalar dependencias
-pip install -e ".[dev]"
-
-# Iniciar el servidor (con recarga automática)
-uvicorn app.main:app --reload --port 8000
-```
-
-**Frontend:**
-
-```bash
-cd movie-graph-rag-frontend
-npm install
-npm run dev
-```
-
-> **Importante**: En modo local, MongoDB y Fuseki deben estar corriendo independientemente. Se recomienda usar Docker solo para esos dos servicios:
-> ```bash
-> docker-compose up -d mongodb fuseki
-> ```
-
-### 2.5 Verificación del Despliegue
-
-Una vez iniciados los servicios, verifique que cada componente responde correctamente:
-
-| Componente | URL | Respuesta esperada |
-|---|---|---|
-| Frontend | http://localhost:3000 | Página de inicio de CineSemantico |
-| API REST (health) | http://localhost:8000/health | `{"status": "ok"}` |
-| Documentación API | http://localhost:8000/docs | Interfaz Swagger interactiva |
-| Apache Fuseki | http://localhost:3030 | Panel de administración Fuseki |
-
----
-
-## 3. Guía de Uso de la Aplicación
-
-> Esta sección está dirigida al **usuario final** de la aplicación. No se requieren conocimientos técnicos.
-
-### 3.1 Acceso al Sistema
-
-Abra su navegador web y diríjase a la dirección de la aplicación (por ejemplo, `http://localhost:3000` si ejecuta en modo local).
+Abra su navegador web y diríjase a la dirección de la aplicación proporcionada por el administrador del sistema.
 
 La aplicación es compatible con los navegadores modernos:
 - Google Chrome 110+
@@ -227,7 +77,7 @@ La aplicación es compatible con los navegadores modernos:
 - Microsoft Edge 110+
 - Safari 16+
 
-### 3.2 Registro e Inicio de Sesión
+### 2.2 Registro e Inicio de Sesión
 
 #### Crear una cuenta nueva
 
@@ -238,8 +88,6 @@ La aplicación es compatible con los navegadores modernos:
    - **Contraseña**: mínimo 8 caracteres.
 3. Haga clic en **"Registrarse"**.
 4. Será redirigido automáticamente a la página principal.
-
-> **Nota**: Si su correo electrónico coincide con el configurado como administrador (variable `ADMIN_EMAILS`), su cuenta recibirá automáticamente el rol de administrador, dando acceso a métricas del sistema.
 
 #### Iniciar sesión con cuenta existente
 
@@ -253,7 +101,7 @@ Haga clic en el icono de usuario en la esquina superior derecha del menú de nav
 
 ---
 
-### 3.3 Página Principal (Home)
+### 2.3 Página Principal (Home)
 
 La página principal (`/`) es el punto de entrada al sistema. Presenta:
 
@@ -273,7 +121,7 @@ La página principal (`/`) es el punto de entrada al sistema. Presenta:
 
 ---
 
-### 3.4 Chat de Recomendación
+### 2.4 Chat de Recomendación
 
 El chat (`/chat`) es la funcionalidad central del sistema. Permite solicitar recomendaciones en **lenguaje natural**, como si conversara con un experto cinematográfico.
 
@@ -334,7 +182,7 @@ Las conversaciones anteriores se guardan localmente en su navegador (hasta 20 se
 
 ---
 
-### 3.5 Búsqueda Avanzada de Películas
+### 2.5 Búsqueda Avanzada de Películas
 
 La pantalla de búsqueda (`/search`) permite explorar el catálogo con filtros precisos.
 
@@ -362,7 +210,7 @@ Cada tarjeta de resultado muestra:
 
 ---
 
-### 3.6 Explorador de Conexiones
+### 2.6 Explorador de Conexiones
 
 El explorador de conexiones (`/connections`) permite descubrir cómo dos películas están relacionadas dentro del grafo de conocimiento.
 
@@ -398,7 +246,7 @@ The Dark Knight → [dirigida por] → Christopher Nolan → [también dirigió]
 
 ---
 
-### 3.7 Favoritos
+### 2.7 Favoritos
 
 La sección de favoritos (`/favorites`) almacena las películas que el usuario guarda para ver más tarde o como referencia para mejorar las recomendaciones.
 
@@ -416,7 +264,7 @@ Desde cualquier tarjeta de película en el sistema (búsqueda, chat, home), haga
 
 ---
 
-### 3.8 Perfil de Usuario
+### 2.8 Perfil de Usuario
 
 El perfil (`/profile`) muestra su identidad dentro del sistema y su **perfil topológico de gustos cinematográficos**.
 
@@ -450,7 +298,7 @@ Gráfico de distribución de los géneros de sus películas favoritas, para visu
 
 ---
 
-### 3.9 Topología del Grafo
+### 2.9 Topología del Grafo
 
 La vista de topología (`/topology`) es una herramienta de **exploración avanzada** del grafo de conocimiento cinematográfico. Está disponible para todos los usuarios autenticados.
 
@@ -481,11 +329,11 @@ Listado de todas las comunidades detectadas, con:
 - Las 10 películas más representativas.
 - Comunidades adyacentes (temáticamente relacionadas).
 
-> Esta vista es especialmente útil para **descubrir géneros y temáticas** que quizás no conocía pero que podrían interesarle, navegar hacia cualquier comunidad y explorar sus películas representativas.
+> Esta vista es especialmente útil para **descubrir géneros y temáticas** que quizás no conocía pero que podrían interesarle, y para navegar hacia cualquier comunidad y explorar sus películas representativas.
 
 ---
 
-## 4. Glosario de Términos
+## 3. Glosario de Términos
 
 | Término | Definición |
 |---|---|
@@ -504,48 +352,34 @@ Listado de todas las comunidades detectadas, con:
 
 ---
 
-## 5. Solución de Problemas Frecuentes
+## 4. Solución de Problemas Frecuentes
 
-### El sistema tarda demasiado en responder (>30 segundos)
+### El sistema tarda demasiado en responder (más de 30 segundos)
 
-**Causa probable**: Fuseki está inicializando o la clave de la API del LLM es inválida.
+**Causa probable**: La API del LLM está saturada o la conexión a internet es lenta.
 
-**Solución**:
-1. Verifique que todos los contenedores Docker están corriendo: `docker-compose ps`.
-2. Revise los logs del backend: `docker-compose logs api --tail=50`.
-3. Confirme que las variables `GEMINI_API_KEY` y `GROQ_API_KEY` son válidas en el archivo `.env`.
+**Solución**: Espere unos segundos y reintente la consulta. Si el problema persiste, contacte al administrador del sistema.
 
 ---
 
 ### El chat muestra un error "No se pudo generar la recomendación"
 
-**Causa probable**: Fuseki no tiene datos cargados o la API del LLM alcanzó su límite de uso.
+**Causa probable**: La API del LLM alcanzó su límite de uso o el grafo de conocimiento no tiene datos suficientes para su consulta.
 
 **Solución**:
-1. Acceda a la interfaz de Fuseki en `http://localhost:3030` y verifique que el dataset `movies` contiene tripletas.
-2. Revise el panel de uso en Google AI Studio o Groq Cloud para verificar cuotas.
-
----
-
-### La aplicación frontend no carga (pantalla en blanco)
-
-**Causa probable**: El archivo `.env.local` no está configurado o el backend no está accesible.
-
-**Solución**:
-1. Verifique que existe el archivo `.env.local` en `movie-graph-rag-frontend/`.
-2. Confirme que contiene: `NEXT_PUBLIC_API_URL=http://localhost:8000`.
-3. Compruebe que la API responde en `http://localhost:8000/health`.
+1. Reformule su consulta con términos más generales (ej: en lugar de *"película francesa de los 70 sobre existencialismo"*, pruebe *"drama europeo reflexivo"*).
+2. Si el error persiste, contacte al administrador del sistema.
 
 ---
 
 ### No puedo iniciar sesión con mis credenciales correctas
 
-**Causa probable**: La sesión JWT expiró o la base de datos de usuarios fue reiniciada.
+**Causa probable**: La sesión expiró o las credenciales son incorrectas.
 
 **Solución**:
-1. Limpie las cookies del navegador para el sitio.
-2. Intente registrar una nueva cuenta.
-3. Si el problema persiste, verifique que el volumen de MongoDB no fue eliminado al detener Docker.
+1. Verifique que está usando el correo electrónico y contraseña correctos.
+2. Limpie las cookies del navegador para el sitio e intente nuevamente.
+3. Si olvidó su contraseña, contacte al administrador para restablecer su cuenta.
 
 ---
 
@@ -558,4 +392,4 @@ Listado de todas las comunidades detectadas, con:
 ---
 
 *Versión del manual: 1.0 · Mayo 2026*
-*Sistema: CineSemantico v1.0 · Trabajo de Grado · Universidad del Valle*
+*Sistema: MOVIQ v1.0 · Trabajo de Grado · Universidad del Valle*
