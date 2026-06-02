@@ -1,160 +1,81 @@
 # movie-graph-rag-backend-fastapi
 
-Starter project para migrar `movie-graph-rag-backend` (NestJS) a FastAPI.
+API REST para el sistema de recomendación cinematográfica semántica **MOVIQ**. Construida con FastAPI y arquitectura hexagonal, combina un grafo de conocimiento OWL/RDF almacenado en Apache Fuseki con MongoDB para datos de usuario, y modelos LLM (Gemini / Groq) para generar explicaciones en lenguaje natural.
 
-## Arranque rápido
+## Tecnologías
 
-```bash
-uvicorn app.main:app --reload --port 8000
+| Capa | Tecnología |
+|---|---|
+| Framework | FastAPI 0.115+ |
+| Base de datos | MongoDB (usuarios, historial) |
+| Triple store | Apache Fuseki (SPARQL) |
+| LLM | Google Gemini Flash / Groq |
+| Grafo | NetworkX, python-louvain |
+| Ontologías | rdflib 7+ |
+| Auth | JWT (python-jose + passlib) |
+| Python | 3.11+ |
+
+## Arquitectura hexagonal
+
 ```
-
-## Objetivo inicial
-
-- Levantar una API FastAPI mínima y estable
-- Definir estructura tipo hexagonal para migración incremental
-- Preparar base para módulos: auth, users, history, recommendation, llm, graph
-
-## Estructura
-
-```txt
 app/
-  api/
-    v1/
-      endpoints/
-    schemas/
-    dependencies.py
-  core/
-  domain/
-    entities/
-    ports/
-  application/
-    use_cases/
-  adapters/
-    repositories/
-tests/
+├── domain/          # Entidades y puertos (contratos)
+├── application/     # Casos de uso (orquestación)
+├── adapters/        # Implementaciones concretas (MongoDB, Fuseki)
+├── api/             # Routers, schemas HTTP, dependencies
+│   └── v1/
+└── core/            # Configuración, seguridad, logging, resiliencia
 ```
 
-## Arquitectura Hexagonal aplicada
-
-- `domain`: entidades y contratos (puertos)
-- `application`: casos de uso (orquesta reglas)
-- `adapters`: implementaciones concretas (repositorio MongoDB)
-- `api`: controllers/routers + schemas HTTP
-
-## Requisitos
+## Requisitos previos
 
 - Python 3.11+
-- MongoDB accesible por `MONGO_URI`
-- Opcional: `GEMINI_API_KEY` (y `GEMINI_MODEL`) para generar explicaciones narrativas con LLM (Gemini Flash)
-- Opcional: `ADMIN_EMAILS` (lista separada por comas) para asignar rol `admin` al registrar
-- Opcional: `FUSEKI_TIMEOUT_SECONDS` y `FUSEKI_MAX_RETRIES` para ajustar estabilidad/latencia de consultas SPARQL
-
-## Recommendation v1.5
-
-- `POST /api/v1/recommendation` ahora genera `rdfGenerated` contextual y ejecuta `sparqlQuery` real sobre Fuseki.
-- El retrieval usa estrategia progresiva: `strict` (género+tiempo) → `relaxed_runtime` → `relaxed_genre` → `broad`.
-- Si Fuseki no responde o no retorna resultados, hace fallback a señales de favoritos para mantener disponibilidad.
-- Las escrituras de historial/métricas son resilientes: si fallan, la recomendación igual se retorna y el error queda en `debug.errors`.
-- `POST /api/v1/recommendation/debug` devuelve la misma recomendación + diagnóstico (`source`, `fallbackUsed`, `errors`) y tiempos por etapa (`contextExtraction`, `rdfAndSparqlBuild`, `fusekiQuery`, `scoring`, `llmExplanation`, `historyWrite`, `total`).
-
-## Pruebas de contexto semántico (Rol 1 + Rol 2)
-
-Esta sección valida el ciclo completo de contexto en Fuseki:
-
-- **Rol 1 (snapshot efímero por sesión):** inyectar snapshot temporal por request y luego limpiarlo.
-- **Rol 2 (perfil histórico persistente):** archivar el snapshot en un grafo histórico por usuario y usarlo en actividad.
-
-### Prerrequisitos
-
-- API levantada en `http://127.0.0.1:8000`
-- Fuseki levantado con dataset `Cine`
-- Variables `.env` de Fuseki configuradas (`FUSEKI_URL`, `FUSEKI_DATASET`, `FUSEKI_USER`, `FUSEKI_PASSWORD`)
-
-### 1) Generar snapshot (Rol 1) y archivarlo (Rol 2)
-
-1. Registrar usuario (`POST /api/v1/auth/register`) y guardar `access_token`.
-2. Ejecutar:
-   - `POST /api/v1/recommendation/debug` con query contextual (por ejemplo: "Quiero algo relajado para ver en familia").
-3. Verificar en respuesta debug:
-   - `contextGraphInjected = true`
-
-### 2) Verificar historial persistente del usuario (Rol 2)
-
-Consultar en Fuseki (pestaña Query del dataset `Cine`):
-
-```sparql
-PREFIX context: <http://www.semanticweb.org/movierecommendation/ontologies/2025/context-ontology#>
-
-SELECT ?snapshotID ?requestTimestamp ?moodDescription ?companionType ?desiredEnergyLevel
-WHERE {
-  GRAPH <http://users/USER_ID/history> {
-    ?snapshot a context:ContextSnapshot ;
-              context:snapshotID ?snapshotID .
-    OPTIONAL { ?snapshot context:requestTimestamp ?requestTimestamp }
-    OPTIONAL {
-      ?snapshot context:feelsMood ?mood .
-      ?mood context:moodDescription ?moodDescription .
-      OPTIONAL { ?mood context:desiredEnergyLevel ?desiredEnergyLevel }
-    }
-    OPTIONAL {
-      ?snapshot context:withCompanion ?social .
-      ?social context:companionType ?companionType .
-    }
-  }
-}
-ORDER BY DESC(?requestTimestamp)
-LIMIT 20
-```
-
-Reemplazar `USER_ID` por el id real de Mongo del usuario autenticado.
-
-### 3) Verificar recomendación por actividad usando perfil semántico
-
-Llamar `GET /api/v1/recommendation/activity` con el mismo token y revisar:
-
-- `debugPayload.profileSource` (`fuseki_history` o `cold_start`)
-- `debugPayload.dominantMood`
-- `debugPayload.dominantCompanion`
-
-### 4) Validar limpieza del grafo efímero de sesión (Rol 1)
-
-```sparql
-SELECT ?g
-WHERE {
-  GRAPH ?g { ?s ?p ?o }
-  FILTER(STRSTARTS(STR(?g), "http://session/"))
-}
-LIMIT 20
-```
-
-No debería permanecer el snapshot de la request ya finalizada (se elimina tras intento de archivado).
-
-### Script automatizado de trazabilidad (Rol 1 + Rol 2)
-
-Se puede ejecutar un test end-to-end que:
-
-- registra un usuario temporal,
-- ejecuta recomendación debug,
-- valida inyección y limpieza de sesión,
-- valida archivado en historial por usuario,
-- ejecuta recommendation activity y revisa `debugPayload`.
-
-Comando:
-
-```bash
-python scripts/test_context_roles_traceability.py
-```
-
-El script imprime reporte `PASS/FAIL` por chequeo y retorna código `0` si todo pasa.
+- MongoDB accesible (variable `MONGO_URI`)
+- Apache Fuseki corriendo con dataset `Cine`
+- (Opcional) clave de API de Gemini o Groq para explicaciones LLM
 
 ## Instalación
 
 ```bash
 cd movie-graph-rag-backend-fastapi
 python -m venv .venv
+
 # Windows
 .venv\Scripts\activate
+
+# Linux / macOS
+source .venv/bin/activate
+
 pip install -e .[dev]
+```
+
+## Variables de entorno
+
+Crear un archivo `.env` en la raíz del proyecto:
+
+```env
+# MongoDB
+MONGO_URI=mongodb://localhost:27017
+MONGO_DB_NAME=moviq
+
+# Fuseki / SPARQL
+FUSEKI_URL=http://localhost:3030
+FUSEKI_DATASET=Cine
+FUSEKI_USER=admin
+FUSEKI_PASSWORD=your_password
+FUSEKI_TIMEOUT_SECONDS=10
+FUSEKI_MAX_RETRIES=3
+
+# JWT
+SECRET_KEY=your_secret_key
+ACCESS_TOKEN_EXPIRE_MINUTES=60
+
+# LLM (opcional)
+GEMINI_API_KEY=your_gemini_key
+GEMINI_MODEL=gemini-2.0-flash
+
+# Administradores (correos separados por comas)
+ADMIN_EMAILS=admin@example.com
 ```
 
 ## Ejecución
@@ -163,38 +84,120 @@ pip install -e .[dev]
 uvicorn app.main:app --reload --port 8000
 ```
 
-La API abre conexión a MongoDB al iniciar y la cierra al apagar.
+Documentación interactiva disponible en `http://localhost:8000/docs`.
 
-## Endpoints iniciales
+## Docker (Render)
 
-- `GET /health`
-- `GET /api/v1/health`
-- `GET /api/v1/health/db`
-- `GET /api/v1/health/gemini`
-- `POST /api/v1/auth/register`
-- `POST /api/v1/auth/login`
-- `POST /api/v1/auth/token` (OAuth2 form login para Swagger Authorize)
-- `GET /api/v1/auth/me` (incluye `role`)
-- `GET /api/v1/admin/whoami` (requiere rol `admin`)
-- `GET /api/v1/admin/metrics/recommendation?recentLimit=20&summaryLimit=200` (requiere rol `admin`)
-- `GET /api/v1/users/me/favorites`
-- `POST /api/v1/users/me/favorites`
-- `DELETE /api/v1/users/me/favorites`
-- `POST /api/v1/history/me`
-- `GET /api/v1/history/me?limit=10`
-- `GET /api/v1/history/{id}`
-- `GET /api/v1/recommendation?query=...`
-- `POST /api/v1/recommendation`
-- `POST /api/v1/recommendation/debug`
-- `GET /api/v1/movies/examples?limit=3`
-- `GET /api/v1/movies/autocomplete?q=...&limit=8`
-- `GET /api/v1/movies/search?...`
-- `GET /api/v1/movies/connections?from=...&to=...&maxDepth=3`
+```bash
+docker build -f Dockerfile.render -t moviq-backend .
+docker run -p 8000:8000 --env-file .env moviq-backend
+```
 
-## Siguiente fase de migración
+## Endpoints principales
 
-1. Migrar `users` + `favorites`
-2. Migrar `auth` JWT
-3. Migrar `history`
-4. Migrar `graph` y `recommendation`
-5. Migrar `llm` y prompts
+### Salud
+
+| Método | Ruta | Descripción |
+|---|---|---|
+| GET | `/health` | Salud general |
+| GET | `/api/v1/health/db` | Conectividad MongoDB |
+| GET | `/api/v1/health/gemini` | Conectividad LLM |
+
+### Autenticación
+
+| Método | Ruta | Descripción |
+|---|---|---|
+| POST | `/api/v1/auth/register` | Registro de usuario |
+| POST | `/api/v1/auth/login` | Login (JSON) |
+| POST | `/api/v1/auth/token` | Login OAuth2 (Swagger) |
+| GET | `/api/v1/auth/me` | Perfil del usuario autenticado |
+
+### Recomendación
+
+| Método | Ruta | Descripción |
+|---|---|---|
+| POST | `/api/v1/recommendation` | Recomendación semántica por texto |
+| GET | `/api/v1/recommendation` | Recomendación vía query param |
+| POST | `/api/v1/recommendation/debug` | Recomendación + diagnóstico completo |
+| GET | `/api/v1/recommendation/activity` | Recomendación basada en historial del usuario |
+
+### Películas
+
+| Método | Ruta | Descripción |
+|---|---|---|
+| GET | `/api/v1/movies/search` | Búsqueda con filtros |
+| GET | `/api/v1/movies/autocomplete` | Autocompletado de títulos |
+| GET | `/api/v1/movies/examples` | Películas de ejemplo |
+| GET | `/api/v1/movies/connections` | Explorador de conexiones en el grafo |
+| GET | `/api/v1/movies/centrality` | Películas por centralidad de grafo |
+| GET | `/api/v1/movies/neighborhood` | Vecindad de una película en el grafo |
+| GET | `/api/v1/movies/cluster` | Películas de un cluster temático |
+
+### Usuario
+
+| Método | Ruta | Descripción |
+|---|---|---|
+| GET | `/api/v1/users/me/favorites` | Favoritos del usuario |
+| POST | `/api/v1/users/me/favorites` | Agregar a favoritos |
+| DELETE | `/api/v1/users/me/favorites` | Eliminar de favoritos |
+| GET | `/api/v1/users/me/topology` | Perfil topológico del usuario |
+
+### Historial
+
+| Método | Ruta | Descripción |
+|---|---|---|
+| GET | `/api/v1/history/me` | Historial de recomendaciones |
+| POST | `/api/v1/history/me` | Registrar entrada de historial |
+| GET | `/api/v1/history/{id}` | Entrada específica del historial |
+
+### Administración (rol `admin`)
+
+| Método | Ruta | Descripción |
+|---|---|---|
+| GET | `/api/v1/admin/whoami` | Verificar rol admin |
+| GET | `/api/v1/admin/metrics/recommendation` | Métricas de uso del sistema |
+
+## Flujo de recomendación
+
+```
+POST /recommendation  →  Extracción de contexto (LLM)
+                      →  Construcción RDF contextual
+                      →  Generación SPARQL (ontology_query_builder)
+                      →  Consulta Fuseki (estrategia progresiva)
+                            strict → relaxed_runtime → relaxed_genre → broad
+                      →  Scoring (compatibilityScore + serendipityScore)
+                      →  Explicación narrativa (LLM)
+                      →  Archivado de contexto en historial (Fuseki + MongoDB)
+```
+
+Si Fuseki no responde, el sistema hace fallback a señales de favoritos del usuario para mantener disponibilidad.
+
+## Contexto semántico (Rol 1 y Rol 2)
+
+El sistema mantiene dos niveles de contexto en Fuseki:
+
+- **Rol 1 – Snapshot efímero**: Se inyecta por request en un grafo temporal (`http://session/{id}`) y se elimina tras archivar.
+- **Rol 2 – Perfil histórico**: El snapshot se archiva en un grafo persistente por usuario (`http://users/{userId}/history`) y se usa para recomendaciones de actividad.
+
+Para validar el ciclo completo:
+
+```bash
+python scripts/test_context_roles_traceability.py
+```
+
+## Tests
+
+```bash
+pytest -q
+```
+
+Los tests cubren estrategia de consulta, scoring adaptativo, endpoints de recomendación y scorer con prompt.
+
+## Scripts auxiliares
+
+| Script | Descripción |
+|---|---|
+| `scripts/compute_network_metrics.py` | Calcula métricas de red del grafo (centralidad, clusters) |
+| `scripts/patch_imdb_ratings.py` | Actualiza ratings de IMDb en Fuseki |
+| `scripts/translate_plot_summaries.py` | Traduce sinopsis de películas |
+| `scripts/smoke_test_phase*.py` | Pruebas de humo por fase de desarrollo |
