@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect, useCallback, Suspense } from "react";
+import { useState, useEffect, useCallback, useRef, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { Search, Code2, ChevronDown, ChevronUp, Clock } from "lucide-react";
+import { Search, SearchX, Code2, ChevronDown, ChevronUp, Clock, Film, User, Tag } from "lucide-react";
 import { Navbar } from "@/components/organisms/Navbar";
 import { MovieGrid } from "@/components/organisms/MovieGrid";
 import { type MovieCardMovie } from "@/components/organisms/MovieCard";
@@ -13,7 +13,8 @@ import { MovieDetailsDialog } from "@/components/home/MovieDetailsDialog";
 import { Movie, searchMovies, MovieSuggestion, getMovieNeighborhood } from "@/services/movies.service";
 import { addMyFavorite, FavoriteMovie, getMyFavorites, removeMyFavorite } from "@/services/favorites.service";
 import { toast } from "sonner";
-import { buildDisplaySparqlQuery } from "@/lib/sparql";
+import { buildDisplaySparqlQuery, type SearchMode } from "@/lib/sparql";
+import { cn } from "@/lib/utils";
 
 function toCardMovie(m: Movie): MovieCardMovie {
   return {
@@ -29,12 +30,21 @@ function toCardMovie(m: Movie): MovieCardMovie {
   };
 }
 
+const SEARCH_MODES: { value: SearchMode; label: string; icon: React.ElementType; placeholder: string }[] = [
+  { value: 'title',    label: 'Title',   icon: Film, placeholder: 'Search movies by title…' },
+  { value: 'director', label: 'Director', icon: User, placeholder: 'Search by director name…' },
+  { value: 'genre',    label: 'Genre',   icon: Tag,  placeholder: 'Search by genre (Drama, Action, Comedy…)' },
+];
+
 function ExploreContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const queryParam = searchParams.get("q") ?? "";
+  const modeParam = (searchParams.get("mode") ?? "title") as SearchMode;
+  const pendingFavs = useRef(new Set<string>());
 
   const [query, setQuery] = useState(queryParam);
+  const [mode, setMode] = useState<SearchMode>(modeParam);
   const [results, setResults] = useState<Movie[]>([]);
   const [directResultCount, setDirectResultCount] = useState(0);
   const [isSearching, setIsSearching] = useState(false);
@@ -50,79 +60,98 @@ function ExploreContent() {
     try { setFavorites(await getMyFavorites()); } catch { /* not auth */ }
   }, []);
 
+  const executeSearch = useCallback(async (term: string, searchMode: SearchMode) => {
+    if (!term.trim()) return;
+    setLastSparql(buildDisplaySparqlQuery(term, searchMode));
+    setIsSearching(true);
+    try {
+      const t0 = Date.now();
+
+      // Route the query to the correct API parameter based on mode
+      const params =
+        searchMode === 'director' ? { director: term, limit: 30 } :
+        searchMode === 'genre'    ? { genre: term, limit: 30 } :
+                                    { q: term, limit: 30 };
+
+      const data = await searchMovies(params);
+      setDirectResultCount(data.length);
+
+      // For title mode, enrich with similar movies from the graph
+      let allResults = [...data];
+      if (searchMode === 'title' && data.length > 0) {
+        try {
+          const neighborhood = await getMovieNeighborhood(data[0].title, 1);
+          const resultUris = new Set(data.map((m) => m.uri));
+          const similarMovies = neighborhood.nodes
+            .filter((n) => !resultUris.has(n.uri))
+            .map((n) => ({
+              uri: n.uri,
+              title: n.title,
+              posterUrl: n.posterUrl ?? undefined,
+              year: n.year ?? undefined,
+              runtime: n.runtime ?? undefined,
+              genres: n.genre ? [n.genre] : undefined,
+              rating: n.rating ?? undefined,
+              description: n.description ?? undefined,
+              director: n.director ?? undefined,
+            } as Movie))
+            .slice(0, 12);
+          allResults = [...data, ...similarMovies];
+        } catch {
+          // Continue with direct results if similarity fails
+        }
+      }
+
+      setExecutionTime(Date.now() - t0);
+      setResults(allResults);
+      setHasSearched(true);
+      if (allResults.length === 0) toast.info("No movies found");
+    } catch {
+      toast.error("Error searching movies");
+    } finally {
+      setIsSearching(false);
+    }
+  }, []);
+
   useEffect(() => {
     loadFavorites();
-    if (queryParam) executeSearch(queryParam);
+    if (queryParam) executeSearch(queryParam, modeParam);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [queryParam]);
+  }, [queryParam, modeParam]);
 
   const isFavorite = (uri: string) => favorites.some((f) => f.uri === uri);
 
   const handleToggleFavorite = async (movie: MovieCardMovie) => {
-    if (!movie.uri) return;
+    if (!movie.uri || pendingFavs.current.has(movie.uri)) return;
+    pendingFavs.current.add(movie.uri);
     try {
       const was = isFavorite(movie.uri);
       const updated = was
         ? await removeMyFavorite(movie.uri)
         : await addMyFavorite(movie as Movie);
       setFavorites(updated);
-      toast.success(was ? `"${movie.title}" eliminado de favoritos` : `"${movie.title}" agregado a favoritos`);
-    } catch { toast.error("No se pudo actualizar favoritos"); }
-  };
-
-  const executeSearch = async (term: string) => {
-    if (!term.trim()) return;
-    setLastSparql(buildDisplaySparqlQuery(term));
-    setIsSearching(true);
-    try {
-      const t0 = Date.now();
-      const data = await searchMovies({ q: term, limit: 30 });
-      setDirectResultCount(data.length);
-      
-      // If we found results, fetch similar movies from the first (most relevant) movie
-      let allResults = [...data];
-      if (data.length > 0) {
-        try {
-          const mainMovie = data[0];
-          const neighborhood = await getMovieNeighborhood(mainMovie.title, 1);
-          // Add neighbors that aren't already in results (avoid duplicates)
-          const resultUris = new Set(data.map(m => m.uri));
-          const similarMovies = neighborhood.nodes
-            .filter(n => !resultUris.has(n.uri))
-            .map(n => ({
-              uri: n.uri,
-              title: n.title,
-              posterUrl: n.poster_url ?? undefined,
-              year: undefined,
-              runtime: n.runtime ?? undefined,
-              genres: n.genre ? [n.genre] : undefined,
-              rating: n.rating ?? undefined,
-              description: n.description ?? undefined,
-              director: undefined,
-            } as Movie))
-            .slice(0, 12); // Limit similar movies
-          
-          allResults = [...data, ...similarMovies];
-        } catch (err) {
-          console.warn("Could not load similar movies:", err);
-          // Continue with just search results if similarity fails
-        }
-      }
-      
-      setExecutionTime(Date.now() - t0);
-      setResults(allResults);
-      setHasSearched(true);
-      if (allResults.length === 0) toast.info("No se encontraron películas");
-    } catch { toast.error("Error al buscar películas"); }
-    finally { setIsSearching(false); }
+      toast.success(was ? `"${movie.title}" removed from favorites` : `"${movie.title}" added to favorites`);
+    } catch {
+      toast.error("Could not update favorites");
+    } finally {
+      pendingFavs.current.delete(movie.uri);
+    }
   };
 
   const handleSearch = () => {
-    router.push(`/search?q=${encodeURIComponent(query.trim())}`);
+    if (!query.trim()) return;
+    router.push(`/search?q=${encodeURIComponent(query.trim())}&mode=${mode}`);
   };
 
   const handleSelect = (movie: MovieSuggestion) => {
-    router.push(`/search?q=${encodeURIComponent(movie.title)}`);
+    router.push(`/search?q=${encodeURIComponent(movie.title)}&mode=title`);
+  };
+
+  const handleModeChange = (newMode: SearchMode) => {
+    setMode(newMode);
+    // Clear results when switching mode so stale data isn't shown
+    setResults([]);
+    setHasSearched(false);
   };
 
   const handleViewDetails = (movie: MovieCardMovie) => {
@@ -131,8 +160,14 @@ function ExploreContent() {
   };
 
   const handleFindSimilar = (movie: MovieCardMovie) => {
-    router.push(`/search?q=${encodeURIComponent(movie.title)}`);
+    router.push(`/search?q=${encodeURIComponent(movie.title)}&mode=title`);
   };
+
+  const currentModeConfig = SEARCH_MODES.find((m) => m.value === mode) ?? SEARCH_MODES[0];
+  const modeLabel =
+    mode === 'director' ? 'director' :
+    mode === 'genre'    ? 'genre' :
+                          'title';
 
   return (
     <ProtectedRoute>
@@ -140,6 +175,26 @@ function ExploreContent() {
         <Navbar />
 
         <main className="max-w-7xl mx-auto px-6 py-8">
+
+          {/* Search mode toggle */}
+          <div className="flex items-center gap-1 mb-3 w-fit p-1 rounded-lg bg-surface border border-border">
+            {SEARCH_MODES.map(({ value, label, icon: Icon }) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => handleModeChange(value)}
+                className={cn(
+                  "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-all",
+                  mode === value
+                    ? "bg-teal text-bg shadow-sm"
+                    : "text-muted hover:text-text hover:bg-surface2"
+                )}
+              >
+                <Icon className="w-3 h-3" />
+                {label}
+              </button>
+            ))}
+          </div>
 
           {/* Search bar */}
           <div className="flex gap-3 mb-8">
@@ -149,8 +204,9 @@ function ExploreContent() {
                 onChange={setQuery}
                 onSelect={handleSelect}
                 onSubmit={handleSearch}
-                placeholder="Buscar películas por título, director, género…"
+                placeholder={currentModeConfig.placeholder}
                 disabled={isSearching}
+                mode={mode}
               />
             </div>
             <Button
@@ -159,21 +215,26 @@ function ExploreContent() {
               disabled={isSearching || !query.trim()}
             >
               <Search className="w-4 h-4 mr-1.5" />
-              Buscar
+              Search
             </Button>
           </div>
 
           {/* Results header */}
           {hasSearched && (
             <div className="flex items-center justify-between mb-6 flex-wrap gap-2">
-            <div>
+              <div>
                 <h1 className="font-display text-3xl text-text">
-                  {queryParam && `"${queryParam}"`}
+                  {queryParam && (
+                    <>
+                      <span className="text-muted text-lg font-normal capitalize">{modeLabel}: </span>
+                      &ldquo;{queryParam}&rdquo;
+                    </>
+                  )}
                 </h1>
                 <p className="text-sm text-muted flex items-center gap-3 mt-1">
                   <span>
-                    {directResultCount} resultado{directResultCount !== 1 ? "s" : ""} 
-                    {results.length > directResultCount && ` + ${results.length - directResultCount} similares`}
+                    {directResultCount} result{directResultCount !== 1 ? "s" : ""}
+                    {results.length > directResultCount && ` + ${results.length - directResultCount} similar`}
                   </span>
                   <span className="flex items-center gap-1">
                     <Clock className="w-3 h-3" />{executionTime}ms
@@ -188,7 +249,7 @@ function ExploreContent() {
                   className="flex items-center gap-1.5 text-xs text-muted hover:text-accent transition-colors"
                 >
                   <Code2 className="w-3.5 h-3.5" />
-                  {showSparql ? "Ocultar" : "Ver"} SPARQL
+                  {showSparql ? "Hide" : "Show"} SPARQL
                   {showSparql ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
                 </button>
               )}
@@ -209,31 +270,20 @@ function ExploreContent() {
           )}
 
           {/* Main grid */}
-          <div className="w-full">
-            <MovieGrid
-              movies={results.map(toCardMovie)}
-              isLoading={isSearching}
-              isFavorite={isFavorite}
-              onToggleFavorite={handleToggleFavorite}
-              onViewDetails={handleViewDetails}
-              onFindSimilar={handleFindSimilar}
-              emptyMessage={
-                hasSearched
-                  ? "No se encontraron películas con esos criterios."
-                  : "Usa el buscador para encontrar películas."
-              }
-            />
-
-            {/* Empty initial state */}
-            {!hasSearched && !isSearching && (
-              <div className="flex flex-col items-center justify-center py-32 text-center">
-                <Search className="w-14 h-14 text-muted/20 mb-4" />
-                <p className="text-muted text-sm max-w-xs">
-                  Busca por título, director o género para explorar el catálogo.
-                </p>
-              </div>
-            )}
-          </div>
+          <MovieGrid
+            movies={results.map(toCardMovie)}
+            isLoading={isSearching}
+            isFavorite={isFavorite}
+            onToggleFavorite={handleToggleFavorite}
+            onViewDetails={handleViewDetails}
+            onFindSimilar={handleFindSimilar}
+            emptyMessage={
+              hasSearched
+                ? `No movies found with that ${modeLabel}.`
+                : currentModeConfig.placeholder
+            }
+            emptyIcon={hasSearched ? SearchX : currentModeConfig.icon}
+          />
         </main>
 
         {/* Movie details dialog */}
@@ -242,7 +292,7 @@ function ExploreContent() {
           open={showDetailsDialog}
           onOpenChange={setShowDetailsDialog}
           onRecommendSimilar={(movie) =>
-            router.push(`/search?q=${encodeURIComponent(movie.title)}`)
+            router.push(`/search?q=${encodeURIComponent(movie.title)}&mode=title`)
           }
         />
       </div>

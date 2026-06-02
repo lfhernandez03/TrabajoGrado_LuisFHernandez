@@ -216,16 +216,17 @@ class MongoMovieCatalogRepositoryAdapter:
         sparql_query = (
             "PREFIX movie: <http://www.semanticweb.org/movierecommendation/ontologies/2025/movie-ontology#>\n"
             "PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>\n"
-            "SELECT DISTINCT ?movie ?title ?posterUrl ?runtime ?releaseDate ?rating ?directorName ?genreName ?description\n"
+            "SELECT DISTINCT ?movie ?title ?posterUrl ?runtime ?releaseDate ?rating ?imdbRating ?directorName ?genreName ?description\n"
             "WHERE {\n"
             "  ?movie rdf:type movie:FeatureFilm ;\n"
             "         movie:hasTitle ?title .\n"
             "  OPTIONAL { ?movie movie:hasPosterUrl ?posterUrl }\n"
             "  OPTIONAL { ?movie movie:runtime ?runtime }\n"
             "  OPTIONAL { ?movie movie:releaseDate ?releaseDate }\n"
-            "  OPTIONAL { ?movie movie:hasAverageRating ?rating }\n"
+            "  OPTIONAL { ?movie movie:hasRating ?rating }\n"
+            "  OPTIONAL { ?movie movie:hasIMDbRating ?imdbRating }\n"
             "  OPTIONAL { ?movie movie:hasPlotSummary ?description }\n"
-            "  OPTIONAL { ?movie movie:hasDirector/movie:personName ?directorName }\n"
+            "  OPTIONAL { ?movie movie:hasDirector/movie:hasName ?directorName }\n"
             "  OPTIONAL { ?movie movie:hasMainGenre/movie:genreName ?genreName }\n"
             f"  {filters_block}\n"
             "}\n"
@@ -253,6 +254,7 @@ class MongoMovieCatalogRepositoryAdapter:
 
             runtime = self._parse_runtime(row.get("runtime"))
             rating = self._parse_rating(row.get("rating"))
+            imdb_rating = self._parse_rating(row.get("imdbRating"))
             genre_name = row.get("genreName")
 
             movie = {
@@ -267,6 +269,7 @@ class MongoMovieCatalogRepositoryAdapter:
                 "genres": [genre_name] if genre_name else [],
                 "description": row.get("description"),
                 "rating": rating,
+                "imdbRating": imdb_rating,
                 "relationReason": None,
                 "createdAt": datetime.utcnow(),
             }
@@ -288,6 +291,7 @@ class MongoMovieCatalogRepositoryAdapter:
                 "director",
                 "description",
                 "rating",
+                "imdbRating",
             ]:
                 if existing.get(field) is None and movie.get(field) is not None:
                     existing[field] = movie[field]
@@ -316,7 +320,7 @@ class MongoMovieCatalogRepositoryAdapter:
             "WHERE {\n"
             "  ?movie rdf:type movie:FeatureFilm ;\n"
             "         movie:hasTitle ?title .\n"
-            "  OPTIONAL { ?movie movie:hasDirector/movie:personName ?directorName }\n"
+            "  OPTIONAL { ?movie movie:hasDirector/movie:hasName ?directorName }\n"
             f'  FILTER(CONTAINS(LCASE(?title), "{safe_term}"))\n'
             "}\n"
             "ORDER BY ?title\n"

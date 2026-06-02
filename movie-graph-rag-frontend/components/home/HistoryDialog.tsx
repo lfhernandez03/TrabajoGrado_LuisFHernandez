@@ -43,21 +43,21 @@ export function HistoryDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <History className="h-5 w-5" />
-            Historial de Búsquedas
+            Search History
           </DialogTitle>
           <DialogDescription>
-            Tus últimas {history.length} consultas realizadas
+            Your last {history.length} queries
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 mt-4">
           {isLoading ? (
             <div className="text-center py-8 text-muted-foreground">
-              Cargando historial...
+              Loading history...
             </div>
           ) : history.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
-              No hay búsquedas en el historial aún
+              No searches in history yet
             </div>
           ) : (
             history.map((entry) => (
@@ -75,7 +75,7 @@ export function HistoryDialog({
                       <CardDescription className="flex items-center gap-4 mt-2">
                         <span className="flex items-center gap-1">
                           <Calendar className="h-3 w-3" />
-                          {new Date(entry.createdAt).toLocaleString("es-ES", {
+                          {new Date(entry.createdAt).toLocaleString("en-US", {
                             dateStyle: "short",
                             timeStyle: "short",
                           })}
@@ -90,7 +90,7 @@ export function HistoryDialog({
                             entry.wasSuccessful ? "default" : "destructive"
                           }
                         >
-                          {entry.wasSuccessful ? "Exitosa" : "Error"}
+                          {entry.wasSuccessful ? "Success" : "Error"}
                         </Badge>
                       </CardDescription>
                     </div>
@@ -102,19 +102,19 @@ export function HistoryDialog({
                         onOpenChange(false);
                       }}
                     >
-                      Repetir
+                      Repeat
                     </Button>
                   </div>
                 </CardHeader>
                 {entry.resultsFound && entry.resultsFound.length > 0 && (
                   <CardContent>
                     <p className="text-sm text-muted-foreground">
-                      {entry.resultsFound.length} película(s) encontrada(s)
+                      {entry.resultsFound.length} movie{entry.resultsFound.length !== 1 ? "s" : ""} found
                     </p>
                     {entry.sparqlExecuted && (
                       <details className="mt-2">
                         <summary className="text-xs cursor-pointer text-muted-foreground hover:text-foreground">
-                          Ver Query SPARQL
+                          View SPARQL Query
                         </summary>
                         <pre className="text-xs mt-2 p-2 bg-slate-950 text-slate-50 rounded overflow-x-auto">
                           <code>{entry.sparqlExecuted}</code>
@@ -133,18 +133,18 @@ export function HistoryDialog({
             variant="outline"
             onClick={() => {
               onRefresh();
-              toast.success("Historial actualizado");
+              toast.success("History refreshed");
             }}
             className="flex-1"
           >
-            Actualizar
+            Refresh
           </Button>
           <Button
             variant="outline"
             onClick={() => onOpenChange(false)}
             className="flex-1"
           >
-            Cerrar
+            Close
           </Button>
         </div>
       </DialogContent>

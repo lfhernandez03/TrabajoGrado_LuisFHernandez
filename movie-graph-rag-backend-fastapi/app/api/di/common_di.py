@@ -4,7 +4,7 @@ from functools import lru_cache
 
 from app.core.config import settings
 from app.core.database import get_database
-from app.adapters.llm.gemini_recommendation_llm_adapter import GeminiRecommendationLlmAdapter
+from app.adapters.llm.groq_recommendation_llm_adapter import GroqRecommendationLlmAdapter
 from app.domain.ports.recommendation_llm_client import RecommendationLlmClientPort
 
 
@@ -22,7 +22,7 @@ def get_mongo_db_singleton():
 @lru_cache(maxsize=1)
 def get_recommendation_llm_client_singleton() -> RecommendationLlmClientPort:
     """Get recommendation LLM client (cached singleton)"""
-    return GeminiRecommendationLlmAdapter()
+    return GroqRecommendationLlmAdapter()
 
 # FastAPI dependency injection functions
 def get_settings_di():

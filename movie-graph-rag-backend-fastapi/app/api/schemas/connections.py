@@ -34,9 +34,11 @@ class NetworkNodeResponse(BaseModel):
     title: str
     genre: str | None = None
     rating: float | None = None
-    poster_url: str | None = None
+    posterUrl: str | None = None
     description: str | None = None
     runtime: int | None = None
+    director: str | None = None
+    year: int | None = None
 
 
 class NetworkEdgeResponse(BaseModel):

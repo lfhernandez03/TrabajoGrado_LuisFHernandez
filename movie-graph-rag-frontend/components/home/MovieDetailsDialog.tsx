@@ -3,13 +3,12 @@
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Star, User, Sparkles } from "lucide-react";
+import { Calendar, Star, User, Sparkles, Clock, ShieldCheck } from "lucide-react";
 import { Movie } from "@/services/movies.service";
 
 interface MovieDetailsDialogProps {
@@ -17,6 +16,30 @@ interface MovieDetailsDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onRecommendSimilar: (movie: Movie) => void;
+}
+
+function formatRuntime(minutes: number): string {
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  return h > 0 ? `${h}h ${m}m` : `${m}m`;
+}
+
+function RatingBar({ rating }: { rating: number }) {
+  const pct = Math.min(Math.max(rating / 10, 0), 1) * 100;
+  const color =
+    rating >= 7.5 ? "bg-teal" :
+    rating >= 6.0 ? "bg-accent2" :
+    "bg-muted";
+
+  return (
+    <div className="flex items-center gap-3">
+      <div className="flex-1 h-1.5 bg-surface2 rounded-full overflow-hidden">
+        <div className={`h-full ${color} rounded-full`} style={{ width: `${pct}%` }} />
+      </div>
+      <span className="text-sm font-bold tabular-nums">{rating.toFixed(1)}</span>
+      <span className="text-xs text-muted">/10</span>
+    </div>
+  );
 }
 
 export function MovieDetailsDialog({
@@ -29,126 +52,103 @@ export function MovieDetailsDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-2xl pr-6">{movie.title}</DialogTitle>
-          <DialogDescription>
-            Información completa de la película
-          </DialogDescription>
+          <DialogTitle className="text-xl md:text-2xl pr-6 leading-tight">
+            {movie.title}
+          </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-6 mt-4">
+        <div className="space-y-5 mt-2">
+          {/* Genres */}
           {movie.genres && movie.genres.length > 0 && (
-            <div>
-              <h3 className="text-sm font-semibold mb-2">Géneros</h3>
-              <div className="flex flex-wrap gap-2">
-                {movie.genres.map((genre, idx) => (
-                  <Badge key={idx} variant="secondary">
-                    {genre}
-                  </Badge>
-                ))}
-              </div>
+            <div className="flex flex-wrap gap-1.5">
+              {movie.genres.map((genre, idx) => (
+                <Badge key={idx} variant="teal" className="text-xs">
+                  {genre}
+                </Badge>
+              ))}
             </div>
           )}
 
-          <div className="grid gap-4 md:grid-cols-2">
-            {movie.director && (
-              <div>
-                <h3 className="text-sm font-semibold mb-2 flex items-center gap-2">
-                  <User className="h-4 w-4" />
-                  Director
-                </h3>
-                <p className="text-sm text-muted-foreground">
-                  {movie.director}
-                </p>
-              </div>
-            )}
-
+          {/* Metadata row */}
+          <div className="flex flex-wrap gap-x-5 gap-y-2 text-sm text-muted">
             {movie.year && (
-              <div>
-                <h3 className="text-sm font-semibold mb-2 flex items-center gap-2">
-                  <Calendar className="h-4 w-4" />
-                  Año
-                </h3>
-                <p className="text-sm text-muted-foreground">{movie.year}</p>
-              </div>
+              <span className="flex items-center gap-1.5">
+                <Calendar className="w-3.5 h-3.5" />
+                {movie.year}
+              </span>
             )}
-
-            {movie.rating && (
-              <div>
-                <h3 className="text-sm font-semibold mb-2 flex items-center gap-2">
-                  <Star className="h-4 w-4" />
-                  Calificación
-                </h3>
-                <div className="flex items-center gap-2">
-                  <div className="flex items-center">
-                    {[...Array(5)].map((_, i) => (
-                      <Star
-                        key={i}
-                        className={`h-4 w-4 ${
-                          i < Math.floor(movie.rating!)
-                            ? "fill-yellow-400 text-yellow-400"
-                            : "text-gray-300"
-                        }`}
-                      />
-                    ))}
-                  </div>
-                  <span className="text-sm font-semibold">
-                    {movie.rating.toFixed(1)}
-                  </span>
-                </div>
-              </div>
+            {movie.runtime && (
+              <span className="flex items-center gap-1.5">
+                <Clock className="w-3.5 h-3.5" />
+                {formatRuntime(movie.runtime)}
+              </span>
             )}
-
-            {movie.uri && (
-              <div>
-                <h3 className="text-sm font-semibold mb-2">URI</h3>
-                <p className="text-xs text-muted-foreground font-mono break-all">
-                  {movie.uri}
-                </p>
-              </div>
+            {movie.certification && (
+              <span className="flex items-center gap-1.5">
+                <ShieldCheck className="w-3.5 h-3.5" />
+                {movie.certification}
+              </span>
             )}
+            <span className="flex items-center gap-1.5">
+              <User className="w-3.5 h-3.5 shrink-0" />
+              <span className={movie.director ? "font-medium text-text" : "italic text-muted/50"}>
+                {movie.director ?? "Director not available"}
+              </span>
+            </span>
           </div>
 
+          {/* Rating */}
+          <div>
+            <p className="text-xs font-bold text-muted tracking-widest mb-1.5 flex items-center gap-1.5">
+              <Star className="w-3.5 h-3.5" />
+              RATING
+            </p>
+            {movie.rating != null
+              ? <RatingBar rating={movie.rating} />
+              : <p className="text-sm text-muted/50 italic">Not rated</p>
+            }
+          </div>
+
+          {/* Description + actions */}
+        <div className="space-y-4 border-t border-border pt-4">
           {movie.description && (
             <div>
-              <h3 className="text-sm font-semibold mb-2">Sinopsis</h3>
-              <p className="text-sm text-muted-foreground leading-relaxed">
+              <h3 className="text-xs font-bold text-muted tracking-widest mb-2">SYNOPSIS</h3>
+              <p className="text-sm text-muted leading-relaxed">
                 {movie.description}
               </p>
             </div>
           )}
 
           {movie.relationReason && (
-            <div className="bg-primary/10 rounded-lg p-4">
-              <h3 className="text-sm font-semibold mb-2">
-                Razón de Recomendación
+            <div className="rounded-lg border border-teal/20 bg-teal/5 px-4 py-3">
+              <h3 className="text-xs font-bold text-teal tracking-widest mb-1.5">
+                WHY THIS RECOMMENDATION
               </h3>
-              <p className="text-sm text-primary italic">
-                {movie.relationReason}
-              </p>
+              <p className="text-sm text-muted italic">{movie.relationReason}</p>
             </div>
           )}
 
-          <div className="flex gap-2 pt-4 border-t">
+          <div className="flex gap-2">
             <Button
-              onClick={() => {
-                onOpenChange(false);
-                onRecommendSimilar(movie);
-              }}
+              variant="primary"
+              onClick={() => { onOpenChange(false); onRecommendSimilar(movie); }}
               className="flex-1"
             >
               <Sparkles className="mr-2 h-4 w-4" />
-              Buscar Similares
+              Find Similar
             </Button>
             <Button
-              variant="outline"
+              variant="ghost"
               onClick={() => onOpenChange(false)}
               className="flex-1"
             >
-              Cerrar
+              Close
             </Button>
           </div>
+        </div>
         </div>
       </DialogContent>
     </Dialog>

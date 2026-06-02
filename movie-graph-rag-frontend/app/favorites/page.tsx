@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Heart } from "lucide-react";
 import { Navbar } from "@/components/organisms/Navbar";
@@ -29,6 +29,7 @@ function toCardMovie(m: FavoriteMovie): MovieCardMovie {
 export default function FavoritesPage() {
   const router = useRouter();
   const [favorites, setFavorites] = useState<FavoriteMovie[]>([]);
+  const pendingFavs = useRef(new Set<string>());
   const [isLoading, setIsLoading] = useState(true);
   const [selectedMovie, setSelectedMovie] = useState<Movie | null>(null);
   const [showDetails, setShowDetails] = useState(false);
@@ -38,7 +39,7 @@ export default function FavoritesPage() {
       setIsLoading(true);
       setFavorites(await getMyFavorites());
     } catch {
-      toast.error("No se pudieron cargar los favoritos");
+      toast.error("Could not load favorites");
     } finally {
       setIsLoading(false);
     }
@@ -47,12 +48,15 @@ export default function FavoritesPage() {
   useEffect(() => { load(); }, [load]);
 
   const handleRemove = useCallback(async (movie: MovieCardMovie) => {
-    if (!movie.uri) return;
+    if (!movie.uri || pendingFavs.current.has(movie.uri)) return;
+    pendingFavs.current.add(movie.uri);
     try {
       setFavorites(await removeMyFavorite(movie.uri));
-      toast.success(`"${movie.title}" eliminado de favoritos`);
+      toast.success(`"${movie.title}" removed from favorites`);
     } catch {
-      toast.error("No se pudo eliminar el favorito");
+      toast.error("Could not remove favorite");
+    } finally {
+      pendingFavs.current.delete(movie.uri);
     }
   }, []);
 
@@ -74,10 +78,10 @@ export default function FavoritesPage() {
               <Heart className="w-5 h-5 text-accent" />
             </div>
             <div>
-              <h1 className="font-display text-4xl text-text">Mis Favoritos</h1>
+              <h1 className="font-display text-4xl text-text">My Favorites</h1>
               {!isLoading && (
                 <p className="text-sm text-muted">
-                  {favorites.length} película{favorites.length !== 1 ? "s" : ""} guardada{favorites.length !== 1 ? "s" : ""}
+                  {favorites.length} movie{favorites.length !== 1 ? "s" : ""} saved
                 </p>
               )}
             </div>
@@ -90,7 +94,7 @@ export default function FavoritesPage() {
             isFavorite={() => true}
             onToggleFavorite={handleRemove}
             onViewDetails={handleViewDetails}
-            emptyMessage="Aún no tienes películas favoritas. Explora el catálogo y guarda las que más te gusten."
+            emptyMessage="You don't have any favorite movies yet. Explore the catalog and save the ones you like."
           />
         </main>
 

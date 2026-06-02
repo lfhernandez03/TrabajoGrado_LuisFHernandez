@@ -3,8 +3,12 @@ import api from '@/lib/api';
 export interface ClusterMovie {
   title: string;
   rating: number | null;
+  imdbRating?: number | null;
   genre: string | null;
   posterUrl: string | null;
+  runtime?: number | null;
+  description?: string | null;
+  director?: string | null;
 }
 
 export interface ClusterInfo {

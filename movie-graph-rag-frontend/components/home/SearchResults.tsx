@@ -38,7 +38,7 @@ export function SearchResults({
     <div className="mb-8">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-2xl font-semibold">
-          Resultados de búsqueda
+          Search results
           {searchResults.length > 0 && ` (${searchResults.length})`}
         </h2>
         {lastSparqlQuery && (
@@ -49,7 +49,7 @@ export function SearchResults({
             className="flex items-center gap-2"
           >
             <Code2 className="h-4 w-4" />
-            {showSparqlLog ? "Ocultar" : "Ver"} Query SPARQL
+            {showSparqlLog ? "Hide" : "Show"} SPARQL Query
             {showSparqlLog ? (
               <ChevronUp className="h-4 w-4" />
             ) : (
@@ -64,11 +64,10 @@ export function SearchResults({
           <CardHeader>
             <CardTitle className="text-sm flex items-center gap-2">
               <Code2 className="h-4 w-4" />
-              Query SPARQL Ejecutada (Explainable AI)
+              Executed SPARQL Query (Explainable AI)
             </CardTitle>
             <CardDescription className="text-slate-400">
-              Esta es la consulta semántica que se ejecutó sobre el grafo de
-              conocimiento
+              This is the semantic query executed against the knowledge graph
             </CardDescription>
           </CardHeader>
           <CardContent>

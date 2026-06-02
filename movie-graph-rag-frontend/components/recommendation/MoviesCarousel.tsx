@@ -32,14 +32,14 @@ export function MoviesCarousel({
   const loadMovies = async () => {
     try {
       setLoading(true);
-      const data = await getMovieExamples(9); // Cargar 9 películas para 3 páginas
+      const data = await getMovieExamples(9);
       const filtered = data.filter(
         (movie) => movie.title.trim().toLowerCase() !== "demo movie"
       );
       setMovies(filtered.length > 0 ? filtered : data);
     } catch (error) {
-      console.error("Error cargando películas:", error);
-      toast.error("Error al cargar las películas de ejemplo");
+      console.error("Error loading movies:", error);
+      toast.error("Error loading example movies");
     } finally {
       setLoading(false);
     }
@@ -61,14 +61,14 @@ export function MoviesCarousel({
   if (movies.length === 0) {
     return (
       <div className="text-center py-12 text-muted-foreground">
-        No hay películas disponibles en este momento
+        No movies available at this time
       </div>
     );
   }
 
   return (
     <div className="relative">
-      {/* Películas */}
+      {/* Movies */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mb-6">
         {currentMovies.map((movie) => (
           <MovieCard
@@ -94,7 +94,7 @@ export function MoviesCarousel({
                   ? "w-2.5 bg-primary"
                   : "w-2.5 bg-muted-foreground/30 hover:bg-muted-foreground/50"
               }`}
-              aria-label={`Ir a página ${idx + 1}`}
+              aria-label={`Go to page ${idx + 1}`}
             />
           ))}
         </div>

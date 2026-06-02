@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+from dataclasses import replace as dc_replace
 from time import perf_counter
 
 from app.core.fuseki_client import execute_select_query
@@ -14,6 +15,7 @@ from app.domain.ports.recommendation_llm_client import RecommendationLlmClientPo
 logger = logging.getLogger(__name__)
 
 _MIN_RESULTS = 5
+_COLD_START_MMR_LAMBDA = 0.45   # diversity > relevance when no known preferences
 
 
 def _unique_movie_count(rows: list[dict]) -> int:
@@ -45,6 +47,39 @@ def _run_strategy(attempts: list[tuple[str, str]]) -> tuple[list[dict], str]:
         except Exception:
             pass
     return [], "empty"
+
+
+def _run_cold_start_strategy(attempts: list[tuple[str, str]]) -> tuple[list[dict], str]:
+    """Aggregate candidates from ALL genre strategies for cold start.
+
+    Unlike _run_strategy(), does not stop at the first hit with >= _MIN_RESULTS.
+    Accumulates candidates from multiple genres so the scorer has real diversity.
+    Stops when >= 40 unique movies are found or the fallbacks ('centrality_ranking', 'broad') are reached.
+    """
+    all_rows: list[dict] = []
+    seen_uris: set[str] = set()
+    names_used: list[str] = []
+
+    for name, sparql in attempts:
+        if name in ("centrality_ranking", "broad"):
+            break  # fallbacks only if aggregation did not reach the minimum
+        try:
+            rows = execute_select_query(sparql)
+            new_rows = [r for r in rows if r.get("movie", "") not in seen_uris]
+            for r in new_rows:
+                seen_uris.add(r.get("movie", ""))
+            all_rows.extend(new_rows)
+            names_used.append(name)
+            if len(seen_uris) >= 40:
+                break
+        except Exception as exc:
+            logger.warning("cold-start strategy '%s' failed: %s", name, exc)
+
+    if _unique_movie_count(all_rows) >= _MIN_RESULTS:
+        return all_rows, "+".join(names_used) if names_used else "cold_start_merged"
+
+    # Fallback to original behavior if not enough candidates were found
+    return _run_strategy(attempts)
 
 
 def _query_type(ctx: UserContext, is_cold_start: bool) -> str:
@@ -79,8 +114,8 @@ class RecommendationUseCase:
         self._llm = llm_client
         self._profile_svc = profile_service
 
-    def get_recommendation(self, query: str, user_id: str) -> dict:
-        return self._run(query, user_id).to_api_dict()
+    def get_recommendation(self, query: str, user_id: str, n: int = 5, query_type_override: str | None = None, excluded_titles: set[str] | None = None) -> dict:
+        return self._run(query, user_id, n=n, query_type_override=query_type_override, excluded_titles=excluded_titles).to_api_dict()
 
     def get_activity_recommendation(self, user_id: str) -> dict:
         """Deprecated: use endpoint's intelligent query building instead.
@@ -97,11 +132,11 @@ class RecommendationUseCase:
         # Base time-of-day query
         hour = datetime.now().hour
         if 6 <= hour < 12:
-            time_query = "ver en la mañana"
+            time_query = "to watch in the morning"
         elif 12 <= hour < 18:
-            time_query = "ver en la tarde"
+            time_query = "to watch in the afternoon"
         else:
-            time_query = "ver en la noche"
+            time_query = "to watch in the evening"
 
         # Enrich query with user's preferred genres
         enrichment = ""
@@ -110,9 +145,9 @@ class RecommendationUseCase:
             top_genres = sorted(profile.genre_weights.items(), key=lambda x: x[1], reverse=True)[:2]
             if top_genres:
                 genre_names = [g[0] for g in top_genres]
-                enrichment = f" que sea de {' o '.join(genre_names)}"
-        
-        query = f"Recomiéndame una película para {time_query}{enrichment}"
+                enrichment = f" in the {' or '.join(genre_names)} genre"
+
+        query = f"Recommend me a movie {time_query}{enrichment}"
         return self._run(query, user_id).to_api_dict()
 
     def get_recommendation_debug(self, query: str, user_id: str) -> dict:
@@ -123,19 +158,33 @@ class RecommendationUseCase:
 
     # ── Pipeline ────────────────────────────────────────────────────────────
 
-    def _run(self, query: str, user_id: str) -> _Result:
+    def _run(self, query: str, user_id: str, n: int = 5, query_type_override: str | None = None, excluded_titles: set[str] | None = None) -> _Result:
         start = perf_counter()
 
         ctx = self._llm.extract_user_context(query)
         profile = self._profile_svc.get(user_id)
 
-        attempts = build_strategy(ctx, profile)
-        candidates, strategy = _run_strategy(attempts)
-        movies = score_and_select(candidates, ctx, profile, n=5)
-        metrics = compute_metrics(movies, profile)
+        # Merge favorites exclusions so the user never gets recommended
+        # a movie they already saved.
+        if excluded_titles:
+            norm = {t.strip().lower() for t in excluded_titles if t.strip()}
+            existing = {e.strip().lower() for e in (ctx.exclusions or []) if e.strip()}
+            ctx = dc_replace(ctx, exclusions=list(existing | norm))
 
-        query_type = _query_type(ctx, profile.is_cold_start)
-        explanation = self._explain(query, ctx, movies, query_type)
+        attempts = build_strategy(ctx, profile)
+        if profile.is_cold_start:
+            candidates, strategy = _run_cold_start_strategy(attempts)
+            movies = score_and_select(candidates, ctx, profile, n=n,
+                                      mmr_lambda=_COLD_START_MMR_LAMBDA)
+        else:
+            candidates, strategy = _run_strategy(attempts)
+            movies = score_and_select(candidates, ctx, profile, n=n)
+
+        from app.core.connection_explorer import ConnectionExplorer
+        metrics = compute_metrics(movies, profile, explorer=ConnectionExplorer(), candidates=candidates)
+
+        query_type = query_type_override or _query_type(ctx, profile.is_cold_start)
+        explanation = self._explain(query, ctx, movies, query_type, profile=profile, favorites_excluded=excluded_titles)
 
         self._profile_svc.archive_context(user_id, ctx)
 
@@ -167,6 +216,8 @@ class RecommendationUseCase:
                     "semantic_precision": metrics.semantic_precision,
                     "cold_start_threshold": metrics.cold_start_threshold,
                     "graph_diversity_score": metrics.graph_diversity_score,
+                    "novelty": metrics.novelty,
+                    "onto_recall": metrics.onto_recall,
                 },
             },
         )
@@ -177,11 +228,24 @@ class RecommendationUseCase:
         ctx: UserContext,
         movies: list[Movie],
         query_type: str,
+        profile=None,
+        favorites_excluded: set[str] | None = None,
     ) -> str:
+        summary = _context_summary(ctx)
+        extras: list[str] = []
+        if profile and getattr(profile, "genre_weights", None) and not getattr(profile, "is_cold_start", True):
+            top = sorted(profile.genre_weights.items(), key=lambda x: x[1], reverse=True)[:3]
+            if top:
+                extras.append("Preferred genres: " + ", ".join(f"{g} ({int(w * 100)}%)" for g, w in top))
+        if favorites_excluded:
+            sample = sorted(favorites_excluded)[:3]
+            extras.append(f"Already in favorites (excluded): {', '.join(sample)}")
+        if extras:
+            summary = (summary + "; " if summary and summary != "general" else "") + "; ".join(extras)
         try:
             return self._llm.generate_recommendation_explanation(
                 query=query,
-                context_summary=_context_summary(ctx),
+                context_summary=summary,
                 movies_with_scores=[m.to_response_dict() for m in movies],
                 semantic_hint=query_type,
                 query_type=query_type,
@@ -189,9 +253,9 @@ class RecommendationUseCase:
         except Exception as exc:
             logger.warning("explanation generation failed: %s", exc)
             return (
-                f"Encontré {len(movies)} película(s) que coinciden con tu consulta."
+                f"Found {len(movies)} movie(s) matching your query."
                 if movies
-                else "No encontré películas para esta consulta. Intenta con términos más generales."
+                else "No movies found for this query. Try using more general terms."
             )
 
 
@@ -227,6 +291,7 @@ class _Result:
     def to_api_dict(self) -> dict:
         return {
             "query": self.query,
+            "isColdStart": self.debug.get("is_cold_start", False),
             "contextExtracted": {
                 "mood": self.context.mood,
                 "companion": self.context.companion,
@@ -239,6 +304,7 @@ class _Result:
                 "confidence": self.context.confidence,
                 "time_of_day": self.context.time_of_day,
             },
+            "strategyUsed": self.strategy_used,
             "rdfGenerated": "",
             "sparqlQuery": self.sparql_executed,
             "moviesFound": self.candidates_found,
@@ -251,5 +317,7 @@ class _Result:
                 "semanticPrecision": self.metrics.semantic_precision,
                 "coldStartThreshold": self.metrics.cold_start_threshold,
                 "movieCount": self.metrics.movie_count,
+                "novelty": self.metrics.novelty,
+                "ontoRecall": self.metrics.onto_recall,
             },
         }

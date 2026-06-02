@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useState } from "react";
 import { Movie } from "@/services/movies.service";
-import { CircleAlert, Sparkles, Star, Heart, Film } from "lucide-react";
+import { Sparkles, Star, Heart, Film } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface MovieCardProps {
@@ -37,16 +37,18 @@ export function MovieCard({
   const descriptionText =
     movie.description ||
     movie.relationReason ||
-    "Recomendación personalizada basada en tu actividad reciente.";
+    "Personalized recommendation based on your recent activity.";
 
   return (
     <div
+      onClick={() => onViewDetails?.(movie)}
       className={cn(
         "group relative overflow-hidden rounded-xl",
         "border border-white/10",
         "transition-all duration-300",
         "hover:scale-[1.015] hover:-translate-y-0.5",
-        "hover:border-white/20 hover:shadow-2xl hover:shadow-black/60"
+        "hover:border-white/20 hover:shadow-2xl hover:shadow-black/60",
+        onViewDetails && "cursor-pointer"
       )}
     >
       {/* Background: dark base + blurred poster on top */}
@@ -72,7 +74,7 @@ export function MovieCard({
           {hasPoster ? (
             <Image
               src={normalizedPosterUrl as string}
-              alt={`Póster de ${movie.title}`}
+              alt={`Poster of ${movie.title}`}
               fill
               sizes="128px"
               className="object-cover"
@@ -95,19 +97,10 @@ export function MovieCard({
             </h3>
 
             <div className="shrink-0 flex items-center gap-1.5">
-              {onViewDetails && (
-                <ActionButton
-                  onClick={() => onViewDetails(movie)}
-                  aria-label={`Ver detalles de ${movie.title}`}
-                  colorClass="hover:bg-accent2/15 hover:text-accent2 hover:border-accent2/40"
-                >
-                  <CircleAlert className="h-3.5 w-3.5" />
-                </ActionButton>
-              )}
               {onRecommendSimilar && (
                 <ActionButton
                   onClick={() => onRecommendSimilar(movie)}
-                  aria-label={`Ver similares de ${movie.title}`}
+                  aria-label={`View similar movies to ${movie.title}`}
                   colorClass="hover:bg-teal/15 hover:text-teal hover:border-teal/40"
                 >
                   <Sparkles className="h-3.5 w-3.5" />
@@ -117,8 +110,8 @@ export function MovieCard({
                 onClick={() => onToggleFavorite?.(movie)}
                 aria-label={
                   isFavorite
-                    ? `Quitar ${movie.title} de favoritos`
-                    : `Marcar ${movie.title} como favorito`
+                    ? `Remove ${movie.title} from favorites`
+                    : `Mark ${movie.title} as favorite`
                 }
                 colorClass={
                   isFavorite
@@ -145,7 +138,7 @@ export function MovieCard({
                 <span className="text-sm font-semibold text-text">
                   {movie.rating!.toFixed(1)}
                 </span>
-                <span className="text-xs text-muted">Calificación</span>
+                <span className="text-xs text-muted">Rating</span>
               </>
             )}
             {movie.certification && (

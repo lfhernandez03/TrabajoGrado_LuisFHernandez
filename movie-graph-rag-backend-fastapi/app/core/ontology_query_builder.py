@@ -10,37 +10,38 @@ from app.domain.entities.query_context import QueryContext
 logger = logging.getLogger(__name__)
 
 
-MOOD_ES_MAP = {
-    "happy": "feliz",
-    "relaxed": "relajado",
-    "stressed": "estresado",
-    "sad": "triste",
-    "anxious": "ansioso",
-    "excited": "emocionado",
-    "bored": "aburrido",
-    "curious": "curioso",
-    "romantic": "romantico",
-    "nostalgic": "nostalgico",
-    "adventurous": "aventurero",
-    "nervous": "nervioso",
-    "adventurer": "aventurero",
+MOOD_MAP = {
+    "happy": "happy",
+    "relaxed": "relaxed",
+    "stressed": "stressed",
+    "sad": "sad",
+    "anxious": "anxious",
+    "excited": "excited",
+    "bored": "bored",
+    "curious": "curious",
+    "romantic": "romantic",
+    "nostalgic": "nostalgic",
+    "adventurous": "adventurous",
+    "nervous": "nervous",
+    "adventurer": "adventurous",
+    "focused": "focused",
     "neutral": None,
 }
 
-COMPANION_ES_MAP = {
-    "alone": "solo",
-    "partner": "pareja",
-    "family": "familia",
-    "friends": "amigos",
-    "family_with_kids": "familia con ninos",
+COMPANION_MAP = {
+    "alone": "alone",
+    "partner": "partner",
+    "family": "family",
+    "friends": "friends",
+    "family_with_kids": "family_with_kids",
 }
 
-ENERGY_ES_MAP = {
-    "low": "bajo",
-    "medium": "medio",
-    "high": "alto",
-    "relaxed": "bajo",
-    "excited": "alto",
+ENERGY_MAP = {
+    "low": "low",
+    "medium": "medium",
+    "high": "high",
+    "relaxed": "low",
+    "excited": "high",
 }
 
 
@@ -57,7 +58,7 @@ def _escape_turtle_literal(value: str) -> str:
 def translate_mood(mood: str | None) -> str | None:
     if mood is None:
         return None
-    return MOOD_ES_MAP.get(str(mood).strip().lower())
+    return MOOD_MAP.get(str(mood).strip().lower())
 
 
 def translate_companion(companion_type: str | None, has_children: bool = False) -> str | None:
@@ -66,15 +67,15 @@ def translate_companion(companion_type: str | None, has_children: bool = False) 
 
     normalized = str(companion_type).strip().lower()
     if normalized == "family" and has_children:
-        return "familia con niños"
+        return "family_with_kids"
 
-    return COMPANION_ES_MAP.get(normalized)
+    return COMPANION_MAP.get(normalized)
 
 
 def translate_energy(energy_description: str | None) -> str | None:
     if energy_description is None:
         return None
-    return ENERGY_ES_MAP.get(str(energy_description).strip().lower())
+    return ENERGY_MAP.get(str(energy_description).strip().lower())
 
 
 def build_context_triples_turtle(
@@ -462,7 +463,7 @@ def build_cross_ontology_sparql(
     ctx: QueryContext,
     excluded_normalized: set[str],
 ) -> list[tuple[str, str]]:
-    """Translate QueryContext to Spanish signals and build progressive ontology attempt chain.
+    """Map QueryContext signals and build progressive ontology attempt chain.
 
     Returns a list of (attempt_name, sparql_query) tuples compatible with the
     ontology_attempts parameter of build_query_attempts in recommendation_components.py.

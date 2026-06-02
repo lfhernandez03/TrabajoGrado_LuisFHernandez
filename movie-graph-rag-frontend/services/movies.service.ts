@@ -12,11 +12,16 @@ export interface Movie {
   genres?: string[];
   description?: string;
   rating?: number;
+  imdbRating?: number;
   relationReason?: string;
 }
 
 export interface SearchMovieParams {
   q?: string;
+  genre?: string;
+  director?: string;
+  yearFrom?: number;
+  yearTo?: number;
   limit?: number;
 }
 
@@ -67,17 +72,11 @@ export interface MovieSuggestion {
   director?: string;
 }
 
-/**
- * Obtiene películas de ejemplo para mostrar en la página principal
- */
 export const getMovieExamples = (limit: number = 3): Promise<Movie[]> =>
   withCache(`examples:${limit}`, TTL.LONG, () =>
     api.get<Movie[]>('/movies/examples', { params: { limit } }).then(r => r.data)
   );
 
-/**
- * Autocompletado de títulos de películas
- */
 export const autocompleteMovies = async (
   q: string,
   limit: number = 8
@@ -89,9 +88,6 @@ export const autocompleteMovies = async (
   return response.data;
 };
 
-/**
- * Busca películas según diferentes criterios
- */
 export const searchMovies = async (
   params: SearchMovieParams
 ): Promise<Movie[]> => {
@@ -99,9 +95,6 @@ export const searchMovies = async (
   return response.data;
 };
 
-/**
- * Explora conexiones entre dos películas en el grafo de conocimiento
- */
 export const findConnections = async (
   params: ConnectionExplorerParams
 ): Promise<ConnectionExplorerResponse> => {
@@ -115,6 +108,7 @@ export const findConnections = async (
 // ===== Phase 5/6 — Connections v2 (neighborhood, centrality, path) =====
 
 export interface RecommendedMovie {
+  uri?: string | null;
   title: string;
   posterUrl?: string | null;
   runtime?: number | null;
@@ -140,9 +134,11 @@ export interface NetworkNode {
   title: string;
   genre?: string | null;
   rating?: number | null;
-  poster_url?: string | null;
+  posterUrl?: string | null;
   description?: string | null;
   runtime?: number | null;
+  director?: string | null;
+  year?: number | null;
 }
 
 export interface NetworkEdge {
@@ -179,6 +175,8 @@ export interface ClusterMovie {
   genres: string[];
   posterUrl?: string | null;
   runtime?: number | null;
+  description?: string | null;
+  director?: string | null;
 }
 
 /** Movies ranked by graph centrality (most "connected" in the knowledge graph) */

@@ -101,7 +101,14 @@ def get_chat_use_case_singleton() -> ChatUseCase:
     """Get ChatUseCase singleton."""
     llm_client = get_recommendation_llm_client_singleton()
     profile_service = get_profile_service_singleton()
-    return ChatUseCase(llm_client=llm_client, profile_service=profile_service)
+    favorites_repo = get_favorite_repository_singleton()
+    query_history_repo = get_query_history_repository_singleton()
+    return ChatUseCase(
+        llm_client=llm_client,
+        profile_service=profile_service,
+        favorites_repo=favorites_repo,
+        query_history_repo=query_history_repo,
+    )
 
 
 # FastAPI dependency injection functions

@@ -537,7 +537,7 @@ class RDFMovieGenerator:
         rating_source = None
         
         if avg_rating := self._safe_float(row.get('avg_rating')):
-            final_rating = avg_rating
+            final_rating = round(avg_rating * 2, 4)  # normalize 0-5 → 0-10
             rating_source = 'MovieLens'
         elif imdb_rating := self._safe_float(row.get('imdb_rating')):
             final_rating = imdb_rating
@@ -548,10 +548,10 @@ class RDFMovieGenerator:
         
         # Agregar rating único estandarizado para Gemini
         if final_rating:
-            self.graph.add((movie_uri, MOVIE_NS.hasRating, 
+            self.graph.add((movie_uri, MOVIE_NS.hasRating,
                           Literal(final_rating, datatype=XSD.float)))
-            # Comentario en log para debugging
             logger.debug(f"Movie rating: {final_rating} (source: {rating_source})")
+
         
         # Determinar vote count con fallback chain
         final_vote_count = None

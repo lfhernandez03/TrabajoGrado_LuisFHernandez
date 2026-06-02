@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { Film, Heart, ExternalLink } from "lucide-react";
+import { Film, Heart, ExternalLink, Sparkles, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScoreBar } from "@/components/atoms/ScoreBar";
 import { SkeletonPoster, SkeletonBox } from "@/components/atoms/Loader";
@@ -16,27 +16,23 @@ function generateMetrics(movie: HeroMovie | null | undefined) {
   // Compatibilidad: from compatibilityScore
   if (movie?.compatibilityScore !== undefined) {
     metrics.push({
-      label: "Compatibilidad",
+      label: "Compatibility",
       value: Math.min(Math.max(movie.compatibilityScore, 0), 1),
     });
   } else {
     metrics.push({ label: "Compatibilidad", value: 0.85 });
   }
 
-  // Estado de ánimo: from contextExtracted.moodDescription
   if (movie?.contextExtracted?.moodDescription) {
-    // Presence of mood description = high confidence
-    metrics.push({ label: "Estado de ánimo", value: 0.85 });
+    metrics.push({ label: "Mood", value: 0.85 });
   } else {
-    metrics.push({ label: "Estado de ánimo", value: 0.60 });
+    metrics.push({ label: "Mood", value: 0.60 });
   }
 
-  // Momento del día: from contextExtracted.availableTime
   if (movie?.contextExtracted?.availableTime) {
-    // Presence of time context = high confidence
-    metrics.push({ label: "Momento del día", value: 0.88 });
+    metrics.push({ label: "Time of day", value: 0.88 });
   } else {
-    metrics.push({ label: "Momento del día", value: 0.70 });
+    metrics.push({ label: "Time of day", value: 0.70 });
   }
 
   return metrics;
@@ -64,6 +60,7 @@ export interface HeroSectionProps {
   featuredMovie?: HeroMovie | null;
   isLoading?: boolean;
   isFavorite?: boolean;
+  isColdStart?: boolean;
   onToggleFavorite?: () => void;
   onViewDetails?: () => void;
   className?: string;
@@ -73,6 +70,7 @@ export function HeroSection({
   featuredMovie,
   isLoading = false,
   isFavorite = false,
+  isColdStart = false,
   onToggleFavorite,
   onViewDetails,
   className,
@@ -90,26 +88,54 @@ export function HeroSection({
     <section className={cn("py-12 md:py-16", className)}>
       <div className="px-6 md:px-12 lg:px-20">
         <div className="max-w-7xl mx-auto">
-          {/* Hero: Tu película de esta noche */}
+          {/* Hero */}
           <div className="space-y-8 w-full">
             {/* Header: Badge + Title */}
             <div className="space-y-4">
-              <div className="flex items-center gap-2 w-fit px-3 py-1.5 rounded-full border border-teal/40 bg-teal/5">
-                <span className="w-1.5 h-1.5 rounded-full bg-teal animate-pulse" />
-                <span className="text-xs font-semibold text-teal tracking-wide">
-                  RECOMENDACIÓN DEL MOMENTO
-                </span>
-              </div>
+              {isColdStart ? (
+                <div className="flex items-center gap-2 w-fit px-3 py-1.5 rounded-full border border-accent2/40 bg-accent2/5">
+                  <Sparkles className="w-3 h-3 text-accent2" />
+                  <span className="text-xs font-semibold text-accent2 tracking-wide">
+                    DISCOVERING YOUR PROFILE
+                  </span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 w-fit px-3 py-1.5 rounded-full border border-teal/40 bg-teal/5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-teal animate-pulse" />
+                  <span className="text-xs font-semibold text-teal tracking-wide">
+                    TODAY&lsquo;S PICK
+                  </span>
+                </div>
+              )}
 
               <h1 className="font-display tracking-tight text-6xl md:text-7xl lg:text-8xl font-extrabold leading-tight">
-                <span className="block text-text">TU PELÍCULA</span>
-                <span className="block bg-linear-to-r from-accent2 via-accent2/80 to-accent2/60 bg-clip-text text-transparent">
-                  DE ESTA NOCHE
-                </span>
+                {isColdStart ? (
+                  <>
+                    <span className="block text-text">START</span>
+                    <span className="block bg-linear-to-r from-accent2 via-accent2/80 to-accent2/60 bg-clip-text text-transparent">
+                      EXPLORING
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <span className="block text-text">YOUR MOVIE</span>
+                    <span className="block bg-linear-to-r from-accent2 via-accent2/80 to-accent2/60 bg-clip-text text-transparent">
+                      FOR TONIGHT
+                    </span>
+                  </>
+                )}
               </h1>
 
               <p className="text-sm md:text-base text-muted max-w-2xl leading-relaxed">
-                El grafo conoce tu historial — <span className="font-bold" style={{ color: 'var(--color-purple)' }}>{featuredMovie?.genres?.slice(0, 3).join(", ") || "películas de calidad"}</span>. Eligió esto para ti ahora mismo.
+                {isColdStart ? (
+                  <>
+                    Save movies you like — <span className="font-bold" style={{ color: 'var(--color-purple)' }}>each favorite improves your recommendations</span>. For now we suggest the best of the catalog.
+                  </>
+                ) : (
+                  <>
+                    The graph knows your history — <span className="font-bold" style={{ color: 'var(--color-purple)' }}>{featuredMovie?.genres?.slice(0, 3).join(", ") || "quality films"}</span>. It chose this for you right now.
+                  </>
+                )}
               </p>
             </div>
 
@@ -126,6 +152,7 @@ export function HeroSection({
                     genre={genre ?? null}
                     runtime={runtime}
                     isFavorite={isFavorite}
+                    isColdStart={isColdStart}
                     onToggleFavorite={onToggleFavorite}
                     onViewDetails={onViewDetails}
                   />
@@ -136,40 +163,56 @@ export function HeroSection({
               <div className="shrink-0 w-full lg:w-64 flex flex-col gap-4 pt-0 lg:pt-4">
                 <div className="space-y-2">
                   <h3 className="text-xs font-bold text-teal tracking-widest">
-                    POR QUÉ EL GRAFO
+                    {isColdStart ? "WHY WE" : "WHY THE GRAPH"}
                   </h3>
                   <h3 className="text-xs font-bold text-teal tracking-widest">
-                    ELIGIÓ ESTO
+                    {isColdStart ? "RECOMMEND THIS" : "CHOSE THIS"}
                   </h3>
                 </div>
                 <p className="text-xs text-muted leading-relaxed">
                   {featuredMovie?.explanation ||
-                    "Basado en tu historial de neo-noir psicológico (Memento, Prestige) y preferencia por worldbuilding ciencia ficción (Blade Runner 1982, Alien). El contexto temporal sugiere una experiencia larga e inmersiva."}
+                    (isColdStart
+                      ? "Selected for its overall popularity and quality. Save movies you like so the system can learn your preferences and recommend with more precision."
+                      : "Based on your psychological neo-noir history (Memento, Prestige) and preference for sci-fi worldbuilding (Blade Runner 1982, Alien). The temporal context suggests a long, immersive experience.")}
                 </p>
               </div>
             </div>
 
             {/* Recommendation Metrics */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4 border-t border-border">
-              {generateMetrics(featuredMovie).map((metric) => (
-                <div key={metric.label} className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <span className="text-xs font-semibold text-muted">
-                      {metric.label}
-                    </span>
-                    <span className="text-xs font-mono text-muted">
-                      {(metric.value * 100).toFixed(0)}%
-                    </span>
-                  </div>
-                  <div className="h-1 bg-surface2 rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-linear-to-r from-teal to-teal/70 rounded-full"
-                      style={{ width: `${metric.value * 100}%` }}
-                    />
-                  </div>
+            {isColdStart ? (
+              <div className="flex items-start gap-3 pt-4 border-t border-border">
+                <BookOpen className="w-4 h-4 text-accent2/70 shrink-0 mt-0.5" />
+                <div className="space-y-1">
+                  <p className="text-xs font-semibold text-accent2/80">
+                    Recommendations in exploration mode
+                  </p>
+                  <p className="text-xs text-muted leading-relaxed">
+                    We don&apos;t have enough information about your taste yet. Save movies as favorites so the graph can learn your profile and tailor recommendations to you.
+                  </p>
                 </div>
-              ))}
-            </div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4 border-t border-border">
+                {generateMetrics(featuredMovie).map((metric) => (
+                  <div key={metric.label} className="space-y-2">
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs font-semibold text-muted">
+                        {metric.label}
+                      </span>
+                      <span className="text-xs font-mono text-muted">
+                        {(metric.value * 100).toFixed(0)}%
+                      </span>
+                    </div>
+                    <div className="h-1 bg-surface2 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-linear-to-r from-teal to-teal/70 rounded-full"
+                        style={{ width: `${metric.value * 100}%` }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -186,6 +229,7 @@ interface HorizontalMovieCardProps {
   genre: string | null;
   runtime: string | null;
   isFavorite: boolean;
+  isColdStart?: boolean;
   onToggleFavorite?: () => void;
   onViewDetails?: () => void;
 }
@@ -196,6 +240,7 @@ function HorizontalMovieCard({
   genre,
   runtime,
   isFavorite,
+  isColdStart = false,
   onToggleFavorite,
   onViewDetails,
 }: HorizontalMovieCardProps) {
@@ -210,7 +255,7 @@ function HorizontalMovieCard({
           {hasPoster ? (
             <Image
               src={posterUrl as string}
-              alt={`Póster de ${movie.title}`}
+              alt={`Poster of ${movie.title}`}
               fill
               priority
               sizes="200px"
@@ -228,12 +273,21 @@ function HorizontalMovieCard({
       {/* RIGHT: Content */}
       <div className="flex-1 space-y-4 flex flex-col justify-between">
         {/* Badge */}
-        <div className="flex items-center gap-1.5 w-fit px-2.5 py-1 rounded-full bg-teal/10 border border-teal/40">
-          <span className="w-1 h-1 rounded-full bg-teal animate-pulse" />
-          <span className="text-[10px] font-bold text-teal tracking-wide">
-            ELEGIDA PARA TI - ESTA NOCHE
-          </span>
-        </div>
+        {isColdStart ? (
+          <div className="flex items-center gap-1.5 w-fit px-2.5 py-1 rounded-full bg-accent2/10 border border-accent2/30">
+            <Sparkles className="w-2.5 h-2.5 text-accent2" />
+            <span className="text-[10px] font-bold text-accent2 tracking-wide">
+              EXPLORATION PICK
+            </span>
+          </div>
+        ) : (
+          <div className="flex items-center gap-1.5 w-fit px-2.5 py-1 rounded-full bg-teal/10 border border-teal/40">
+            <span className="w-1 h-1 rounded-full bg-teal animate-pulse" />
+            <span className="text-[10px] font-bold text-teal tracking-wide">
+              CHOSEN FOR YOU - TONIGHT
+            </span>
+          </div>
+        )}
 
         {/* Title */}
         <h2 className="font-display text-2xl md:text-3xl font-bold text-text leading-tight">
@@ -260,7 +314,7 @@ function HorizontalMovieCard({
         {/* Synopsis */}
         <p className="text-sm text-muted/90 line-clamp-3 leading-relaxed">
           {movie.description ||
-            "Un thriller psicológico de ciencia ficción que explora los límites de la identidad y la memoria en un futuro distópico."}
+            "A psychological science fiction thriller that explores the limits of identity and memory in a dystopian future."}
         </p>
 
         {/* Score and Actions */}
@@ -268,7 +322,7 @@ function HorizontalMovieCard({
           {typeof movie.compatibilityScore === "number" && (
             <ScoreBar
               score={movie.compatibilityScore}
-              label="Compatibilidad"
+              label="Compatibility"
               animated
               variant="gradient"
             />
@@ -281,14 +335,14 @@ function HorizontalMovieCard({
               className="flex-1 bg-accent2 hover:bg-accent2/90"
             >
               <ExternalLink className="w-4 h-4 mr-2" />
-              Ver detalles
+              View details
             </Button>
             <Button
               variant="ghost"
               size="icon"
               onClick={onToggleFavorite}
               aria-label={
-                isFavorite ? "Quitar de favoritos" : "Agregar a favoritos"
+                isFavorite ? "Remove from favorites" : "Add to favorites"
               }
               className="hover:bg-surface2"
             >

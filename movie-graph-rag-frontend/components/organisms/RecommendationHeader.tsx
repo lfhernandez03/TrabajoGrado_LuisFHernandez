@@ -9,7 +9,7 @@ interface RecommendationHeaderProps {
 }
 
 export function RecommendationHeader({ className, movieTitle, genres }: RecommendationHeaderProps) {
-  const genreText = genres && genres.length > 0 ? genres.slice(0, 2).join(" y ") : "películas de calidad";
+  const genreText = genres && genres.length > 0 ? genres.slice(0, 2).join(" and ") : "quality films";
 
   return (
     <section className={cn("py-12 md:py-16", className)}>
@@ -21,25 +21,25 @@ export function RecommendationHeader({ className, movieTitle, genres }: Recommen
               <div className="flex items-center gap-2 w-fit px-3 py-1.5 rounded-full border border-teal/40 bg-teal/5">
                 <span className="w-1.5 h-1.5 rounded-full bg-teal animate-pulse" />
                 <span className="text-xs font-semibold text-teal tracking-wide">
-                  RECOMENDACIÓN SEMÁNTICA ACTIVA
+                  ACTIVE SEMANTIC RECOMMENDATION
                 </span>
               </div>
 
               <h2 className="font-display tracking-tight text-5xl md:text-6xl lg:text-7xl font-black leading-tight">
-                <span className="block text-text">DESCUBRE TU</span>
+                <span className="block text-text">DISCOVER YOUR</span>
                 <span className="block bg-linear-to-r from-accent2 via-accent2/80 to-accent2/60 bg-clip-text text-transparent">
-                  PRÓXIMA PELÍCULA
+                  NEXT MOVIE
                 </span>
               </h2>
 
               {/* Subtitle with dynamic genre highlights */}
               <p className="text-sm md:text-base text-muted max-w-xl leading-relaxed">
-                Basado en tu interés en{" "}
+                Based on your interest in{" "}
                 <span className="font-semibold" style={{ color: 'var(--color-purple)' }}>
                   {genreText}
                 </span>{" "}
-                {movieTitle && `— y lo que viste en ${movieTitle} `} 
-                dice sobre tu siguiente paso.
+                {movieTitle && `— and what you saw in ${movieTitle} `}
+                tells us about your next step.
               </p>
             </div>
           </div>

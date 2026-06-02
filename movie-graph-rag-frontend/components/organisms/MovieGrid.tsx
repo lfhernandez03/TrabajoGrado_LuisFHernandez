@@ -14,6 +14,7 @@ export interface MovieGridProps {
   onViewDetails?: (movie: MovieCardMovie) => void
   onFindSimilar?: (movie: MovieCardMovie) => void
   emptyMessage?: string
+  emptyIcon?: React.ElementType
   className?: string
 }
 
@@ -25,7 +26,8 @@ export function MovieGrid({
   onToggleFavorite,
   onViewDetails,
   onFindSimilar,
-  emptyMessage = 'No se encontraron películas con esos filtros.',
+  emptyMessage = 'No movies found matching those filters.',
+  emptyIcon: EmptyIcon = Film,
   className,
 }: MovieGridProps) {
   const gridClass = cn('grid gap-4 grid-cols-1 sm:grid-cols-2 xl:grid-cols-3', className)
@@ -43,7 +45,7 @@ export function MovieGrid({
   if (movies.length === 0) {
     return (
       <div className={cn('flex flex-col items-center justify-center gap-3 py-24 text-center', className)}>
-        <Film className="w-12 h-12 text-muted/30" />
+        <EmptyIcon className="w-12 h-12 text-muted/30" />
         <p className="text-muted text-sm max-w-xs">{emptyMessage}</p>
       </div>
     )
@@ -53,7 +55,7 @@ export function MovieGrid({
     <div className={gridClass}>
       {movies.map((movie, i) => (
         <MovieCard
-          key={movie.uri ?? movie.title ?? `movie-${i}`}
+          key={(movie.uri?.trim()) || (movie.title?.trim()) || `movie-${i}`}
           movie={movie}
           isFavorite={isFavorite?.(movie.uri ?? '') ?? false}
           onToggleFavorite={onToggleFavorite}
