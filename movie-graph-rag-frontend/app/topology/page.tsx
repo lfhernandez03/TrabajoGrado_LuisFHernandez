@@ -38,24 +38,26 @@ function CentralityBar({
 }) {
   const pct = maxValue > 0 ? (entry.value / maxValue) * 100 : 0;
   return (
-    <div className="flex items-center gap-3 py-1">
-      <div className="w-40 shrink-0 text-sm truncate text-right text-muted-foreground" title={entry.title}>
+    <div className="flex items-center gap-2 py-1.5">
+      <span className="w-32 shrink-0 text-sm truncate text-left text-muted-foreground" title={entry.title}>
         {entry.title}
-      </div>
-      <div className="flex-1 h-5 bg-muted rounded overflow-hidden">
+      </span>
+      <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
         <div
-          className={`h-full rounded transition-all duration-500 ${color}`}
+          className={`h-full rounded-full transition-all duration-500 ${color}`}
           style={{ width: `${pct}%` }}
         />
       </div>
-      <span className="text-xs text-muted-foreground w-16 text-right">
+      <span className="text-xs text-muted-foreground w-14 text-right tabular-nums shrink-0">
         {entry.value.toFixed(4)}
       </span>
-      {entry.genre && (
-        <Badge variant="outline" className="text-xs shrink-0">
-          {entry.genre}
-        </Badge>
-      )}
+      <div className="w-20 shrink-0 flex justify-end">
+        {entry.genre && (
+          <Badge variant="outline" className="text-xs">
+            {entry.genre}
+          </Badge>
+        )}
+      </div>
     </div>
   );
 }
@@ -128,7 +130,7 @@ export default function TopologyPage() {
   useEffect(() => {
     getGraphTopology()
       .then(setData)
-      .catch(() => toast.error("Error cargando el dashboard topológico"))
+      .catch(() => toast.error("Error loading topology dashboard"))
       .finally(() => setLoading(false));
   }, []);
 
@@ -148,9 +150,9 @@ export default function TopologyPage() {
               <Network className="h-7 w-7 text-primary" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold">Dashboard Topológico</h1>
+              <h1 className="text-2xl font-bold">Topology Dashboard</h1>
               <p className="text-muted-foreground text-sm mt-0.5">
-                Métricas de red compleja del grafo de conocimiento cinematográfico
+                Complex network metrics of the movie knowledge graph
               </p>
             </div>
           </div>
@@ -161,37 +163,37 @@ export default function TopologyPage() {
             <div className="space-y-6">
 
               {/* Summary cards */}
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                 <StatCard
                   icon={Globe}
-                  label="Películas indexadas"
+                  label="Indexed movies"
                   value={data.graphSummary.totalMovies.toLocaleString()}
                 />
                 <StatCard
                   icon={GitBranch}
-                  label="Aristas estimadas"
+                  label="Estimated edges"
                   value={data.graphSummary.totalEdges.toLocaleString()}
                 />
                 <StatCard
                   icon={BarChart3}
-                  label="Grado promedio"
+                  label="Average degree"
                   value={data.graphSummary.averageDegree.toFixed(1)}
                 />
                 <StatCard
                   icon={Layers}
-                  label="Coef. clustering"
+                  label="Clustering coef."
                   value={data.graphSummary.averageClusteringCoefficient.toFixed(3)}
                 />
                 <StatCard
                   icon={Users}
-                  label="Comunidades"
+                  label="Communities"
                   value={data.graphSummary.communityCount}
                 />
                 <StatCard
                   icon={Star}
-                  label="Modularidad"
+                  label="Modularity"
                   value={data.graphSummary.modularity.toFixed(3)}
-                  sub="(mayor = mejor separación)"
+                  sub="(higher = better separation)"
                 />
               </div>
 
@@ -200,7 +202,7 @@ export default function TopologyPage() {
                 <div className="flex items-center gap-2 px-4 py-3 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-700 dark:text-emerald-400">
                   <Zap className="h-4 w-4 shrink-0" />
                   <span className="text-sm font-medium">
-                    Small-world detectado — clustering coefficient alto con diámetro reducido, propiedad característica de redes complejas reales.
+                    Small-world detected — high clustering coefficient with reduced diameter, characteristic property of real complex networks.
                   </span>
                 </div>
               )}
@@ -214,7 +216,7 @@ export default function TopologyPage() {
                       Top — Degree Centrality
                     </CardTitle>
                     <p className="text-xs text-muted-foreground">
-                      Películas con más conexiones directas
+                      Movies with most direct connections
                     </p>
                   </CardHeader>
                   <CardContent className="space-y-1">
@@ -236,7 +238,7 @@ export default function TopologyPage() {
                       Top — Betweenness Centrality
                     </CardTitle>
                     <p className="text-xs text-muted-foreground">
-                      Películas puente entre comunidades
+                      Bridge movies between communities
                     </p>
                   </CardHeader>
                   <CardContent className="space-y-1">
@@ -258,7 +260,7 @@ export default function TopologyPage() {
                       Top — PageRank
                     </CardTitle>
                     <p className="text-xs text-muted-foreground">
-                      Películas de mayor influencia global
+                      Most globally influential movies
                     </p>
                   </CardHeader>
                   <CardContent className="space-y-1">
@@ -279,10 +281,10 @@ export default function TopologyPage() {
                 <CardHeader className="pb-2">
                   <CardTitle className="text-base flex items-center gap-2">
                     <Users className="h-4 w-4 text-emerald-500" />
-                    Comunidades detectadas (Louvain)
+                    Detected Communities (Louvain)
                   </CardTitle>
                   <p className="text-xs text-muted-foreground">
-                    Grupos de películas con alta cohesión interna. Generadas offline con NetworkX + Gemini.
+                    Movie groups with high internal cohesion. Generated offline with NetworkX + Gemini.
                   </p>
                 </CardHeader>
                 <CardContent>
@@ -291,9 +293,9 @@ export default function TopologyPage() {
                       <thead>
                         <tr className="border-b text-muted-foreground">
                           <th className="text-left pb-2 pr-4 font-medium">ID</th>
-                          <th className="text-left pb-2 pr-4 font-medium">Etiqueta</th>
-                          <th className="text-right pb-2 font-medium">Películas</th>
-                          <th className="text-right pb-2 font-medium pl-4">Proporción</th>
+                          <th className="text-left pb-2 pr-4 font-medium">Label</th>
+                          <th className="text-right pb-2 font-medium">Movies</th>
+                          <th className="text-right pb-2 font-medium pl-4">Proportion</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -337,7 +339,7 @@ export default function TopologyPage() {
           {!loading && !data && (
             <div className="flex flex-col items-center justify-center py-24 text-muted-foreground gap-3">
               <Network className="h-12 w-12 opacity-30" />
-              <p>No se pudieron cargar las métricas topológicas.</p>
+              <p>Could not load topological metrics.</p>
               <p className="text-sm">
                 Ejecuta <code className="bg-muted px-1 rounded">scripts/compute_network_metrics.py</code> y vuelve a intentarlo.
               </p>

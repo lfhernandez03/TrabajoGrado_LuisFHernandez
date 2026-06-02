@@ -8,71 +8,71 @@
 <http://www.semanticweb.org/movierecommendation/ontologies/2025/context-ontology> rdf:type owl:Ontology ;
     rdfs:label "Interaction-Driven Context Ontology for GraphRAG"@en ,
                "Ontología de Contexto Centrada en Interacción para GraphRAG"@es ;
-    rdfs:comment "Ontología simplificada para GraphRAG que extrae contexto del lenguaje natural. Los datos NO se solicitan mediante formularios, sino que se infieren automáticamente del diálogo con el usuario mediante LLM."@es ;
+    rdfs:comment "Simplified ontology for GraphRAG that extracts context from natural language. Data is NOT requested through forms; it is automatically inferred from the user dialogue using an LLM."@en ;
     owl:versionInfo "1.0" .
 
 #################################################################
-#    TABLA DE CONTENIDOS
+#    TABLE OF CONTENTS
 #################################################################
-# 1. Classes (Solo 5 clases esenciales)
+# 1. Classes (5 essential classes only)
 #    1.1 User
 #    1.2 ContextSnapshot
 #    1.3 SocialContext
 #    1.4 EmotionalContext
 #    1.5 RequirementContext
 #
-# 2. Object Properties (Navegación bidireccional)
+# 2. Object Properties (Bidirectional navigation)
 #    2.1 User ↔ ContextSnapshot
 #    2.2 ContextSnapshot ↔ SocialContext
 #    2.3 ContextSnapshot ↔ EmotionalContext
 #    2.4 ContextSnapshot ↔ RequirementContext
 #
-# 3. Data Properties (Datos extraídos del chat)
+# 3. Data Properties (Data extracted from chat)
 #    3.1 User
-#    3.2 ContextSnapshot (incluye enriquecimiento temporal neutro)
-#    3.3 SocialContext (incluye dimensión cuantitativa)
-#    3.4 EmotionalContext (incluye nivel de energía deseado)
-#    3.5 RequirementContext (incluye preferencias negativas)
+#    3.2 ContextSnapshot (includes neutral temporal enrichment)
+#    3.3 SocialContext (includes quantitative dimension)
+#    3.4 EmotionalContext (includes desired energy level)
+#    3.5 RequirementContext (includes negative preferences)
 #
-# 4. Axiomas y Restricciones
+# 4. Axioms and Constraints
 #################################################################
 
 #################################################################
-#    Classes - Jerarquía Simplificada (Interaction-Driven)
+#    Classes - Simplified Hierarchy (Interaction-Driven)
 #################################################################
 
 ###  User
 :User rdf:type owl:Class ;
     rdfs:label "User"@en ,
                "Usuario"@es ;
-    rdfs:comment "Representa al usuario del sistema. Información básica que persiste entre sesiones. Los datos se extraen automáticamente del perfil o historial, NO mediante formularios."@es .
+    rdfs:comment "Represents the system user. Basic information that persists across sessions. Data is automatically extracted from the profile or history, NOT through forms."@en .
 
 ###  ContextSnapshot
 :ContextSnapshot rdf:type owl:Class ;
     rdfs:label "Context Snapshot"@en ,
                "Snapshot de Contexto"@es ;
-    rdfs:comment "Nodo central que captura el momento actual de interacción. Representa el 'ahora' del usuario: con quién está, cómo se siente, qué necesita. El LLM infiere estos datos del lenguaje natural de la conversación, NO mediante preguntas explícitas."@es .
+    rdfs:comment "Central node that captures the current moment of interaction. Represents the user's 'now': who they are with, how they feel, what they need. The LLM infers this data from the natural language of the conversation, NOT through explicit questions."@en .
 
 ###  SocialContext
 :SocialContext rdf:type owl:Class ;
     rdfs:label "Social Context"@en ,
                "Contexto Social"@es ;
-    rdfs:comment "Información sobre con quién está viendo el usuario. CRÍTICO para filtros de edad y género. El LLM detecta frases como 'con mi familia', 'con los niños', 'solo', etc. y lo extrae automáticamente."@es .
+    rdfs:comment "Information about who is watching with the user. CRITICAL for age and genre filters. The LLM detects phrases like 'with my family', 'with the kids', 'alone', etc. and extracts it automatically."@en .
 
 ###  EmotionalContext
 :EmotionalContext rdf:type owl:Class ;
     rdfs:label "Emotional Context"@en ,
                "Contexto Emocional"@es ;
-    rdfs:comment "Estado emocional o mood actual del usuario. El LLM identifica el tono emocional de mensajes como 'estoy estresado', 'necesito algo ligero', 'quiero reír'. NO se pregunta directamente."@es .
+    rdfs:comment "Current emotional state or mood of the user. The LLM identifies the emotional tone of messages like 'I'm stressed', 'I need something light', 'I want to laugh'. NOT asked directly."@en .
 
 ###  RequirementContext
 :RequirementContext rdf:type owl:Class ;
     rdfs:label "Requirement Context"@en ,
                "Contexto de Requisitos"@es ;
-    rdfs:comment "Restricciones logísticas o prácticas para la sesión actual. El LLM extrae información como 'tengo una hora', 'algo corto', 'nada de terror' del lenguaje natural."@es .
+    rdfs:comment "Logistical or practical constraints for the current session. The LLM extracts information like 'I have an hour', 'something short', 'nothing scary' from natural language."@en .
 
 #################################################################
-#    Object Properties - Navegación Bidireccional
+#    Object Properties - Bidirectional Navigation
 #################################################################
 
 #================================================================
@@ -86,14 +86,14 @@
     owl:inverseOf :isContextOfUser ;
     rdfs:label "has current context"@en ,
                "tiene contexto actual"@es ;
-    rdfs:comment "Enlaza el usuario con su contexto actual. Funcional porque un usuario solo tiene UN contexto activo a la vez."@es .
+    rdfs:comment "Links the user with their current context. Functional because a user has only ONE active context at a time."@en .
 
 :isContextOfUser rdf:type owl:ObjectProperty ;
     rdfs:domain :ContextSnapshot ;
     rdfs:range :User ;
     rdfs:label "is context of user"@en ,
                "es contexto de usuario"@es ;
-    rdfs:comment "Inversa de hasCurrentContext. Permite navegar desde el contexto hacia el usuario."@es .
+    rdfs:comment "Inverse of hasCurrentContext. Allows navigating from the context back to the user."@en .
 
 #================================================================
 # ContextSnapshot ↔ SocialContext
@@ -105,14 +105,14 @@
     owl:inverseOf :isCompanionIn ;
     rdfs:label "with companion"@en ,
                "con compañía"@es ;
-    rdfs:comment "Conecta el snapshot con información social (con quién está viendo)."@es .
+    rdfs:comment "Connects the snapshot with social information (who the user is watching with)."@en .
 
 :isCompanionIn rdf:type owl:ObjectProperty ;
     rdfs:domain :SocialContext ;
     rdfs:range :ContextSnapshot ;
     rdfs:label "is companion in"@en ,
                "es compañía en"@es ;
-    rdfs:comment "Inversa de withCompanion. Permite consultar en qué contextos se usa esta configuración social."@es .
+    rdfs:comment "Inverse of withCompanion. Allows querying which contexts use this social configuration."@en .
 
 #================================================================
 # ContextSnapshot ↔ EmotionalContext
@@ -124,14 +124,14 @@
     owl:inverseOf :isMoodOfSnapshot ;
     rdfs:label "feels mood"@en ,
                "siente estado de ánimo"@es ;
-    rdfs:comment "Conecta el snapshot con el estado emocional actual del usuario."@es .
+    rdfs:comment "Connects the snapshot with the user's current emotional state."@en .
 
 :isMoodOfSnapshot rdf:type owl:ObjectProperty ;
     rdfs:domain :EmotionalContext ;
     rdfs:range :ContextSnapshot ;
     rdfs:label "is mood of snapshot"@en ,
                "es estado de ánimo de snapshot"@es ;
-    rdfs:comment "Inversa de feelsMood."@es .
+    rdfs:comment "Inverse of feelsMood."@en .
 
 #================================================================
 # ContextSnapshot ↔ RequirementContext
@@ -143,17 +143,17 @@
     owl:inverseOf :isRequirementOf ;
     rdfs:label "has requirement"@en ,
                "tiene requisito"@es ;
-    rdfs:comment "Conecta el snapshot con restricciones prácticas (tiempo, contenido)."@es .
+    rdfs:comment "Connects the snapshot with practical constraints (time, content)."@en .
 
 :isRequirementOf rdf:type owl:ObjectProperty ;
     rdfs:domain :RequirementContext ;
     rdfs:range :ContextSnapshot ;
     rdfs:label "is requirement of"@en ,
                "es requisito de"@es ;
-    rdfs:comment "Inversa de hasRequirement."@es .
+    rdfs:comment "Inverse of hasRequirement."@en .
 
 #################################################################
-#    Data Properties - Datos Extraídos del Chat
+#    Data Properties - Data Extracted from Chat
 #################################################################
 
 #================================================================
@@ -166,14 +166,14 @@
     rdfs:range xsd:string ;
     rdfs:label "user ID"@en ,
                "ID de usuario"@es ;
-    rdfs:comment "Identificador único del usuario en el sistema."@es .
+    rdfs:comment "Unique identifier for the user in the system."@en .
 
 :userName rdf:type owl:DatatypeProperty ;
     rdfs:domain :User ;
     rdfs:range xsd:string ;
     rdfs:label "user name"@en ,
                "nombre de usuario"@es ;
-    rdfs:comment "Nombre del usuario (opcional). Puede extraerse del perfil o conversación."@es .
+    rdfs:comment "User name (optional). Can be extracted from the profile or conversation."@en .
 
 #================================================================
 # ContextSnapshot
@@ -185,7 +185,7 @@
     rdfs:range xsd:string ;
     rdfs:label "snapshot ID"@en ,
                "ID de snapshot"@es ;
-    rdfs:comment "Identificador único del snapshot de contexto."@es .
+    rdfs:comment "Unique identifier for the context snapshot."@en .
 
 :requestTimestamp rdf:type owl:DatatypeProperty ,
                            owl:FunctionalProperty ;
@@ -193,28 +193,28 @@
     rdfs:range xsd:dateTime ;
     rdfs:label "request timestamp"@en ,
                "marca de tiempo de solicitud"@es ;
-    rdfs:comment "Momento exacto en que se capturó este contexto. Se genera automáticamente por el sistema."@es .
+    rdfs:comment "Exact moment this context was captured. Automatically generated by the system."@en .
 
 :userIntent rdf:type owl:DatatypeProperty ;
     rdfs:domain :ContextSnapshot ;
     rdfs:range xsd:string ;
     rdfs:label "user intent"@en ,
                "intención del usuario"@es ;
-    rdfs:comment "Texto libre que captura la intención expresada por el usuario. Ejemplo: 'buscar comedia para relajarme', 'algo familiar para el fin de semana'. Extraído del lenguaje natural."@es .
+    rdfs:comment "Free text capturing the intent expressed by the user. Example: 'looking for a comedy to relax', 'something family-friendly for the weekend'. Extracted from natural language."@en .
 
 :dayOfWeek rdf:type owl:DatatypeProperty ;
     rdfs:domain :ContextSnapshot ;
     rdfs:range xsd:string ;
     rdfs:label "day of week"@en ,
                "día de la semana"@es ;
-    rdfs:comment "Día de la semana en que se realiza la solicitud (Lunes, Martes, etc.). Información temporal neutra que permite al LLM hacer inferencias contextuales sin inducir sesgos. Por ejemplo, detectar 'es martes por la noche' sin forzar categorías como 'día laboral'."@es .
+    rdfs:comment "Day of the week when the request is made (Monday, Tuesday, etc.). Neutral temporal information that allows the LLM to make contextual inferences without inducing bias. For example, detecting 'it's Tuesday night' without forcing categories like 'weekday'."@en .
 
 :hourOfDay rdf:type owl:DatatypeProperty ;
     rdfs:domain :ContextSnapshot ;
     rdfs:range xsd:integer ;
     rdfs:label "hour of day"@en ,
                "hora del día"@es ;
-    rdfs:comment "Hora del día en formato 24h (rango válido: 0-23, donde 0=medianoche, 23=11 PM). IMPORTANTE: El LLM debe devolver siempre valores en este rango estándar para garantizar consistencia. Captura información temporal sin sesgos. Ejemplo: '3 AM del martes' se codifica como hourOfDay=3. El sistema puede usar esto para contextualizar sin forzar categorías predefinidas como 'madrugada'."@es .
+    rdfs:comment "Hour of the day in 24h format (valid range: 0-23, where 0=midnight, 23=11 PM). IMPORTANT: The LLM must always return values in this standard range to ensure consistency. Captures temporal information without bias. Example: '3 AM on Tuesday' is encoded as hourOfDay=3. The system can use this for context without forcing predefined categories like 'early morning'."@en .
 
 #================================================================
 # SocialContext
@@ -225,21 +225,21 @@
     rdfs:range xsd:string ;
     rdfs:label "companion type"@en ,
                "tipo de compañía"@es ;
-    rdfs:comment "Descripción de con quién está viendo. Valores típicos: 'solo', 'familia', 'niños', 'pareja', 'amigos'. El LLM extrae esto de frases como 'voy a ver con mi familia'."@es .
+    rdfs:comment "Description of who the user is watching with. Typical values: 'alone', 'family', 'kids', 'partner', 'friends'. The LLM extracts this from phrases like 'I'm going to watch with my family'."@en .
 
 :hasChildren rdf:type owl:DatatypeProperty ;
     rdfs:domain :SocialContext ;
     rdfs:range xsd:boolean ;
     rdfs:label "has children"@en ,
                "tiene niños"@es ;
-    rdfs:comment "Indica si hay niños presentes (crítico para filtros de clasificación). Inferido de frases como 'con los niños', 'mis hijos'."@es .
+    rdfs:comment "Indicates whether children are present (critical for content rating filters). Inferred from phrases like 'with the kids', 'my children'."@en .
 
 :groupSize rdf:type owl:DatatypeProperty ;
     rdfs:domain :SocialContext ;
     rdfs:range xsd:integer ;
     rdfs:label "group size"@en ,
                "tamaño de grupo"@es ;
-    rdfs:comment "Número de personas viendo. CRÍTICO para contexto social cuantitativo: ver con pareja (2) vs grupo grande (5+) cambia las dinámicas de selección. Grupos grandes necesitan 'crowd-pleasers' con mayor consenso. Puede inferirse de 'somos 5', 'vamos 3 amigos', etc."@es .
+    rdfs:comment "Number of people watching. CRITICAL for quantitative social context: watching with a partner (2) vs. large group (5+) changes selection dynamics. Large groups need 'crowd-pleasers' with broader consensus. Can be inferred from 'there are 5 of us', 'we're 3 friends', etc."@en .
 
 #================================================================
 # EmotionalContext
@@ -250,28 +250,28 @@
     rdfs:range xsd:string ;
     rdfs:label "mood description"@en ,
                "descripción de estado de ánimo"@es ;
-    rdfs:comment "Descripción textual del estado emocional. Ejemplos: 'relajado', 'estresado', 'alegre', 'necesita distracción'. Extraído del tono y palabras del usuario."@es .
+    rdfs:comment "Textual description of the emotional state. Examples: 'relaxed', 'stressed', 'happy', 'needs distraction'. Extracted from the user's tone and words."@en .
 
 :emotionalNeed rdf:type owl:DatatypeProperty ;
     rdfs:domain :EmotionalContext ;
     rdfs:range xsd:string ;
     rdfs:label "emotional need"@en ,
                "necesidad emocional"@es ;
-    rdfs:comment "Qué busca emocionalmente. Ejemplos: 'escapar del estrés', 'reír', 'reflexionar', 'emocionarse'. Inferido de frases como 'quiero algo que me haga reír'."@es .
+    rdfs:comment "What the user is seeking emotionally. Examples: 'escape stress', 'laugh', 'reflect', 'get excited'. Inferred from phrases like 'I want something that makes me laugh'."@en .
 
 :moodIntensity rdf:type owl:DatatypeProperty ;
     rdfs:domain :EmotionalContext ;
     rdfs:range xsd:decimal ;
     rdfs:label "mood intensity"@en ,
                "intensidad de estado"@es ;
-    rdfs:comment "Intensidad del estado emocional (0.0-1.0). Opcional. El LLM puede estimarlo del énfasis del usuario."@es .
+    rdfs:comment "Intensity of the emotional state (0.0-1.0). Optional. The LLM can estimate this from the user's emphasis."@en .
 
 :desiredEnergyLevel rdf:type owl:DatatypeProperty ;
     rdfs:domain :EmotionalContext ;
     rdfs:range xsd:string ;
     rdfs:label "desired energy level"@en ,
                "nivel de energía deseado"@es ;
-    rdfs:comment "Nivel de energía o intensidad deseado para la película, separado del estado emocional actual. Valores típicos: 'alto', 'medio', 'bajo', 'relajante', 'intenso'. Permite expresar: 'Estoy triste pero quiero algo energético para animarme' vs 'Estoy triste y quiero algo tranquilo'. Separa cómo me siento (mood) de qué dinámica quiero (energy)."@es .
+    rdfs:comment "Desired energy or intensity level for the movie, separate from the current emotional state. Typical values: 'high', 'medium', 'low', 'relaxing', 'intense'. Allows expressing: 'I'm sad but want something energetic to cheer me up' vs 'I'm sad and want something calm'. Separates how I feel (mood) from the dynamic I want (energy)."@en .
 
 #================================================================
 # RequirementContext
@@ -282,79 +282,79 @@
     rdfs:range xsd:integer ;
     rdfs:label "available time"@en ,
                "tiempo disponible"@es ;
-    rdfs:comment "Tiempo disponible en minutos. Extraído de frases como 'tengo una hora', 'algo corto', 'tengo toda la tarde'. El LLM convierte texto a número."@es .
+    rdfs:comment "Available time in minutes. Extracted from phrases like 'I have an hour', 'something short', 'I have the whole afternoon'. The LLM converts text to a number."@en .
 
 :contentRestrictions rdf:type owl:DatatypeProperty ;
     rdfs:domain :RequirementContext ;
     rdfs:range xsd:string ;
     rdfs:label "content restrictions"@en ,
                "restricciones de contenido"@es ;
-    rdfs:comment "Restricciones expresadas sobre el contenido. Ejemplos: 'nada de terror', 'sin violencia', 'apto para niños'. Texto libre extraído de la conversación."@es .
+    rdfs:comment "Expressed restrictions on content. Examples: 'no horror', 'no violence', 'suitable for kids'. Free text extracted from the conversation."@en .
 
 :preferredLanguage rdf:type owl:DatatypeProperty ;
     rdfs:domain :RequirementContext ;
     rdfs:range xsd:language ;
     rdfs:label "preferred language"@en ,
                "idioma preferido"@es ;
-    rdfs:comment "Idioma preferido para la sesión (código ISO). Puede inferirse de 'en inglés', 'películas en español', etc."@es .
+    rdfs:comment "Preferred language for the session (ISO code). Can be inferred from 'in English', 'movies in Spanish', etc."@en .
 
 :excludedGenre rdf:type owl:DatatypeProperty ;
     rdfs:domain :RequirementContext ;
     rdfs:range xsd:string ;
     rdfs:label "excluded genre"@en ,
                "género excluido"@es ;
-    rdfs:comment "Géneros que el usuario explícitamente NO quiere ver. Valores como 'terror', 'romance', 'ciencia ficción', 'documental'. Las preferencias negativas son críticas: lo que NO queremos es tan importante como lo que queremos. Múltiples géneros pueden especificarse separados por comas. Extraído de frases como 'nada de terror', 'sin películas románticas', 'no quiero acción'. CONSISTENCIA: Esta propiedad se usa específicamente para géneros; para otras exclusiones usar negativeConstraint."@es .
+    rdfs:comment "Genres the user explicitly does NOT want to see. Values like 'horror', 'romance', 'science fiction', 'documentary'. Negative preferences are critical: what we DON'T want is as important as what we want. Multiple genres can be specified separated by commas. Extracted from phrases like 'no horror', 'no romantic movies', 'I don't want action'. CONSISTENCY: This property is used specifically for genres; for other exclusions use negativeConstraint."@en .
 
 :negativeConstraint rdf:type owl:DatatypeProperty ;
     rdfs:domain :RequirementContext ;
     rdfs:range xsd:string ;
     rdfs:label "negative constraint"@en ,
                "restricción negativa"@es ;
-    rdfs:comment "Restricciones negativas generales más allá de género. Ejemplos: 'no Marvel', 'sin secuelas', 'nada antiguo', 'sin subtítulos', 'no Tarantino', 'sin animación'. Permite especificar exclusiones estructuradas que el GraphRAG debe respetar al filtrar nodos del grafo. Texto libre extraído de negaciones explícitas del usuario. DIFERENCIA con excludedGenre: úsela para actores, directores, franquicias, formatos, épocas, etc., NO para géneros."@es .
+    rdfs:comment "General negative constraints beyond genre. Examples: 'no Marvel', 'no sequels', 'nothing old', 'no subtitles', 'no Tarantino', 'no animation'. Allows specifying structured exclusions that GraphRAG must respect when filtering graph nodes. Free text extracted from explicit user negations. DIFFERENCE from excludedGenre: use this for actors, directors, franchises, formats, eras, etc., NOT for genres."@en .
 
 #################################################################
-#    Axiomas y Restricciones
+#    Axioms and Constraints
 #################################################################
 
 #================================================================
-# RESTRICCIONES DE CARDINALIDAD
+# CARDINALITY CONSTRAINTS
 #================================================================
 
-# Un User DEBE tener exactamente un userID
+# A User MUST have exactly one userID
 :User rdfs:subClassOf [ rdf:type owl:Restriction ;
                         owl:onProperty :userID ;
                         owl:cardinality "1"^^xsd:nonNegativeInteger
                       ] .
 
-# Un ContextSnapshot DEBE tener exactamente un snapshotID
+# A ContextSnapshot MUST have exactly one snapshotID
 :ContextSnapshot rdfs:subClassOf [ rdf:type owl:Restriction ;
                                    owl:onProperty :snapshotID ;
                                    owl:cardinality "1"^^xsd:nonNegativeInteger
                                  ] .
 
-# Un ContextSnapshot DEBE tener exactamente un requestTimestamp
+# A ContextSnapshot MUST have exactly one requestTimestamp
 :ContextSnapshot rdfs:subClassOf [ rdf:type owl:Restriction ;
                                    owl:onProperty :requestTimestamp ;
                                    owl:cardinality "1"^^xsd:nonNegativeInteger
                                  ] .
 
-# Un ContextSnapshot puede tener máximo un hourOfDay
+# A ContextSnapshot can have at most one hourOfDay
 :ContextSnapshot rdfs:subClassOf [ rdf:type owl:Restriction ;
                                    owl:onProperty :hourOfDay ;
                                    owl:maxCardinality "1"^^xsd:nonNegativeInteger
                                  ] .
 
-# Un User puede tener solo UN contexto actual activo
+# A User can have only ONE active current context
 :User rdfs:subClassOf [ rdf:type owl:Restriction ;
                         owl:onProperty :hasCurrentContext ;
                         owl:maxCardinality "1"^^xsd:nonNegativeInteger
                       ] .
 
 #================================================================
-# RESTRICCIONES DE RANGO DE VALORES
+# VALUE RANGE CONSTRAINTS
 #================================================================
 
-# availableTime debe ser positivo (minutos)
+# availableTime must be positive (minutes)
 :RequirementContext rdfs:subClassOf [ rdf:type owl:Restriction ;
                                       owl:onProperty :availableTime ;
                                       owl:allValuesFrom [ rdf:type rdfs:Datatype ;
@@ -365,7 +365,7 @@
                                                       ]
                                     ] .
 
-# moodIntensity debe estar entre 0.0 y 1.0
+# moodIntensity must be between 0.0 and 1.0
 :EmotionalContext rdfs:subClassOf [ rdf:type owl:Restriction ;
                                     owl:onProperty :moodIntensity ;
                                     owl:allValuesFrom [ rdf:type rdfs:Datatype ;
@@ -376,7 +376,7 @@
                                                     ]
                                   ] .
 
-# groupSize debe ser positivo
+# groupSize must be positive
 :SocialContext rdfs:subClassOf [ rdf:type owl:Restriction ;
                                  owl:onProperty :groupSize ;
                                  owl:allValuesFrom [ rdf:type rdfs:Datatype ;
@@ -387,9 +387,9 @@
                                                  ]
                                ] .
 
-# hourOfDay debe estar entre 0 y 23 (formato 24h estándar)
-# RESTRICCIÓN TÉCNICA: Valores válidos [0-23] donde 0=00:00 (medianoche), 23=23:00 (11 PM)
-# Esta restricción garantiza que el LLM siempre devuelva datos en formato consistente
+# hourOfDay must be between 0 and 23 (standard 24h format)
+# TECHNICAL CONSTRAINT: Valid values [0-23] where 0=00:00 (midnight), 23=23:00 (11 PM)
+# This constraint ensures the LLM always returns data in a consistent format
 :ContextSnapshot rdfs:subClassOf [ rdf:type owl:Restriction ;
                                    owl:onProperty :hourOfDay ;
                                    owl:allValuesFrom [ rdf:type rdfs:Datatype ;
@@ -401,268 +401,268 @@
                                  ] .
 
 #================================================================
-# PROPIEDADES FUNCIONALES (VALORES ÚNICOS)
+# FUNCTIONAL PROPERTIES (UNIQUE VALUES)
 #================================================================
 
-# Un usuario tiene exactamente un ID
+# A user has exactly one ID
 :userID rdf:type owl:FunctionalProperty .
 
-# Un snapshot tiene exactamente un ID
+# A snapshot has exactly one ID
 :snapshotID rdf:type owl:FunctionalProperty .
 
-# Un snapshot tiene exactamente un timestamp
+# A snapshot has exactly one timestamp
 :requestTimestamp rdf:type owl:FunctionalProperty .
 
-# Un usuario tiene como máximo un contexto actual
+# A user has at most one current context
 :hasCurrentContext rdf:type owl:FunctionalProperty .
 
-# Un snapshot tiene como máximo una hora del día
+# A snapshot has at most one hour of day
 :hourOfDay rdf:type owl:FunctionalProperty .
 
-# Tipo de compañía es funcional (un solo valor por SocialContext)
+# Companion type is functional (single value per SocialContext)
 :companionType rdf:type owl:FunctionalProperty .
 
-# Presencia de niños es funcional
+# Presence of children is functional
 :hasChildren rdf:type owl:FunctionalProperty .
 
-# Descripción de mood es funcional (un solo estado dominante)
+# Mood description is functional (single dominant state)
 :moodDescription rdf:type owl:FunctionalProperty .
 
-# Nivel de energía deseado es funcional
+# Desired energy level is functional
 :desiredEnergyLevel rdf:type owl:FunctionalProperty .
 
-# Tiempo disponible es funcional
+# Available time is functional
 :availableTime rdf:type owl:FunctionalProperty .
 
-# Idioma preferido es funcional
+# Preferred language is functional
 :preferredLanguage rdf:type owl:FunctionalProperty .
 
-# Día de la semana es funcional
+# Day of week is functional
 :dayOfWeek rdf:type owl:FunctionalProperty .
 
 #================================================================
-# CLASES DISJUNTAS (MUTUAMENTE EXCLUYENTES)
+# DISJOINT CLASSES (MUTUALLY EXCLUSIVE)
 #================================================================
 
-# Las 5 clases principales de la ontología son mutuamente disjuntas
+# The 5 main classes of the ontology are mutually disjoint
 [] rdf:type owl:AllDisjointClasses ;
    owl:members ( :User :ContextSnapshot :SocialContext
                  :EmotionalContext :RequirementContext ) .
 
 #================================================================
-# RESTRICCIONES DE CARDINALIDAD PARA OBJECT PROPERTIES
+# CARDINALITY CONSTRAINTS FOR OBJECT PROPERTIES
 #================================================================
 
-# Un ContextSnapshot tiene como máximo un SocialContext
+# A ContextSnapshot has at most one SocialContext
 :ContextSnapshot rdfs:subClassOf [ rdf:type owl:Restriction ;
                                    owl:onProperty :withCompanion ;
                                    owl:maxCardinality "1"^^xsd:nonNegativeInteger
                                  ] .
 
-# Un ContextSnapshot tiene como máximo un EmotionalContext
+# A ContextSnapshot has at most one EmotionalContext
 :ContextSnapshot rdfs:subClassOf [ rdf:type owl:Restriction ;
                                    owl:onProperty :feelsMood ;
                                    owl:maxCardinality "1"^^xsd:nonNegativeInteger
                                  ] .
 
-# Un ContextSnapshot tiene como máximo un RequirementContext
+# A ContextSnapshot has at most one RequirementContext
 :ContextSnapshot rdfs:subClassOf [ rdf:type owl:Restriction ;
                                    owl:onProperty :hasRequirement ;
                                    owl:maxCardinality "1"^^xsd:nonNegativeInteger
                                  ] .
 
-# Un SocialContext DEBE tener exactamente un companionType
+# A SocialContext MUST have exactly one companionType
 :SocialContext rdfs:subClassOf [ rdf:type owl:Restriction ;
                                  owl:onProperty :companionType ;
                                  owl:cardinality "1"^^xsd:nonNegativeInteger
                                ] .
 
-# Un SocialContext tiene como máximo un valor hasChildren
+# A SocialContext has at most one hasChildren value
 :SocialContext rdfs:subClassOf [ rdf:type owl:Restriction ;
                                  owl:onProperty :hasChildren ;
                                  owl:maxCardinality "1"^^xsd:nonNegativeInteger
                                ] .
 
-# Un EmotionalContext DEBE tener exactamente una descripción de mood
+# An EmotionalContext MUST have exactly one mood description
 :EmotionalContext rdfs:subClassOf [ rdf:type owl:Restriction ;
                                     owl:onProperty :moodDescription ;
                                     owl:cardinality "1"^^xsd:nonNegativeInteger
                                   ] .
 
-# Un EmotionalContext tiene como máximo un nivel de energía deseado
+# An EmotionalContext has at most one desired energy level
 :EmotionalContext rdfs:subClassOf [ rdf:type owl:Restriction ;
                                     owl:onProperty :desiredEnergyLevel ;
                                     owl:maxCardinality "1"^^xsd:nonNegativeInteger
                                   ] .
 
-# Un EmotionalContext tiene como máximo una intensidad de mood
+# An EmotionalContext has at most one mood intensity
 :EmotionalContext rdfs:subClassOf [ rdf:type owl:Restriction ;
                                     owl:onProperty :moodIntensity ;
                                     owl:maxCardinality "1"^^xsd:nonNegativeInteger
                                   ] .
 
-# Un RequirementContext tiene como máximo un tiempo disponible
+# A RequirementContext has at most one available time
 :RequirementContext rdfs:subClassOf [ rdf:type owl:Restriction ;
                                       owl:onProperty :availableTime ;
                                       owl:maxCardinality "1"^^xsd:nonNegativeInteger
                                     ] .
 
-# Un RequirementContext tiene como máximo un idioma preferido
+# A RequirementContext has at most one preferred language
 :RequirementContext rdfs:subClassOf [ rdf:type owl:Restriction ;
                                       owl:onProperty :preferredLanguage ;
                                       owl:maxCardinality "1"^^xsd:nonNegativeInteger
                                     ] .
 
 #================================================================
-# RESTRICCIONES allValuesFrom (TIPADO ESTRICTO)
+# allValuesFrom CONSTRAINTS (STRICT TYPING)
 #================================================================
 
-# Los valores de withCompanion DEBEN ser instancias de SocialContext
+# withCompanion values MUST be instances of SocialContext
 :ContextSnapshot rdfs:subClassOf [ rdf:type owl:Restriction ;
                                    owl:onProperty :withCompanion ;
                                    owl:allValuesFrom :SocialContext
                                  ] .
 
-# Los valores de feelsMood DEBEN ser instancias de EmotionalContext
+# feelsMood values MUST be instances of EmotionalContext
 :ContextSnapshot rdfs:subClassOf [ rdf:type owl:Restriction ;
                                    owl:onProperty :feelsMood ;
                                    owl:allValuesFrom :EmotionalContext
                                  ] .
 
-# Los valores de hasRequirement DEBEN ser instancias de RequirementContext
+# hasRequirement values MUST be instances of RequirementContext
 :ContextSnapshot rdfs:subClassOf [ rdf:type owl:Restriction ;
                                    owl:onProperty :hasRequirement ;
                                    owl:allValuesFrom :RequirementContext
                                  ] .
 
-# Los valores de hasCurrentContext DEBEN ser instancias de ContextSnapshot
+# hasCurrentContext values MUST be instances of ContextSnapshot
 :User rdfs:subClassOf [ rdf:type owl:Restriction ;
                         owl:onProperty :hasCurrentContext ;
                         owl:allValuesFrom :ContextSnapshot
                       ] .
 
 #################################################################
-#    Instancias de Ejemplo para Testing
+#    Example Instances for Testing
 #################################################################
 
-# Usuario de prueba
+# Test user
 :TestUser1 rdf:type :User ;
     :userID "user-001"^^xsd:string ;
     :userName "Luis Hernández"^^xsd:string ;
-    rdfs:comment "Usuario de prueba para validación"@es .
+    rdfs:comment "Test user for validation"@en .
 
-# Contexto de ejemplo: Usuario solo, relajado, con tiempo limitado
+# Example context: User alone, relaxed, with limited time
 :Context_TestSession1 rdf:type :ContextSnapshot ;
     :snapshotID "ctx-001"^^xsd:string ;
     :requestTimestamp "2026-01-09T20:30:00"^^xsd:dateTime ;
-    :dayOfWeek "Jueves"^^xsd:string ;
+    :dayOfWeek "Thursday"^^xsd:string ;
     :hourOfDay "20"^^xsd:integer ;
-    :userIntent "Buscar algo ligero para relajarme después del trabajo"^^xsd:string ;
-    rdfs:comment "Contexto inferido del mensaje: 'Quiero ver algo ligero para relajarme, tengo una hora'. Temporal: Jueves 8:30 PM."@es .
+    :userIntent "Looking for something light to relax after work"^^xsd:string ;
+    rdfs:comment "Context inferred from the message: 'I want to watch something light to relax, I have an hour'. Temporal: Thursday 8:30 PM."@en .
 
 :Social_Alone rdf:type :SocialContext ;
-    :companionType "solo"^^xsd:string ;
+    :companionType "alone"^^xsd:string ;
     :hasChildren "false"^^xsd:boolean ;
-    rdfs:comment "Usuario viendo solo"@es .
+    rdfs:comment "User watching alone"@en .
 
 :Mood_Relaxed rdf:type :EmotionalContext ;
-    :moodDescription "relajado"^^xsd:string ;
-    :emotionalNeed "desconectar del estrés laboral"^^xsd:string ;
+    :moodDescription "relaxed"^^xsd:string ;
+    :emotionalNeed "disconnect from work stress"^^xsd:string ;
     :moodIntensity "0.7"^^xsd:decimal ;
-    :desiredEnergyLevel "bajo"^^xsd:string ;
-    rdfs:comment "Estado inferido de 'quiero relajarme'. Energía baja: busca película tranquila que no demande mucha atención."@es .
+    :desiredEnergyLevel "low"^^xsd:string ;
+    rdfs:comment "State inferred from 'I want to relax'. Low energy: looking for a calm movie that doesn't demand much attention."@en .
 
 :Req_ShortTime rdf:type :RequirementContext ;
     :availableTime "60"^^xsd:integer ;
-    :contentRestrictions "nada muy intenso"^^xsd:string ;
-    rdfs:comment "Restricciones inferidas de 'tengo una hora' y 'algo ligero'"@es .
+    :contentRestrictions "nothing too intense"^^xsd:string ;
+    rdfs:comment "Constraints inferred from 'I have an hour' and 'something light'"@en .
 
-# Relaciones del contexto de ejemplo
+# Example context relationships
 :TestUser1 :hasCurrentContext :Context_TestSession1 .
 :Context_TestSession1 :isContextOfUser :TestUser1 ;
                       :withCompanion :Social_Alone ;
                       :feelsMood :Mood_Relaxed ;
                       :hasRequirement :Req_ShortTime .
 
-# Contexto de ejemplo 2: Usuario con familia, busca algo apto para niños
+# Example context 2: User with family, looking for something kid-friendly
 :Context_TestSession2 rdf:type :ContextSnapshot ;
     :snapshotID "ctx-002"^^xsd:string ;
     :requestTimestamp "2026-01-09T18:00:00"^^xsd:dateTime ;
-    :dayOfWeek "Sábado"^^xsd:string ;
+    :dayOfWeek "Saturday"^^xsd:string ;
     :hourOfDay "18"^^xsd:integer ;
-    :userIntent "Película familiar para el fin de semana con los niños"^^xsd:string ;
-    rdfs:comment "Contexto inferido de: 'Buscamos algo para ver con los niños este fin de semana'. Temporal: Sábado 6:00 PM."@es .
+    :userIntent "Family movie for the weekend with the kids"^^xsd:string ;
+    rdfs:comment "Context inferred from: 'We're looking for something to watch with the kids this weekend'. Temporal: Saturday 6:00 PM."@en .
 
 :Social_Family rdf:type :SocialContext ;
-    :companionType "familia con niños"^^xsd:string ;
+    :companionType "family with children"^^xsd:string ;
     :hasChildren "true"^^xsd:boolean ;
     :groupSize "4"^^xsd:integer ;
-    rdfs:comment "Familia con niños"@es .
+    rdfs:comment "Family with children"@en .
 
 :Mood_Joyful rdf:type :EmotionalContext ;
-    :moodDescription "alegre, familiar"^^xsd:string ;
-    :emotionalNeed "entretenimiento para todos"^^xsd:string ;
-    :desiredEnergyLevel "medio"^^xsd:string ;
-    rdfs:comment "Tono alegre para ambiente familiar. Energía media: entretenimiento dinámico pero no abrumador."@es .
+    :moodDescription "joyful, family-friendly"^^xsd:string ;
+    :emotionalNeed "entertainment for everyone"^^xsd:string ;
+    :desiredEnergyLevel "medium"^^xsd:string ;
+    rdfs:comment "Joyful tone for a family atmosphere. Medium energy: dynamic entertainment but not overwhelming."@en .
 
 :Req_KidFriendly rdf:type :RequirementContext ;
-    :contentRestrictions "apto para niños, sin violencia, sin terror"^^xsd:string ;
-    :excludedGenre "terror, thriller psicológico"^^xsd:string ;
-    :negativeConstraint "sin escenas intensas, sin lenguaje adulto"^^xsd:string ;
-    rdfs:comment "Restricciones críticas para contexto familiar. Incluye exclusiones explícitas de géneros y contenido inapropiado."@es .
+    :contentRestrictions "suitable for kids, no violence, no horror"^^xsd:string ;
+    :excludedGenre "horror, psychological thriller"^^xsd:string ;
+    :negativeConstraint "no intense scenes, no adult language"^^xsd:string ;
+    rdfs:comment "Critical constraints for family context. Includes explicit exclusions of genres and inappropriate content."@en .
 
 :Context_TestSession2 :withCompanion :Social_Family ;
                       :feelsMood :Mood_Joyful ;
                       :hasRequirement :Req_KidFriendly .
 
 #################################################################
-#    Anotaciones Adicionales
+#    Additional Annotations
 #################################################################
 
 <http://www.semanticweb.org/movierecommendation/ontologies/2025/context-ontology>
     rdfs:comment """
-    Ontología de Contexto Simplificada - Interaction-Driven para GraphRAG
-    
-    FILOSOFÍA DE DISEÑO:
-    - Solo 5 clases esenciales (User, ContextSnapshot, SocialContext, EmotionalContext, RequirementContext)
-    - Los datos se INFIEREN del lenguaje natural, NO se preguntan explícitamente
-    - El LLM actúa como extractor: convierte frases del usuario en tripletas RDF
-    - Navegabilidad bidireccional completa (owl:inverseOf en todas las relaciones)
-    - Tipado XSD estricto para validación de datos
-    - Enriquecimiento temporal neutro (dayOfWeek, hourOfDay) sin sesgos predefinidos
-    - Dimensión social cuantitativa (groupSize) para dinámicas de grupo
-    - Preferencias negativas explícitas (excludedGenre, negativeConstraint)
-    - Separación entre estado emocional y energía deseada (desiredEnergyLevel)
-    
-    EJEMPLOS DE INFERENCIA:
-    Usuario dice: "Quiero ver algo ligero, tengo una hora"
-    → LLM infiere: EmotionalContext(moodDescription="relajado"), RequirementContext(availableTime=60)
-    
-    Usuario dice: "Buscamos algo para ver con los niños"
-    → LLM infiere: SocialContext(companionType="familia", hasChildren=true), 
-                   RequirementContext(contentRestrictions="apto para niños")
-    
-    Usuario dice: "Estoy estresado, necesito desconectar"
-    → LLM infiere: EmotionalContext(moodDescription="estresado", emotionalNeed="escapar del estrés")
-    
-    Usuario dice: "Son las 3 AM, quiero algo épico pero nada de terror"
-    → LLM infiere: ContextSnapshot(dayOfWeek="Martes", hourOfDay=3),
-                   EmotionalContext(desiredEnergyLevel="alto"),
-                   RequirementContext(excludedGenre="terror")
-    
-    Usuario dice: "Somos 6 amigos, queremos algo que a todos les guste"
-    → LLM infiere: SocialContext(companionType="amigos", groupSize=6),
-                   EmotionalContext(emotionalNeed="consenso grupal")
-    
-    INTEGRACIÓN CON GRAPHRAG:
-    - ContextSnapshot es el nodo central de consulta
-    - Se conecta con movie-ontology mediante properties bridge
-    - El grafo contextual + grafo de películas = espacio de búsqueda completo
-    - El LLM usa ambos grafos para razonamiento híbrido
-    
-    Autor: Luis Fernando Hernández Solís
-    Institución: Universidad del Valle - Escuela de Ingeniería de Sistemas y Computación
-    Versión: 3.0 - Interaction-Driven
-    Año: 2026
-    
-    """@es .
+    Simplified Context Ontology - Interaction-Driven for GraphRAG
+
+    DESIGN PHILOSOPHY:
+    - Only 5 essential classes (User, ContextSnapshot, SocialContext, EmotionalContext, RequirementContext)
+    - Data is INFERRED from natural language, NOT asked explicitly
+    - The LLM acts as extractor: converts user phrases into RDF triples
+    - Complete bidirectional navigability (owl:inverseOf on all relations)
+    - Strict XSD typing for data validation
+    - Neutral temporal enrichment (dayOfWeek, hourOfDay) without predefined biases
+    - Quantitative social dimension (groupSize) for group dynamics
+    - Explicit negative preferences (excludedGenre, negativeConstraint)
+    - Separation between emotional state and desired energy (desiredEnergyLevel)
+
+    INFERENCE EXAMPLES:
+    User says: "I want to watch something light, I have an hour"
+    → LLM infers: EmotionalContext(moodDescription="relaxed"), RequirementContext(availableTime=60)
+
+    User says: "We're looking for something to watch with the kids"
+    → LLM infers: SocialContext(companionType="family", hasChildren=true),
+                   RequirementContext(contentRestrictions="suitable for kids")
+
+    User says: "I'm stressed, I need to disconnect"
+    → LLM infers: EmotionalContext(moodDescription="stressed", emotionalNeed="escape stress")
+
+    User says: "It's 3 AM, I want something epic but no horror"
+    → LLM infers: ContextSnapshot(dayOfWeek="Tuesday", hourOfDay=3),
+                   EmotionalContext(desiredEnergyLevel="high"),
+                   RequirementContext(excludedGenre="horror")
+
+    User says: "We're 6 friends, we want something everyone will enjoy"
+    → LLM infers: SocialContext(companionType="friends", groupSize=6),
+                   EmotionalContext(emotionalNeed="group consensus")
+
+    GRAPHRAG INTEGRATION:
+    - ContextSnapshot is the central query node
+    - Connected to movie-ontology via bridge properties
+    - The context graph + movie graph = complete search space
+    - The LLM uses both graphs for hybrid reasoning
+
+    Author: Luis Fernando Hernández Solís
+    Institution: Universidad del Valle - Escuela de Ingeniería de Sistemas y Computación
+    Version: 3.0 - Interaction-Driven
+    Year: 2026
+
+    """@en .

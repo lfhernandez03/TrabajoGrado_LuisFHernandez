@@ -40,6 +40,7 @@ def get_connection_explorer() -> ConnectionExplorer:
 
 def _movie_to_response(movie: Movie) -> RecommendedMovieResponse:
     return RecommendedMovieResponse(
+        uri=movie.uri or None,
         title=movie.title,
         posterUrl=movie.poster_url,
         runtime=movie.runtime,
@@ -63,17 +64,17 @@ def _movie_to_response(movie: Movie) -> RecommendedMovieResponse:
 
 @router.get("/path", response_model=ConnectionPathResponse)
 def find_path(
-    source: str = Query(..., min_length=1, description="Título de la película origen"),
-    target: str = Query(..., min_length=1, description="Título de la película destino"),
+    source: str = Query(..., min_length=1, description="Source movie title"),
+    target: str = Query(..., min_length=1, description="Target movie title"),
     current_user: AuthUser = Depends(get_current_user),
     explorer: ConnectionExplorer = Depends(get_connection_explorer),
 ) -> ConnectionPathResponse:
-    """Encuentra el camino más corto entre dos películas en el grafo de conocimiento.
+    """Find the shortest path between two movies in the knowledge graph.
 
-    Traversa hasta 3 saltos usando relaciones de director compartido, género
-    compartido, y perfil de mood compatible (bridge-ontology).
+    Traverses up to 3 hops using shared director, shared genre,
+    and compatible mood profile (bridge-ontology) relationships.
 
-    Devuelve los hops con el tipo de relación en cada paso.
+    Returns hops with the relationship type at each step.
     """
     path = explorer.find_path(source, target)
     hops = [
@@ -99,23 +100,23 @@ def find_path(
 
 @router.get("/neighborhood", response_model=NetworkGraphResponse)
 def get_neighborhood(
-    title: str = Query(..., min_length=1, description="Título de la película centro"),
-    depth: int = Query(default=2, ge=1, le=3, description="Profundidad de expansión (1–3)"),
+    title: str = Query(..., min_length=1, description="Center movie title"),
+    depth: int = Query(default=2, ge=1, le=3, description="Expansion depth (1–3)"),
     current_user: AuthUser = Depends(get_current_user),
     explorer: ConnectionExplorer = Depends(get_connection_explorer),
 ) -> NetworkGraphResponse:
-    """Devuelve el grafo de vecindad alrededor de una película hasta N saltos.
+    """Return the neighborhood graph around a movie up to N hops.
 
-    Los nodos representan películas conectadas; las aristas indican el tipo de
-    relación (director compartido o género compartido).
+    Nodes represent connected movies; edges indicate the relationship type
+    (shared director or shared genre).
 
-    El nodo central (entrada) se excluye del resultado.
+    The center node (input) is excluded from the result.
 
-    Limitado a 60 nodos para mantener respuestas manejables.
+    Limited to 60 nodes to keep responses manageable.
     """
     graph = explorer.get_neighborhood(title, depth=depth)
 
-    # Excluir el nodo central (primer nodo) — solo devolver el vecindario real
+    # Exclude the center node (first node) — return only the real neighborhood
     neighborhood_nodes = graph.nodes[1:] if graph.nodes else []
 
     nodes = [
@@ -124,9 +125,11 @@ def get_neighborhood(
             title=n.title,
             genre=n.genre,
             rating=n.rating,
-            poster_url=n.poster_url,
+            posterUrl=n.poster_url,
             description=n.description,
             runtime=getattr(n, "runtime", None),
+            director=getattr(n, "director", None),
+            year=getattr(n, "year", None),
         )
         for n in neighborhood_nodes
     ]
@@ -158,11 +161,10 @@ def get_centrality(
     current_user: AuthUser = Depends(get_current_user),
     explorer: ConnectionExplorer = Depends(get_connection_explorer),
 ) -> CentralityResponse:
-    """Devuelve las películas más centrales del grafo, ordenadas por rating y compatibilidad.
+    """Return the most central movies in the graph, ordered by rating and compatibility.
 
-    Cuando se especifica ``genre``, el ranking se restringe a ese género.
-    Útil para mostrar películas de referencia en cold start y para exploración
-    temática del catálogo.
+    When ``genre`` is specified, the ranking is restricted to that genre.
+    Useful for showing reference movies in cold start and for thematic catalog exploration.
     """
     rows = explorer.get_centrality_ranking(genre=genre, limit=limit)
 

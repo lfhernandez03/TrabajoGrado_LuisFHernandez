@@ -24,6 +24,9 @@ _MOVIE_NS = "http://www.semanticweb.org/movierecommendation/ontologies/2025/movi
 # {movie_uri: {"betweenness": float, "clustering": float, "degree": float}}
 _NETWORK_CACHE: dict[str, dict[str, float]] = {}
 
+# {movie_uri: cluster_id_string_or_None}
+_CLUSTER_CACHE: dict[str, str | None] = {}
+
 
 def _bulk_fetch_network_scores(uris: list[str]) -> None:
     """Fetch Phase 6 network metrics for all uncached URIs in one SPARQL query.
@@ -67,6 +70,62 @@ def _bulk_fetch_network_scores(uris: list[str]) -> None:
         logger.debug("Network scores fetch skipped: %s", exc)
         for uri in missing:
             _NETWORK_CACHE[uri] = {}
+
+
+def _bulk_fetch_cluster_ids(uris: list[str]) -> None:
+    """Fetch Louvain cluster IDs for uncached URIs in one SPARQL query.
+
+    Results stored in ``_CLUSTER_CACHE``. Same pattern as _bulk_fetch_network_scores.
+    """
+    missing = [u for u in uris if u not in _CLUSTER_CACHE]
+    if not missing:
+        return
+    try:
+        from app.core.fuseki_client import execute_select_query
+        values_clause = " ".join(f"<{u}>" for u in missing)
+        rows = execute_select_query(
+            f"PREFIX movie: <{_MOVIE_NS}>\n"
+            "SELECT ?movie ?clusterId WHERE {\n"
+            f"  VALUES ?movie {{ {values_clause} }}\n"
+            "  OPTIONAL { ?movie movie:belongsToCluster ?clusterId }\n"
+            "}"
+        )
+        found: dict[str, str | None] = {u: None for u in missing}
+        for row in rows:
+            uri = row.get("movie", "")
+            cid = str(row.get("clusterId", "")).strip()
+            if uri:
+                found[uri] = cid if cid else None
+        _CLUSTER_CACHE.update(found)
+    except Exception as exc:
+        logger.debug("Cluster ID fetch skipped: %s", exc)
+        for u in missing:
+            _CLUSTER_CACHE[u] = None
+
+
+def _graph_affinity(
+    movie: Movie,
+    dominant_cluster_ids: set[str],
+    adjacent_cluster_ids: set[str],
+) -> float:
+    """Topological affinity of a movie to the user's graph profile.
+
+    1.0 — movie is in one of the user's dominant clusters.
+    0.5 — movie is in an unexplored adjacent cluster (serendipity zone).
+    0.0 — movie is outside the user's known graph neighbourhood.
+
+    Returns 0.0 when both sets are empty (feature disabled / no cluster data).
+    """
+    if not dominant_cluster_ids and not adjacent_cluster_ids:
+        return 0.0
+    cid = movie.cluster_id or _CLUSTER_CACHE.get(movie.uri)
+    if cid is None:
+        return 0.0
+    if cid in dominant_cluster_ids:
+        return 1.0
+    if cid in adjacent_cluster_ids:
+        return 0.5
+    return 0.0
 
 
 def _compute_serendipity(movie: Movie, network: dict[str, float]) -> float:
@@ -172,21 +231,22 @@ def _compute_score(
     ctx: UserContext,
     profile: UserProfile,
     network: dict[str, float] | None = None,
+    dominant_cluster_ids: set[str] | None = None,
+    adjacent_cluster_ids: set[str] | None = None,
 ) -> float:
     """Composite relevance score for a single movie candidate.
 
-    With semantic + network data (Phases 5 + 6):
+    With graph topology (Graph RAG, Phase 6 clusters):
+        score = 0.35·rating + 0.25·semantic + 0.20·graph_affinity + 0.10·freshness + 0.10·novelty
+
+    With semantic + network data but no cluster profile:
         score = 0.35·rating + 0.25·semantic + 0.20·serendipity + 0.10·freshness + 0.10·novelty
 
-    With semantic data only (bridge ontology, Phase 5):
+    With semantic data only (bridge ontology):
         score = 0.30·rating + 0.25·semantic + 0.25·genre_match + 0.10·freshness + 0.10·novelty
 
     Without semantic data (fallback strategies):
         score = 0.55·rating + 0.25·genre_match + 0.10·freshness + 0.10·novelty
-
-    Genre match is 1.0 when the movie's genre aligns with the user's explicit request.
-    Serendipity replaces genre_match when network metrics are available — the bridge
-    ontology's compatibility_score already encodes semantic genre compatibility.
     """
     rating = _norm_rating(movie.rating)
     fresh = _freshness(movie.release_year)
@@ -198,13 +258,20 @@ def _compute_score(
     if not semantic and movie.semantic_scores:
         semantic = float(movie.semantic_scores.get("overallCompatibility", 0.0))
 
-    if semantic > 0.0 and network:
-        serendipity = _compute_serendipity(movie, network)
-        movie.serendipity_score = round(serendipity, 4)
-        if serendipity > 0.0:
-            return 0.35 * rating + 0.25 * semantic + 0.20 * serendipity + 0.10 * fresh + 0.10 * novel
-
     if semantic > 0.0:
+        affinity = _graph_affinity(
+            movie,
+            dominant_cluster_ids or set(),
+            adjacent_cluster_ids or set(),
+        )
+        if affinity > 0.0:
+            # Graph RAG formula: topology replaces serendipity when clusters are known
+            return 0.35 * rating + 0.25 * semantic + 0.20 * affinity + 0.10 * fresh + 0.10 * novel
+        if network:
+            serendipity = _compute_serendipity(movie, network)
+            movie.serendipity_score = round(serendipity, 4)
+            if serendipity > 0.0:
+                return 0.35 * rating + 0.25 * semantic + 0.20 * serendipity + 0.10 * fresh + 0.10 * novel
         return 0.30 * rating + 0.25 * semantic + 0.25 * genre + 0.10 * fresh + 0.10 * novel
     return 0.55 * rating + 0.25 * genre + 0.10 * fresh + 0.10 * novel
 
@@ -225,11 +292,14 @@ def _similarity(a: Movie, b: Movie) -> float:
     return max(0.0, 0.3 - score_diff * 0.3)
 
 
-def _mmr_select(scored: list[tuple[Movie, float]], n: int) -> list[Movie]:
+def _mmr_select(scored: list[tuple[Movie, float]], n: int, lam: float = _MMR_LAMBDA) -> list[Movie]:
     """Maximum Marginal Relevance selection.
 
     Iteratively picks the candidate that maximises:
         MMR = λ·relevance − (1−λ)·max_similarity_to_selected
+
+    ``lam`` overrides the module-level _MMR_LAMBDA (useful for cold start,
+    where diversity should outweigh relevance since no preferences are known).
     """
     if len(scored) <= n:
         return [m for m, _ in scored]
@@ -243,7 +313,7 @@ def _mmr_select(scored: list[tuple[Movie, float]], n: int) -> list[Movie]:
 
         for i, (cand, cand_score) in enumerate(remaining):
             max_sim = max(_similarity(cand, sel) for sel, _ in selected)
-            mmr = _MMR_LAMBDA * cand_score - (1.0 - _MMR_LAMBDA) * max_sim
+            mmr = lam * cand_score - (1.0 - lam) * max_sim
             if mmr > best_mmr:
                 best_mmr = mmr
                 best_idx = i
@@ -262,6 +332,9 @@ def score_and_select(
     ctx: UserContext,
     profile: UserProfile,
     n: int = 5,
+    mmr_lambda: float | None = None,
+    dominant_cluster_ids: list[str] | None = None,
+    adjacent_cluster_ids: list[str] | None = None,
 ) -> list[Movie]:
     """Convert raw SPARQL rows → Movie objects, score, and select top-n with MMR.
 
@@ -298,11 +371,25 @@ def score_and_select(
     all_uris = [m.uri for m in parsed if m.uri]
     _bulk_fetch_network_scores(all_uris)
 
+    # Bulk-fetch cluster IDs for movies without one (non-community strategies).
+    if dominant_cluster_ids or adjacent_cluster_ids:
+        no_cluster = [m.uri for m in parsed if m.uri and m.cluster_id is None]
+        if no_cluster:
+            _bulk_fetch_cluster_ids(no_cluster)
+
+    dom_set = set(dominant_cluster_ids or [])
+    adj_set = set(adjacent_cluster_ids or [])
+
     uri_to_entry: dict[str, tuple[Movie, float]] = {}
     for movie in parsed:
         try:
             network = _NETWORK_CACHE.get(movie.uri) if movie.uri else None
-            score = _compute_score(movie, ctx, profile, network=network)
+            score = _compute_score(
+                movie, ctx, profile,
+                network=network,
+                dominant_cluster_ids=dom_set,
+                adjacent_cluster_ids=adj_set,
+            )
             if movie.uri not in uri_to_entry:
                 uri_to_entry[movie.uri] = (movie, score)
             else:
@@ -319,4 +406,5 @@ def score_and_select(
         return []
 
     scored.sort(key=lambda x: x[1], reverse=True)
-    return _mmr_select(scored, n)
+    lam = mmr_lambda if mmr_lambda is not None else _MMR_LAMBDA
+    return _mmr_select(scored, n, lam=lam)

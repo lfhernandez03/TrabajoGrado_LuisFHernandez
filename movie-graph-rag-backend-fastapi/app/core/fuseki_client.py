@@ -41,6 +41,25 @@ def _build_auth_headers() -> dict[str, str]:
     return {"Authorization": f"Basic {token}"}
 
 
+def ping_fuseki(timeout_seconds: int = 3) -> bool:
+    """Return True if the Fuseki server is reachable, False otherwise.
+
+    Hits the Fuseki admin ping endpoint (``/$/ping``) which exists regardless
+    of whether any dataset is loaded.  This is the same check the Docker
+    healthcheck uses.  Intentionally short timeout — fast preflight only.
+    """
+    base = settings.fuseki_url.rstrip("/")
+    ping_url = f"{base}/$/ping"
+    headers = {"Accept": "text/plain"}
+    headers.update(_build_auth_headers())
+    req = request.Request(ping_url, headers=headers, method="GET")
+    try:
+        with request.urlopen(req, timeout=timeout_seconds):
+            return True
+    except Exception:
+        return False
+
+
 def execute_select_query(sparql_query: str) -> list[dict[str, str]]:
     endpoint = _build_query_endpoint()
     payload = parse.urlencode({"query": sparql_query}).encode("utf-8")

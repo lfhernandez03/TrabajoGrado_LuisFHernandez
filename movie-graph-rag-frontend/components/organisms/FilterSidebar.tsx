@@ -7,18 +7,17 @@ import { Input } from '@/components/ui/input'
 import { Tag } from '@/components/atoms/Tag'
 import { cn } from '@/lib/utils'
 
-// Genre list from FRONTEND_CONTEXT.md bridge ontology
 const GENRES = [
-  'Acción', 'Aventura', 'Animación', 'Comedia', 'Crimen',
-  'Documental', 'Drama', 'Fantasía', 'Horror', 'Misterio',
-  'Romance', 'Ciencia ficción', 'Thriller', 'Western',
+  'Action', 'Adventure', 'Animation', 'Comedy', 'Crime',
+  'Documentary', 'Drama', 'Fantasy', 'Horror', 'Mystery',
+  'Romance', 'Sci-Fi', 'Thriller', 'Western',
 ]
 
 const SORT_OPTIONS = [
-  { value: 'rating', label: 'Mejor valoradas' },
-  { value: 'year_desc', label: 'Más recientes' },
-  { value: 'year_asc', label: 'Más antiguas' },
-  { value: 'title', label: 'Alfabético' },
+  { value: 'rating', label: 'Highest rated' },
+  { value: 'year_desc', label: 'Newest first' },
+  { value: 'year_asc', label: 'Oldest first' },
+  { value: 'title', label: 'Alphabetical' },
 ]
 
 export interface FilterValues {
@@ -86,7 +85,7 @@ export function FilterSidebar({
           className="flex items-center gap-2 text-sm text-muted hover:text-text transition-colors"
         >
           <SlidersHorizontal className="w-4 h-4" />
-          Filtros
+          Filters
           {activeCount > 0 && (
             <span className="px-1.5 py-0.5 rounded-full bg-teal/20 text-teal text-xs font-semibold">
               {activeCount}
@@ -109,7 +108,7 @@ export function FilterSidebar({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <SlidersHorizontal className="w-4 h-4 text-muted" />
-            <span className="text-sm font-semibold text-text">Filtros</span>
+            <span className="text-sm font-semibold text-text">Filters</span>
             {activeCount > 0 && (
               <span className="px-1.5 py-0.5 rounded-full bg-teal/20 text-teal text-[11px] font-semibold">
                 {activeCount}
@@ -120,14 +119,14 @@ export function FilterSidebar({
             type="button"
             onClick={onReset}
             className="text-muted hover:text-text transition-colors"
-            aria-label="Limpiar filtros"
+            aria-label="Clear filters"
           >
             <RotateCcw className="w-3.5 h-3.5" />
           </button>
         </div>
 
         {/* ── Genre ── */}
-        <FilterSection label="Género">
+        <FilterSection label="Genre">
           <div className="flex flex-wrap gap-1.5">
             {GENRES.map((genre) => (
               <Tag
@@ -143,7 +142,7 @@ export function FilterSidebar({
         </FilterSection>
 
         {/* ── Sort ── */}
-        <FilterSection label="Ordenar por">
+        <FilterSection label="Sort by">
           <div className="flex flex-col gap-1">
             {SORT_OPTIONS.map(({ value, label }) => (
               <button
@@ -171,7 +170,7 @@ export function FilterSidebar({
               variant="search"
               value={filters.director}
               onChange={(e) => update('director', e.target.value)}
-              placeholder="Ej. Nolan, Villeneuve…"
+              placeholder="E.g. Nolan, Villeneuve…"
               className="text-sm pr-7"
             />
             {filters.director && (
@@ -179,7 +178,7 @@ export function FilterSidebar({
                 type="button"
                 onClick={() => update('director', '')}
                 className="absolute right-2 top-1/2 -translate-y-1/2 text-muted hover:text-text"
-                aria-label="Limpiar director"
+                aria-label="Clear director"
               >
                 <X className="w-3.5 h-3.5" />
               </button>
@@ -188,14 +187,14 @@ export function FilterSidebar({
         </FilterSection>
 
         {/* ── Year ── */}
-        <FilterSection label="Año">
+        <FilterSection label="Year">
           <div className="flex gap-2">
             <Input
               variant="default"
               type="number"
               value={filters.yearFrom}
               onChange={(e) => update('yearFrom', e.target.value)}
-              placeholder="Desde"
+              placeholder="From"
               min={1900}
               max={2030}
               className="text-sm"
@@ -205,7 +204,7 @@ export function FilterSidebar({
               type="number"
               value={filters.yearTo}
               onChange={(e) => update('yearTo', e.target.value)}
-              placeholder="Hasta"
+              placeholder="To"
               min={1900}
               max={2030}
               className="text-sm"
@@ -214,14 +213,14 @@ export function FilterSidebar({
         </FilterSection>
 
         {/* ── Runtime ── */}
-        <FilterSection label="Duración máxima">
+        <FilterSection label="Max runtime">
           <div className="flex items-center gap-2">
             <Input
               variant="default"
               type="number"
               value={filters.runtimeMax}
               onChange={(e) => update('runtimeMax', e.target.value)}
-              placeholder="minutos"
+              placeholder="minutes"
               min={30}
               max={300}
               className="text-sm"
@@ -232,7 +231,7 @@ export function FilterSidebar({
 
         {/* ── Apply ── */}
         <Button variant="primary" onClick={onApply} className="w-full">
-          Aplicar filtros
+          Apply filters
         </Button>
       </aside>
     </>

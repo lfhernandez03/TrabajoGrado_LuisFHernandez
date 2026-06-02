@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import datetime
 from time import perf_counter
 
@@ -22,6 +22,8 @@ from app.domain.entities.recommendation_models import (
     UserContext,
 )
 from app.domain.ports.recommendation_llm_client import RecommendationLlmClientPort
+from app.domain.ports.user_favorites_repository import UserFavoritesRepositoryPort
+from app.domain.ports.query_history_repository import QueryHistoryRepositoryPort
 
 logger = logging.getLogger(__name__)
 
@@ -41,6 +43,7 @@ class ChatResult:
     strategy_used: str
     context: UserContext
     execution_ms: int
+    sparql_query: str = ""
     metrics: ListMetrics | None = None
     debug: dict = field(default_factory=dict)
 
@@ -61,20 +64,20 @@ def _unique_movie_count(rows: list[dict]) -> int:
 def _run_strategy(
     attempts: list[tuple[str, str]],
     min_results: int = _MIN_RESULTS,
-) -> tuple[list[dict], str]:
+) -> tuple[list[dict], str, str]:
     """Execute strategies in order until min_results unique movies are found.
 
     Counts unique ?movie URIs rather than raw rows so that a strategy with
     30 rows for a single movie does not incorrectly signal success.
 
-    Returns ``(rows, strategy_name)``.  Returns ``([], "empty")`` if every
+    Returns ``(rows, strategy_name, sparql_query)``.  Returns ``([], "empty", "")`` if every
     attempt fails or returns fewer than min_results unique movies.
     """
     for name, sparql in attempts:
         try:
             rows = execute_select_query(sparql)
             if _unique_movie_count(rows) >= min_results:
-                return rows, name
+                return rows, name, sparql
         except Exception as exc:
             logger.warning("strategy '%s' failed: %s", name, exc)
     # Last resort: return whatever the final attempt yielded (even if < min)
@@ -82,14 +85,14 @@ def _run_strategy(
         try:
             rows = execute_select_query(sparql)
             if rows:
-                return rows, name
+                return rows, name, sparql
         except Exception:
             pass
-    return [], "empty"
+    return [], "empty", ""
 
 
 def _query_type(ctx: UserContext, is_cold_start: bool) -> str:
-    """Select the prompt type for Gemini's explanation generation."""
+    """Select the prompt type for the explanation generation."""
     if is_cold_start:
         return "cold_start"
     if ctx.mood:
@@ -104,23 +107,25 @@ def _query_type(ctx: UserContext, is_cold_start: bool) -> str:
 # ---------------------------------------------------------------------------
 
 class ChatUseCase:
-    """Conversational recommendation pipeline.
+    """Conversational recommendation pipeline with Graph RAG integration.
 
     Each call processes the full message history sent by the frontend,
-    extracts context from the latest user turn, merges it with the accumulated
-    session context, and returns a fresh set of recommendations.
-
-    This is the first use case to use the Phase 2 core components
-    (query_strategy, scorer, profile_service) end-to-end.
+    fetches the user's profile and topological graph data BEFORE NLU,
+    runs a profile-aware NLU extraction, then builds SPARQL strategies that
+    include community-based graph traversal.
     """
 
     def __init__(
         self,
         llm_client: RecommendationLlmClientPort,
         profile_service: ProfileService,
+        favorites_repo: UserFavoritesRepositoryPort,
+        query_history_repo: QueryHistoryRepositoryPort,
     ) -> None:
         self._llm = llm_client
         self._profile_svc = profile_service
+        self._favorites_repo = favorites_repo
+        self._query_history_repo = query_history_repo
 
     def execute(
         self,
@@ -137,24 +142,64 @@ class ChatUseCase:
             return ChatResult(
                 session_id=session_id,
                 movies=[],
-                explanation="No se encontró ningún mensaje del usuario en la conversación.",
+                explanation="No user message found in the conversation.",
                 strategy_used="empty",
                 context=UserContext(session_id=session_id),
                 execution_ms=0,
             )
         last_query = user_messages[-1]["content"]
 
-        # ── 2. NLU: extract context from last user message ──────────────────
+        # ── 2. Fetch favorites (needed for topo profile + NLU enrichment) ───
+        favorites_raw = self._get_favorites_raw(user_id, limit=10)
+        favorites_titles = [f.title for f in favorites_raw if f.title]
+
+        # ── 3. Load basic profile (cached, fast) and enrich genre_weights ─────
+        profile = self._profile_svc.get(user_id)
+        genre_weights = self._profile_svc.build_genre_weights(favorites_raw)
+        if genre_weights:
+            profile = replace(profile, genre_weights=genre_weights)
+
+        # ── 4. Get topological profile (requires favorites_raw) ─────────────
+        dominant_cluster_ids: list[str] = []
+        adjacent_cluster_ids: list[str] = []
+        topological_type = "balanced"
+        dominant_cluster_labels: list[str] = []
+        topo_profile = None
+
         try:
-            qctx = self._llm.extract_query_context(last_query)
-            new_ctx = query_context_to_user_context(
-                qctx,
-                raw_query=last_query,
-                session_id=session_id,
-                now=now,
-            )
+            topo_profile = self._profile_svc.get_topological_profile(user_id, favorites_raw)
+            dominant_cluster_ids = [c.clusterId for c in topo_profile.dominantClusters]
+            adjacent_cluster_ids = [c.clusterId for c in topo_profile.unexploredAdjacent]
+            topological_type = topo_profile.userType
+            dominant_cluster_labels = [c.label for c in topo_profile.dominantClusters[:3]]
         except Exception as exc:
-            logger.warning("NLU extraction failed: %s — using bare context", exc)
+            logger.warning("get_topological_profile failed for %s: %s", user_id, exc)
+
+        # ── 5. Load session (before NLU to pass accumulated_context) ────────
+        session = session_store.get_or_create(session_id, user_id)
+        accumulated = session.accumulated_context
+
+        # ── 6. Profile-aware NLU ─────────────────────────────────────────────
+        # All messages except the last user turn — used as conversation history
+        # fallback when the in-memory session has expired (e.g. server restart).
+        prior_messages = messages[:-1] if len(messages) > 1 else []
+
+        try:
+            recent_queries = self._get_recent_queries(user_id, limit=5)
+            new_ctx = self._llm.extract_user_context_with_profile(
+                query=last_query,
+                profile=profile,
+                favorites_sample=favorites_titles,
+                recent_queries=recent_queries,
+                topological_type=topological_type,
+                dominant_cluster_labels=dominant_cluster_labels,
+                accumulated_context=accumulated,
+                now=now,
+                conversation_history=prior_messages,
+            )
+            new_ctx = replace(new_ctx, session_id=session_id)
+        except Exception as exc:
+            logger.warning("Profile-aware NLU failed: %s — bare context fallback", exc)
             new_ctx = UserContext(
                 session_id=session_id,
                 time_of_day=get_time_of_day(now),
@@ -162,25 +207,66 @@ class ChatUseCase:
                 confidence=0.3,
             )
 
-        # ── 3. Load session and merge contexts ──────────────────────────────
-        session = session_store.get_or_create(session_id, user_id)
-        accumulated = session.accumulated_context
+        # ── 6b. Short-circuit if message is off-topic ────────────────────────
+        if new_ctx.off_topic:
+            try:
+                greeting = self._llm.generate_greeting_response(
+                    query=last_query,
+                    is_cold_start=profile.is_cold_start,
+                )
+            except Exception:
+                greeting = (
+                    "Hello! I'm Moviq. Tell me what kind of movie you're looking for "
+                    "and I'll help you find the perfect one. For example: "
+                    "'something funny for tonight' or 'intense action movie'."
+                )
+            return ChatResult(
+                session_id=session_id,
+                movies=[],
+                explanation=greeting,
+                strategy_used="off_topic",
+                context=new_ctx,
+                execution_ms=int((perf_counter() - start) * 1000),
+                debug={"off_topic": True, "original_query": last_query},
+            )
+
+        # ── 7. Merge session context ─────────────────────────────────────────
         merged_ctx = merge_contexts(accumulated, new_ctx)
 
-        # ── 4. Load user profile ────────────────────────────────────────────
-        profile = self._profile_svc.get(user_id)
+        # ── 8. Build SPARQL strategy with cluster IDs ────────────────────────
+        # Exclude: (a) movies already shown this session, (b) user's favorites —
+        # so recommendations are always fresh and never repeat what the user saved.
+        seen = {t.strip().lower() for t in session.recommended_titles if t.strip()}
+        fav_excl = {t.strip().lower() for t in favorites_titles if t.strip()}
+        existing_excl = {e.strip().lower() for e in (merged_ctx.exclusions or []) if e.strip()}
+        all_excl = existing_excl | seen | fav_excl
+        query_ctx = replace(merged_ctx, exclusions=list(all_excl)) if all_excl else merged_ctx
 
-        # ── 5. Build SPARQL strategy and run ───────────────────────────────
-        attempts = build_strategy(merged_ctx, profile)
-        candidates, strategy_used = _run_strategy(attempts)
+        attempts = build_strategy(
+            query_ctx,
+            profile,
+            dominant_cluster_ids=dominant_cluster_ids or None,
+            adjacent_cluster_ids=adjacent_cluster_ids or None,
+        )
+        candidates, strategy_used, sparql_query = _run_strategy(attempts)
 
-        # ── 6. Score and select with MMR ────────────────────────────────────
-        movies = score_and_select(candidates, merged_ctx, profile, n=5)
-        metrics = compute_metrics(movies, profile)
+        # ── 9. Score and select with graph_affinity ──────────────────────────
+        movies = score_and_select(
+            candidates,
+            merged_ctx,
+            profile,
+            n=5,
+            dominant_cluster_ids=dominant_cluster_ids or None,
+            adjacent_cluster_ids=adjacent_cluster_ids or None,
+        )
+        from app.core.connection_explorer import ConnectionExplorer
+        metrics = compute_metrics(movies, profile, explorer=ConnectionExplorer(), candidates=candidates)
 
-        # ── 7. Generate explanation ─────────────────────────────────────────
+        # ── 10. Generate explanation with enriched context ───────────────────
         query_type = _query_type(merged_ctx, profile.is_cold_start)
-        context_summary = _build_context_summary(merged_ctx)
+        context_summary = _build_context_summary_with_graph(
+            merged_ctx, topo_profile, favorites_titles[:3], profile
+        )
         movies_payload = [m.to_response_dict() for m in movies]
 
         try:
@@ -188,26 +274,28 @@ class ChatUseCase:
                 query=last_query,
                 context_summary=context_summary,
                 movies_with_scores=movies_payload,
-                semantic_hint=query_type,
+                semantic_hint=strategy_used,
                 query_type=query_type,
             )
         except Exception as exc:
             logger.warning("Explanation generation failed: %s", exc)
             explanation = (
-                f"Encontré {len(movies)} película(s) basándome en tu consulta."
+                f"Found {len(movies)} movie(s) based on your query."
                 if movies
-                else "No encontré películas que coincidan con tu consulta actual. Intenta ser más específico."
+                else "No movies found matching your query. Try being more specific."
             )
 
-        # ── 8. Update session ───────────────────────────────────────────────
+        # ── 11. Update session ───────────────────────────────────────────────
         session.accumulated_context = merged_ctx
         session.add_turn(ConversationTurn(role="user", content=last_query, context=merged_ctx))
         if movies:
             assistant_msg = explanation[:200] + "..." if len(explanation) > 200 else explanation
             session.add_turn(ConversationTurn(role="assistant", content=assistant_msg))
+            new_titles = [m.title for m in movies if m.title]
+            session.recommended_titles.extend(new_titles)
         session_store.update(session)
 
-        # ── 9. Archive context to Fuseki ────────────────────────────────────
+        # ── 12. Archive context to Fuseki ────────────────────────────────────
         self._profile_svc.archive_context(user_id, merged_ctx)
 
         return ChatResult(
@@ -215,6 +303,7 @@ class ChatUseCase:
             movies=movies,
             explanation=explanation,
             strategy_used=strategy_used,
+            sparql_query=sparql_query,
             context=merged_ctx,
             metrics=metrics,
             execution_ms=int((perf_counter() - start) * 1000),
@@ -223,14 +312,41 @@ class ChatUseCase:
                 "candidates_found": len(candidates),
                 "query_type": query_type,
                 "is_cold_start": profile.is_cold_start,
+                "graph_rag": {
+                    "dominant_cluster_ids": dominant_cluster_ids,
+                    "adjacent_cluster_ids": adjacent_cluster_ids,
+                    "topological_type": topological_type,
+                    "topo_profile_available": topo_profile is not None,
+                },
                 "metrics": {
                     "ild": metrics.ild,
                     "semantic_precision": metrics.semantic_precision,
                     "cold_start_threshold": metrics.cold_start_threshold,
                     "graph_diversity_score": metrics.graph_diversity_score,
+                    "novelty": metrics.novelty,
+                    "onto_recall": metrics.onto_recall,
                 },
             },
         )
+
+    # ── Private helpers ──────────────────────────────────────────────────────
+
+    def _get_favorites_raw(self, user_id: str, limit: int = 10) -> list:
+        """Return the user's most recent FavoriteMovie objects. Never raises."""
+        try:
+            return self._favorites_repo.get_favorites(user_id)[:limit]
+        except Exception as exc:
+            logger.warning("_get_favorites_raw failed for %s: %s", user_id, exc)
+            return []
+
+    def _get_recent_queries(self, user_id: str, limit: int = 5) -> list[str]:
+        """Return the raw query strings from recent history. Never raises."""
+        try:
+            entries = self._query_history_repo.find_by_user(user_id, limit=limit)
+            return [e.query for e in entries if e.query]
+        except Exception as exc:
+            logger.warning("_get_recent_queries failed for %s: %s", user_id, exc)
+            return []
 
 
 # ---------------------------------------------------------------------------
@@ -240,13 +356,37 @@ class ChatUseCase:
 def _build_context_summary(ctx: UserContext) -> str:
     parts: list[str] = []
     if ctx.mood:
-        parts.append(f"Estado de ánimo: {ctx.mood}")
+        parts.append(f"Mood: {ctx.mood}")
     if ctx.companion:
-        parts.append(f"Compañía: {ctx.companion}")
+        parts.append(f"Companion: {ctx.companion}")
     if ctx.genres:
-        parts.append(f"Géneros: {', '.join(ctx.genres)}")
+        parts.append(f"Genres: {', '.join(ctx.genres)}")
     if ctx.runtime_max:
-        parts.append(f"Duración máxima: {ctx.runtime_max} min")
+        parts.append(f"Max runtime: {ctx.runtime_max} min")
     if ctx.exclusions:
-        parts.append(f"Excluir: {', '.join(ctx.exclusions)}")
-    return "; ".join(parts) if parts else "consulta general"
+        parts.append(f"Exclude: {', '.join(ctx.exclusions)}")
+    return "; ".join(parts) if parts else "general query"
+
+
+def _build_context_summary_with_graph(
+    ctx: UserContext,
+    topo_profile,           # TopologicalProfileResponse | None
+    favorites_sample: list[str],
+    profile=None,
+) -> str:
+    """Extended context summary including graph topology for the explanation LLM."""
+    base = _build_context_summary(ctx)
+    extras: list[str] = []
+    if favorites_sample:
+        extras.append(f"Recent favorites: {', '.join(favorites_sample)}")
+    if topo_profile:
+        if topo_profile.dominantClusters:
+            top = topo_profile.dominantClusters[0]
+            extras.append(f"Main cluster: {top.label} ({top.moviesSeen} movies)")
+        extras.append(f"Profile: {topo_profile.userType}")
+    if profile and getattr(profile, "genre_weights", None) and not getattr(profile, "is_cold_start", True):
+        top_genres = sorted(profile.genre_weights.items(), key=lambda x: x[1], reverse=True)[:3]
+        if top_genres:
+            genre_info = ", ".join(f"{g} ({int(w * 100)}%)" for g, w in top_genres)
+            extras.append(f"Preferred genres: {genre_info}")
+    return "; ".join([base] + extras) if extras else base

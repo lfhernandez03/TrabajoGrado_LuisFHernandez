@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Protocol
 from app.domain.entities.query_context import QueryContext
 
 if TYPE_CHECKING:
-    from app.domain.entities.recommendation_models import UserContext
+    from app.domain.entities.recommendation_models import UserContext, UserProfile
 
 
 class RecommendationLlmClientPort(Protocol):
@@ -28,6 +28,30 @@ class RecommendationLlmClientPort(Protocol):
         """
         ...
 
+    def extract_user_context_with_profile(
+        self,
+        query: str,
+        profile: "UserProfile",
+        favorites_sample: list[str],
+        recent_queries: list[str],
+        topological_type: str,
+        dominant_cluster_labels: list[str],
+        accumulated_context: "UserContext | None",
+        now: datetime | None = None,
+        conversation_history: list[dict] | None = None,
+    ) -> "UserContext":
+        """Profile-aware NLU: infer intent from query enriched with user history.
+
+        ``conversation_history`` is the full message list from the client
+        (excluding the current user message). Used as a fallback when
+        ``accumulated_context`` is None (e.g. after a server restart).
+
+        Sets off_topic=True when the message is clearly not a movie query.
+        Never raises — falls back to keyword extraction on any LLM failure.
+        time_of_day is always injected from server clock, never from the LLM.
+        """
+        ...
+
     def generate_recommendation_explanation(
         self,
         query: str,
@@ -36,4 +60,17 @@ class RecommendationLlmClientPort(Protocol):
         semantic_hint: str = "",
         query_type: str = "general",
     ) -> str:
+        ...
+
+    def generate_greeting_response(
+        self,
+        query: str,
+        user_name: str | None = None,
+        is_cold_start: bool = True,
+    ) -> str:
+        """Generate a friendly invitation response when the message is off-topic.
+
+        Returns a short, warm reply in Spanish inviting the user to ask for a movie.
+        Never raises — returns a hardcoded fallback on any LLM failure.
+        """
         ...

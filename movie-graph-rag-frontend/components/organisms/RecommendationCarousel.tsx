@@ -1,8 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import Link from 'next/link'
-import { ChevronLeft, ChevronRight, ArrowRight } from 'lucide-react'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { MovieCard, type MovieCardMovie } from './MovieCard'
 import { SkeletonMovieCard } from '@/components/atoms/Loader'
 import { cn } from '@/lib/utils'
@@ -12,7 +11,6 @@ export interface RecommendationCarouselProps {
   subtitle?: string
   movies: MovieCardMovie[]
   isLoading?: boolean
-  viewAllHref?: string
   isFavorite?: (uri: string) => boolean
   onToggleFavorite?: (movie: MovieCardMovie) => void
   onViewDetails?: (movie: MovieCardMovie) => void
@@ -28,7 +26,6 @@ export function RecommendationCarousel({
   subtitle,
   movies,
   isLoading = false,
-  viewAllHref,
   isFavorite,
   onToggleFavorite,
   onViewDetails,
@@ -80,15 +77,6 @@ export function RecommendationCarousel({
             <ChevronRight className="w-4 h-4" />
           </button>
 
-          {viewAllHref && (
-            <Link
-              href={viewAllHref}
-              className="hidden sm:flex items-center gap-1 ml-2 text-xs text-muted hover:text-accent transition-colors"
-            >
-              Ver todo
-              <ArrowRight className="w-3 h-3" />
-            </Link>
-          )}
         </div>
       </div>
 
@@ -98,7 +86,7 @@ export function RecommendationCarousel({
           ? Array.from({ length: PAGE_SIZE }).map((_, i) => <SkeletonMovieCard key={i} />)
           : visible.map((movie, i) => (
               <MovieCard
-                key={movie.uri ?? movie.title ?? `movie-${i}`}
+                key={(movie.uri?.trim()) || (movie.title?.trim()) || `movie-${i}`}
                 movie={movie}
                 isFavorite={isFavorite?.(movie.uri ?? '') ?? false}
                 onToggleFavorite={onToggleFavorite}
@@ -116,7 +104,7 @@ export function RecommendationCarousel({
               key={i}
               type="button"
               onClick={() => setPage(i)}
-              aria-label={`Página ${i + 1}`}
+              aria-label={`Page ${i + 1}`}
               className={cn(
                 'rounded-full transition-all duration-200',
                 i === page

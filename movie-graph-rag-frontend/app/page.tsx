@@ -7,6 +7,7 @@ import { RecommendationHeader } from "@/components/organisms/RecommendationHeade
 import { RecommendationCarousel } from "@/components/organisms/RecommendationCarousel";
 import { type MovieCardMovie } from "@/components/organisms/MovieCard";
 import { MovieDetailsDialog } from "@/components/home/MovieDetailsDialog";
+import { ProtectedRoute } from "@/components/shared/ProtectedRoute";
 import { Movie, searchMovies, getMovieExamples, getMoviesByCentrality, getMovieNeighborhood, getTopologicalProfile, getClusterMovies, type RecommendedMovie } from "@/services/movies.service";
 import { getActivityRecommendation } from "@/services/chat.service";
 import {
@@ -17,6 +18,42 @@ import {
 } from "@/services/favorites.service";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/hooks/useAuth";
+import { usePendingSet } from "@/hooks/usePendingSet";
+
+// ── Cold start genre rotation ─────────────────────────────────────────────────
+// Genres must match the ontology literals used in the backend
+const _COLD_START_GENRES = [
+  "Drama", "Comedy", "Action", "Thriller", "Animation",
+  "Romance", "Sci-Fi", "Horror", "Adventure",
+] as const;
+
+// English display names for each ontology genre
+const _GENRE_DISPLAY: Record<string, string> = {
+  Drama: "Drama",
+  Comedy: "Comedy",
+  Action: "Action",
+  Thriller: "Thriller",
+  Animation: "Animation",
+  Romance: "Romance",
+  "Sci-Fi": "Sci-Fi",
+  Horror: "Horror",
+  Adventure: "Adventure",
+};
+
+/**
+ * Returns 3 distinct genres for today's cold start carousels.
+ * Rotates daily so the user sees different content each day.
+ */
+function getThreeDailyGenres(): [string, string, string] {
+  const day = new Date().getDay(); // 0–6
+  const n = _COLD_START_GENRES.length;
+  return [
+    _COLD_START_GENRES[day % n],
+    _COLD_START_GENRES[(day + 3) % n],
+    _COLD_START_GENRES[(day + 6) % n],
+  ];
+}
 
 // ── Adapters ─────────────────────────────────────────────────────────────────
 
@@ -37,7 +74,7 @@ function toCardMovie(movie: Movie | FavoriteMovie): MovieCardMovie {
 
 function recToCardMovie(movie: RecommendedMovie): MovieCardMovie {
   return {
-    uri: '',
+    uri: movie.uri ?? '',
     title: movie.title,
     posterUrl: movie.posterUrl ?? undefined,
     year: movie.year ?? undefined,
@@ -52,21 +89,25 @@ function recToCardMovie(movie: RecommendedMovie): MovieCardMovie {
 
 export default function Home() {
   const router = useRouter();
+  const { isAuthenticated } = useAuth();
+  const withPending = usePendingSet();
 
   // ── Hero ──────────────────────────────────────────────────────────────────
   const [heroMovie, setHeroMovie] = useState<HeroMovie | null>(null);
   const [heroLoading, setHeroLoading] = useState(true);
   const [heroFavorite, setHeroFavorite] = useState(false);
+  const [heroColdStart, setHeroColdStart] = useState(false);
 
   // ── Carousels ─────────────────────────────────────────────────────────────
   const [carousel1, setCarousel1] = useState<MovieCardMovie[]>([]);
   const [carousel2, setCarousel2] = useState<MovieCardMovie[]>([]);
   const [carousel3, setCarousel3] = useState<MovieCardMovie[]>([]);
   const [carouselLoading, setCarouselLoading] = useState(true);
-  const [carousel1Title, setCarousel1Title] = useState<string>("Porque viste");
+  const [carousel1Title, setCarousel1Title] = useState<string>("Because you watched");
   const [carousel1FavoriteTitle, setCarousel1FavoriteTitle] = useState<string>("…");
-  const [carousel2Title, setCarousel2Title] = useState<string>("Basado en tus favoritos");
+  const [carousel2Title, setCarousel2Title] = useState<string>("Based on your favorites");
   const [carousel2FavoriteTitle, setCarousel2FavoriteTitle] = useState<string>("");
+  const [carousel3Subtitle, setCarousel3Subtitle] = useState<string>("Discover new genres based on what you haven't explored");
 
   // ── Favorites ─────────────────────────────────────────────────────────────
   const [favorites, setFavorites] = useState<FavoriteMovie[]>([]);
@@ -92,6 +133,7 @@ export default function Home() {
     setHeroLoading(true);
     try {
       const rec = await getActivityRecommendation();
+      setHeroColdStart(rec.isColdStart ?? false);
       const best = rec.moviesWithScores?.[0];
       if (best) {
         // Try to enrich with canonical poster
@@ -170,8 +212,35 @@ export default function Home() {
   const loadCarousels = useCallback(async (userFavorites: FavoriteMovie[]) => {
     setCarouselLoading(true);
     try {
+      // ── Cold start: genre-rotation carousels (no favorites yet) ────────────
+      if (userFavorites.length === 0) {
+        const [g1, g2, g3] = getThreeDailyGenres();
+        const d1 = _GENRE_DISPLAY[g1] ?? g1;
+        const d2 = _GENRE_DISPLAY[g2] ?? g2;
+        const d3 = _GENRE_DISPLAY[g3] ?? g3;
+
+        setCarousel1Title("Best of");
+        setCarousel1FavoriteTitle(d1);
+        setCarousel2Title("Discover");
+        setCarousel2FavoriteTitle(d2);
+        setCarousel3Subtitle(`Start exploring the best of ${d3}`);
+
+        const [c1, c2, c3] = await Promise.allSettled([
+          getMoviesByCentrality(g1, 12).then((r) => r.movies.map(recToCardMovie)),
+          getMoviesByCentrality(g2, 12).then((r) => r.movies.map(recToCardMovie)),
+          getMoviesByCentrality(g3, 12).then((r) => r.movies.map(recToCardMovie)),
+        ]);
+
+        const fallback = () => getMovieExamples(12).then((arr) => arr.map(toCardMovie));
+        setCarousel1(c1.status === "fulfilled" ? c1.value : await fallback());
+        setCarousel2(c2.status === "fulfilled" ? c2.value : await fallback());
+        setCarousel3(c3.status === "fulfilled" ? c3.value : await fallback());
+        return;
+      }
+
+      // ── Normal path: favorites-based carousels ────────────────────────────
       // Select random favorites for each carousel
-      const getRandomFavorite = () => userFavorites.length > 0 
+      const getRandomFavorite = () => userFavorites.length > 0
         ? userFavorites[Math.floor(Math.random() * userFavorites.length)]
         : null;
       
@@ -180,19 +249,19 @@ export default function Home() {
       
       // Update carousel 1 heading based on cold start status
       if (randomFavorite1) {
-        setCarousel1Title("Porque viste");
+        setCarousel1Title("Because you watched");
         setCarousel1FavoriteTitle(randomFavorite1.title);
       } else {
-        setCarousel1Title("Películas para ti");
-        setCarousel1FavoriteTitle("Para que empieces a disfrutar");
+        setCarousel1Title("Movies for you");
+        setCarousel1FavoriteTitle("To get you started");
       }
       
       // Update carousel 2 heading based on favorites availability
       if (randomFavorite2) {
-        setCarousel2Title("Como");
+        setCarousel2Title("Like");
         setCarousel2FavoriteTitle(randomFavorite2.title);
       } else {
-        setCarousel2Title("Basado en tus favoritos");
+        setCarousel2Title("Based on your favorites");
         setCarousel2FavoriteTitle("");
       }
       
@@ -212,26 +281,36 @@ export default function Home() {
         return null;
       };
       
+      // Helper: neighborhood with fallback to centrality when results are sparse
+      const neighborhoodOrCentrality = async (
+        fav: FavoriteMovie | null,
+        fallbackGenre?: string,
+      ): Promise<MovieCardMovie[]> => {
+        if (!fav) return getMovieExamples(12).then((arr) => arr.map(toCardMovie));
+        const r = await getMovieNeighborhood(fav.title, 2);
+        // Filter out the center node itself (always first in the list)
+        const neighbours = r.nodes
+          .filter((n) => n.title.trim().toLowerCase() !== fav.title.trim().toLowerCase())
+          .map((n) => ({
+            uri: n.uri, title: n.title, posterUrl: n.posterUrl ?? undefined,
+            year: n.year ?? undefined,
+            genres: n.genre ? [n.genre] : undefined, rating: n.rating ?? undefined,
+            runtime: n.runtime ?? undefined,
+            description: n.description ?? undefined,
+            director: n.director ?? undefined,
+          } as MovieCardMovie));
+        if (neighbours.length >= 4) return neighbours;
+        // Sparse neighborhood — fall back to centrality for the same genre
+        const genre = fallbackGenre ?? fav.genres?.[0];
+        return getMoviesByCentrality(genre, 12).then((r) => r.movies.map(recToCardMovie));
+      };
+
       const [neighborhood, centrality, serendipity] = await Promise.allSettled([
-        // "Porque viste X" — neighborhood of a random favorite (backend excludes center node)
-        randomFavorite1
-          ? getMovieNeighborhood(randomFavorite1.title, 1).then((r) => r.nodes.map((n) => ({
-              uri: n.uri, title: n.title, posterUrl: n.poster_url ?? undefined,
-              genres: n.genre ? [n.genre] : undefined, rating: n.rating ?? undefined,
-              runtime: n.runtime ?? undefined,
-              description: n.description ?? undefined,
-            } as MovieCardMovie)))
-          : getMovieExamples(12).then((arr) => arr.map(toCardMovie)),
-        // "Como Y" — neighborhood of another random favorite (backend excludes center node)
-        randomFavorite2
-          ? getMovieNeighborhood(randomFavorite2.title, 1).then((r) => r.nodes.map((n) => ({
-              uri: n.uri, title: n.title, posterUrl: n.poster_url ?? undefined,
-              genres: n.genre ? [n.genre] : undefined, rating: n.rating ?? undefined,
-              runtime: n.runtime ?? undefined,
-              description: n.description ?? undefined,
-            } as MovieCardMovie)))
-          : getMoviesByCentrality(undefined, 12).then((r) => r.movies.map(recToCardMovie)),
-        // "Explora nuevos géneros" — from least-explored cluster or fallback to serendipity
+        // "Because you watched X" — 2-hop neighborhood with centrality fallback
+        neighborhoodOrCentrality(randomFavorite1),
+        // "Like Y" — 2-hop neighborhood with centrality fallback
+        neighborhoodOrCentrality(randomFavorite2),
+        // "Explore new genres" — from least-explored cluster or fallback to serendipity
         (async () => {
           const clusterId = await getUnexploredClusterId();
           if (clusterId) {
@@ -242,7 +321,8 @@ export default function Home() {
               genres: m.genres && m.genres.length > 0 ? m.genres : undefined,
               rating: m.rating ?? undefined,
               runtime: m.runtime ?? undefined,
-              description: undefined,
+              description: m.description ?? undefined,
+              director: m.director ?? undefined,
             } as MovieCardMovie)));
           }
           // Fallback: use serendipity score from centrality
@@ -261,22 +341,27 @@ export default function Home() {
       setCarousel2(centrality.status === 'fulfilled' ? centrality.value : await fallback());
       setCarousel3(serendipity.status === 'fulfilled' ? serendipity.value : await fallback());
     } catch {
-      toast.error("No se pudieron cargar las recomendaciones");
+      toast.error("Could not load recommendations");
     } finally {
       setCarouselLoading(false);
     }
   }, []);
 
-  // Initial load: fetch favorites and hero on mount
+  // Initial load: only fetch data once we know the user is authenticated.
+  // This prevents firing API calls when ProtectedRoute is about to redirect to login.
   useEffect(() => {
+    if (!isAuthenticated) return;
     const initialize = async () => {
+      // Hero and favorites are independent — start both in parallel.
+      // Carousels need favorites but NOT hero, so they start as soon as
+      // favorites resolve without waiting for the hero call to finish.
+      const heroPromise = loadHero();
       const userFavorites = await loadFavorites();
-      await loadHero();
-      await loadCarousels(userFavorites);
+      await Promise.all([heroPromise, loadCarousels(userFavorites)]);
     };
     initialize();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Only run once on mount
+  }, [isAuthenticated]);
 
   // ── Favorites helpers ─────────────────────────────────────────────────────
 
@@ -286,22 +371,19 @@ export default function Home() {
   );
 
   const handleToggleFavorite = useCallback(
-    async (movie: MovieCardMovie) => {
+    (movie: MovieCardMovie) => {
       if (!movie.uri) return;
-      try {
-        const was = isFavorite(movie.uri);
+      withPending(movie.uri, async () => {
+        const was = isFavorite(movie.uri!);
         const updated = was
-          ? await removeMyFavorite(movie.uri)
+          ? await removeMyFavorite(movie.uri!)
           : await addMyFavorite(movie as Movie);
         setFavorites(updated);
         toast.success(was ? `"${movie.title}" eliminado de favoritos` : `"${movie.title}" agregado a favoritos`);
-        // Update hero fav status
         if (heroMovie && movie.title === heroMovie.title) setHeroFavorite(!was);
-      } catch {
-        toast.error("No se pudo actualizar favoritos");
-      }
+      }).catch(() => toast.error("Could not update favorites"));
     },
-    [isFavorite, heroMovie]
+    [withPending, isFavorite, heroMovie]
   );
 
   const handleViewDetails = useCallback((movie: MovieCardMovie) => {
@@ -313,27 +395,24 @@ export default function Home() {
     router.push(`/search?q=${encodeURIComponent(movie.title)}`);
   }, [router]);
 
-  const handleHeroDetails = useCallback(async () => {
+  const handleHeroDetails = useCallback(() => {
     if (!heroMovie) return;
-    try {
-      // Search for the full movie details
+    withPending('hero-details', async () => {
       const results = await searchMovies({ q: heroMovie.title, limit: 5 });
       const fullMovie = results.find(
         (m) => m.title.trim().toLowerCase() === heroMovie.title.trim().toLowerCase()
       ) ?? results[0];
-      
       if (fullMovie) {
         setSelectedMovie(fullMovie);
         setShowDetailsDialog(true);
       }
-    } catch {
-      toast.error("No se pudo cargar los detalles de la película");
-    }
-  }, [heroMovie]);
+    }).catch(() => toast.error("Could not load movie details"));
+  }, [withPending, heroMovie]);
 
   // ── Render ────────────────────────────────────────────────────────────────
 
   return (
+    <ProtectedRoute>
     <div className="min-h-screen bg-bg">
       <Navbar />
 
@@ -342,6 +421,7 @@ export default function Home() {
         featuredMovie={heroMovie}
         isLoading={heroLoading}
         isFavorite={heroFavorite}
+        isColdStart={heroColdStart}
         onToggleFavorite={() => heroMovie && handleToggleFavorite(heroMovie as MovieCardMovie)}
         onViewDetails={handleHeroDetails}
       />
@@ -356,7 +436,6 @@ export default function Home() {
           subtitle={carousel1FavoriteTitle}
           movies={carousel1}
           isLoading={carouselLoading}
-          viewAllHref="/search"
           showLiveIndicator
           isFavorite={isFavorite}
           onToggleFavorite={handleToggleFavorite}
@@ -369,7 +448,6 @@ export default function Home() {
           subtitle={carousel2FavoriteTitle}
           movies={carousel2}
           isLoading={carouselLoading}
-          viewAllHref="/favorites"
           isFavorite={isFavorite}
           onToggleFavorite={handleToggleFavorite}
           onViewDetails={handleViewDetails}
@@ -377,11 +455,10 @@ export default function Home() {
         />
 
         <RecommendationCarousel
-          title="Explora nuevos géneros"
-          subtitle="Descubre géneros nuevos basado en lo que no has explorado"
+          title="Explore new genres"
+          subtitle={carousel3Subtitle}
           movies={carousel3}
           isLoading={carouselLoading}
-          viewAllHref="/search"
           showLiveIndicator
           isFavorite={isFavorite}
           onToggleFavorite={handleToggleFavorite}
@@ -400,5 +477,6 @@ export default function Home() {
         }
       />
     </div>
+    </ProtectedRoute>
   );
 }

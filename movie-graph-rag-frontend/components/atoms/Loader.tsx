@@ -31,14 +31,14 @@ interface SkeletonBaseProps {
   className?: string
 }
 
-/** Bloque rectangular genérico */
+/** Generic rectangular block */
 export function SkeletonBox({ className }: SkeletonBaseProps) {
   return (
     <div className={cn('bg-surface2 animate-shimmer rounded-md', className)} />
   )
 }
 
-/** Skeleton de póster de película (ratio 2:3) */
+/** Movie poster skeleton (2:3 ratio) */
 export function SkeletonPoster({ className }: SkeletonBaseProps) {
   return (
     <div className={cn('bg-surface2 animate-shimmer rounded-md aspect-2/3 w-full', className)} />
@@ -77,7 +77,7 @@ export function SkeletonMovieCard({ className }: SkeletonBaseProps) {
   )
 }
 
-/** Skeleton de línea de texto */
+/** Text line skeleton */
 export function SkeletonText({ className }: SkeletonBaseProps) {
   return (
     <div className={cn('bg-surface2 animate-pulse rounded h-4 w-full', className)} />

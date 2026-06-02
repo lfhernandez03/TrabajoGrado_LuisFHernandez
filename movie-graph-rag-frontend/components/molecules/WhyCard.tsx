@@ -23,21 +23,13 @@ export interface WhyCardProps {
 }
 
 /**
- * WhyCard - "Por qué el grafo eligió esto" explanation card
+ * WhyCard - "Why the graph chose this" explanation card
  *
  * Displays narrative explanation from the backend about why a movie was recommended.
  * The explanation comes from the LLM-generated response that explains the reasoning
  * based on the graph topology and user context.
  *
  * Used in: HeroSection RecCard, MovieDetailHero, inline recommendations
- *
- * @example
- * ```tsx
- * <WhyCard
- *   explanation="Esta película combina la tensión psicológica que buscas con la cinematografía oscura que disfrutas..."
- *   contextHints={{ mood: 'ansioso', genre: 'thriller' }}
- * />
- * ```
  */
 export function WhyCard({
   explanation,
@@ -66,7 +58,7 @@ export function WhyCard({
 
         {/* Title */}
         <h4 className="text-sm font-semibold text-text leading-tight">
-          Por qué esta película
+          Why this movie
         </h4>
       </div>
 

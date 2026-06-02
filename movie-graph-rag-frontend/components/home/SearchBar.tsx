@@ -34,7 +34,7 @@ export function SearchBar({
       <div className="flex items-center gap-3">
         <div className="relative flex-1">
           <Input
-            placeholder="Buscar películas..."
+            placeholder="Search movies..."
             className="w-full pr-10 bg-secondary/50 border-border"
             value={searchQuery}
             onChange={(e) => onSearchQueryChange(e.target.value)}
@@ -55,7 +55,7 @@ export function SearchBar({
           size="icon"
           className="shrink-0 text-muted-foreground hover:text-primary"
           onClick={onNavigateFavorites}
-          title="Favoritos"
+          title="Favorites"
         >
           <Heart className="h-5 w-5" />
         </Button>
@@ -65,7 +65,7 @@ export function SearchBar({
           size="icon"
           className="shrink-0 text-muted-foreground hover:text-primary"
           onClick={onNavigateChat}
-          title="Chat de Recomendaciones"
+          title="Recommendation Chat"
         >
           <MessageSquare className="h-5 w-5" />
         </Button>
@@ -75,7 +75,7 @@ export function SearchBar({
           size="icon"
           className="shrink-0 text-muted-foreground hover:text-primary"
           onClick={onOpenHistory}
-          title="Historial"
+          title="History"
         >
           <History className="h-5 w-5" />
         </Button>

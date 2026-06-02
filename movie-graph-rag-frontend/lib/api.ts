@@ -17,16 +17,14 @@ const API_URL = normalizedPrefix
     : `${normalizedHost}${normalizedPrefix}`
   : normalizedHost;
 
-// Crear instancia de axios
 const api = axios.create({
   baseURL: API_URL,
-  timeout: 120000, // 2 minutos
+  timeout: 120000,
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
-// Interceptor de peticiones: Agregar token automáticamente
 api.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     if (typeof window !== 'undefined') {
@@ -42,7 +40,6 @@ api.interceptors.request.use(
   }
 );
 
-// Interceptor de respuestas: Manejar errores globalmente
 api.interceptors.response.use(
   (response) => {
     return response;
@@ -52,11 +49,17 @@ api.interceptors.response.use(
       const status = error.response.status;
       const responseData = error.response.data;
       
-      // Validar y extraer mensaje de error de forma segura
-      let message = 'Error desconocido';
+      let message = 'Unknown error';
       if (typeof responseData === 'object' && responseData !== null) {
         const data = responseData as Record<string, any>;
-        message = data.detail || data.message || data.msg || error.message || message;
+        const raw = data.detail ?? data.message ?? data.msg ?? error.message ?? message;
+        if (Array.isArray(raw)) {
+          message = raw.map((e: any) => (typeof e === 'object' ? e.msg ?? JSON.stringify(e) : String(e))).join(', ');
+        } else if (typeof raw === 'string') {
+          message = raw;
+        } else {
+          message = error.message || message;
+        }
       } else if (typeof responseData === 'string') {
         message = responseData;
       } else {
@@ -65,40 +68,29 @@ api.interceptors.response.use(
 
       switch (status) {
         case 401:
-          // Token inválido o expirado
           if (typeof window !== 'undefined') {
             localStorage.removeItem('auth_token');
             localStorage.removeItem('auth_user');
-            toast.error('Sesión expirada. Por favor, inicia sesión nuevamente.');
+            toast.error('Session expired. Please log in again.');
             window.location.href = '/login';
           }
           break;
-        
         case 403:
-          // Sin permisos
-          toast.error('No tienes permisos para realizar esta acción');
+          toast.error('You do not have permission to perform this action');
           break;
-        
         case 404:
-          // No encontrado
-          toast.error('Recurso no encontrado');
+          toast.error('Resource not found');
           break;
-        
         case 500:
-          // Error del servidor
-          toast.error('Error del servidor. Por favor, intenta más tarde.');
+          toast.error('Server error. Please try again later.');
           break;
-        
         default:
-          // Otros errores
           toast.error(message);
       }
     } else if (error.request) {
-      // La petición se hizo pero no hubo respuesta
-      toast.error('No se pudo conectar con el servidor');
+      toast.error('Could not connect to the server');
     } else {
-      // Error al configurar la petición
-      toast.error('Error en la petición');
+      toast.error('Request error');
     }
 
     return Promise.reject(error);

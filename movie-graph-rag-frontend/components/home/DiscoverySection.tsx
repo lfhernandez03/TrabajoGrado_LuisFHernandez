@@ -7,30 +7,30 @@ import { useRouter } from "next/navigation";
 const DISCOVERY_FEATURES = [
   {
     icon: Network,
-    title: "Explorador de Conexiones",
+    title: "Connection Explorer",
     description:
-      "Descubre el camino semántico entre dos películas o directores en el grafo",
+      "Discover the semantic path between two movies or directors in the graph",
     href: "/connections",
   },
   {
     icon: Compass,
-    title: "Viaje Cinematográfico",
+    title: "Cinematic Journey",
     description:
-      "Recorre una secuencia curada de 5-7 películas conectadas temáticamente",
+      "Walk a curated sequence of 5–7 thematically connected movies",
     href: null,
   },
   {
     icon: Shuffle,
-    title: "Rueda Aleatoria",
+    title: "Random Wheel",
     description:
-      "Navegación multihop por el grafo para descubrir algo completamente nuevo",
+      "Multi-hop navigation through the graph to discover something completely new",
     href: null,
   },
   {
     icon: Smile,
-    title: "Selector Emocional",
+    title: "Mood Selector",
     description:
-      "Recomendaciones basadas en tu estado de ánimo y preferencias del momento",
+      "Recommendations based on your current mood and preferences",
     href: null,
   },
 ] as const;
@@ -42,11 +42,10 @@ export function DiscoverySection() {
     <section className="mb-10">
       <div className="mb-6">
         <h2 className="text-2xl font-semibold text-center">
-          Descubrimiento Inteligente
+          Intelligent Discovery
         </h2>
         <p className="text-muted-foreground text-sm mt-1 text-center">
-          Explora películas de formas únicas usando el poder del grafo de
-          conocimiento
+          Explore movies in unique ways using the power of the knowledge graph
         </p>
       </div>
 

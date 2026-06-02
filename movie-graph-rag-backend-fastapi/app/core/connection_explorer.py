@@ -53,6 +53,8 @@ class NetworkNode:
     poster_url: str | None = None
     description: str | None = None
     runtime: int | None = None
+    director: str | None = None
+    year: int | None = None
 
 
 @dataclass
@@ -95,7 +97,7 @@ def _get_movie_info(title: str) -> dict | None:
         rows = execute_select_query(query)
         return rows[0] if rows else None
     except Exception as exc:
-        logger.warning("_get_movie_info failed for '%s': %s", title, exc)
+        logger.debug("_get_movie_info failed for '%s': %s", title, exc)
         return None
 
 
@@ -105,15 +107,18 @@ def _movies_by_genre(genre: str, exclude_uris: set[str], limit: int = 30) -> lis
     excl_filter = f"  FILTER(?movie NOT IN ({excl}))\n" if excl else ""
     query = (
         _PREFIXES
-        + "SELECT DISTINCT ?movie ?title ?genreName ?rating ?posterUrl ?description ?runtime\n"
+        + "SELECT DISTINCT ?title ?rating ?imdbRating ?genreName ?posterUrl ?description ?runtime ?directorName ?releaseDate\n"
         + "WHERE {\n"
         + "  ?movie rdf:type movie:FeatureFilm ; movie:hasTitle ?title .\n"
         + f'  ?movie movie:hasMainGenre/movie:genreName "{_esc(genre)}" .\n'
         + "  OPTIONAL { ?movie movie:hasMainGenre/movie:genreName ?genreName }\n"
         + "  OPTIONAL { ?movie movie:hasRating ?rating }\n"
+        + "  OPTIONAL { ?movie movie:hasIMDbRating ?imdbRating }\n"
         + "  OPTIONAL { ?movie schema1:image ?posterUrl }\n"
         + "  OPTIONAL { ?movie movie:hasPlotSummary ?description }\n"
         + "  OPTIONAL { ?movie movie:runtime ?runtime }\n"
+        + "  OPTIONAL { ?movie movie:hasDirector/movie:hasName ?directorName }\n"
+        + "  OPTIONAL { ?movie movie:releaseDate ?releaseDate }\n"
         + excl_filter
         + "}\n"
         + f"LIMIT {limit}"
@@ -121,7 +126,7 @@ def _movies_by_genre(genre: str, exclude_uris: set[str], limit: int = 30) -> lis
     try:
         return execute_select_query(query)
     except Exception as exc:
-        logger.warning("_movies_by_genre failed for '%s': %s", genre, exc)
+        logger.debug("_movies_by_genre failed for '%s': %s", genre, exc)
         return []
 
 
@@ -131,15 +136,18 @@ def _movies_by_director(director_uri: str, exclude_uris: set[str], limit: int = 
     excl_filter = f"  FILTER(?movie NOT IN ({excl}))\n" if excl else ""
     query = (
         _PREFIXES
-        + "SELECT DISTINCT ?movie ?title ?genreName ?rating ?posterUrl ?description ?runtime\n"
+        + "SELECT DISTINCT ?movie ?title ?genreName ?rating ?imdbRating ?posterUrl ?description ?runtime ?directorName ?releaseDate\n"
         + "WHERE {\n"
         + "  ?movie rdf:type movie:FeatureFilm ; movie:hasTitle ?title .\n"
         + f"  ?movie movie:hasDirector <{director_uri}> .\n"
         + "  OPTIONAL { ?movie movie:hasMainGenre/movie:genreName ?genreName }\n"
         + "  OPTIONAL { ?movie movie:hasRating ?rating }\n"
+        + "  OPTIONAL { ?movie movie:hasIMDbRating ?imdbRating }\n"
         + "  OPTIONAL { ?movie schema1:image ?posterUrl }\n"
         + "  OPTIONAL { ?movie movie:hasPlotSummary ?description }\n"
         + "  OPTIONAL { ?movie movie:runtime ?runtime }\n"
+        + f"  OPTIONAL {{ <{director_uri}> movie:hasName ?directorName }}\n"
+        + "  OPTIONAL { ?movie movie:releaseDate ?releaseDate }\n"
         + excl_filter
         + "}\n"
         + f"LIMIT {limit}"
@@ -147,7 +155,7 @@ def _movies_by_director(director_uri: str, exclude_uris: set[str], limit: int = 
     try:
         return execute_select_query(query)
     except Exception as exc:
-        logger.warning("_movies_by_director failed for '%s': %s", director_uri, exc)
+        logger.debug("_movies_by_director failed for '%s': %s", director_uri, exc)
         return []
 
 
@@ -157,12 +165,13 @@ def _movies_by_mood_profile(mood: str, exclude_uris: set[str], limit: int = 20) 
     excl_filter = f"  FILTER(?movie NOT IN ({excl}))\n" if excl else ""
     query = (
         _PREFIXES
-        + "SELECT DISTINCT ?movie ?title ?genreName ?rating ?posterUrl ?description\n"
+        + "SELECT DISTINCT ?movie ?title ?genreName ?rating ?imdbRating ?posterUrl ?description\n"
         + "WHERE {\n"
         + "  ?movie rdf:type movie:FeatureFilm ; movie:hasTitle ?title .\n"
         + f'  ?movie bridge:compatibleMood "{_esc(mood)}" .\n'
         + "  OPTIONAL { ?movie movie:hasMainGenre/movie:genreName ?genreName }\n"
         + "  OPTIONAL { ?movie movie:hasRating ?rating }\n"
+        + "  OPTIONAL { ?movie movie:hasIMDbRating ?imdbRating }\n"
         + "  OPTIONAL { ?movie schema1:image ?posterUrl }\n"
         + "  OPTIONAL { ?movie movie:hasPlotSummary ?description }\n"
         + excl_filter
@@ -172,7 +181,7 @@ def _movies_by_mood_profile(mood: str, exclude_uris: set[str], limit: int = 20) 
     try:
         return execute_select_query(query)
     except Exception as exc:
-        logger.warning("_movies_by_mood_profile failed for '%s': %s", mood, exc)
+        logger.debug("_movies_by_mood_profile failed for '%s': %s", mood, exc)
         return []
 
 
@@ -329,6 +338,10 @@ class ConnectionExplorer:
                         runtime = int(row["runtime"]) if row.get("runtime") else None
                     except (ValueError, TypeError):
                         runtime = None
+                    try:
+                        year = int(str(row["releaseDate"])[:4]) if row.get("releaseDate") else None
+                    except (ValueError, TypeError):
+                        year = None
                     node = NetworkNode(
                         uri=n_uri,
                         title=row.get("title", ""),
@@ -337,6 +350,8 @@ class ConnectionExplorer:
                         poster_url=row.get("posterUrl"),
                         description=row.get("description"),
                         runtime=runtime,
+                        director=row.get("directorName") or None,
+                        year=year,
                     )
                     graph.nodes.append(node)
                     rel = "same_genre" if genre and row.get("genreName") == genre else "same_director"
@@ -376,7 +391,7 @@ class ConnectionExplorer:
             "PREFIX bridge: <http://www.semanticweb.org/movierecommendation/ontologies/2025/bridge-ontology#>\n"
             "PREFIX schema1: <http://schema.org/>\n"
             "PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>\n"
-            "SELECT DISTINCT ?movie ?title ?genreName ?runtime ?rating ?posterUrl\n"
+            "SELECT DISTINCT ?movie ?title ?genreName ?runtime ?rating ?imdbRating ?posterUrl\n"
             "                ?releaseDate ?compatibilityScore ?moodMatchScore ?socialMatchScore\n"
             "                ?energyMatchScore ?timeMatchScore ?kidFriendly ?description\n"
             "WHERE {\n"
@@ -385,6 +400,7 @@ class ConnectionExplorer:
             + genre_filter
             + "  OPTIONAL { ?movie movie:runtime ?runtime }\n"
             "  OPTIONAL { ?movie movie:hasRating ?rating }\n"
+            "  OPTIONAL { ?movie movie:hasIMDbRating ?imdbRating }\n"
             "  OPTIONAL { ?movie schema1:image ?posterUrl }\n"
             "  OPTIONAL { ?movie movie:releaseDate ?releaseDate }\n"
             "  OPTIONAL { ?movie bridge:compatibilityScore ?compatibilityScore }\n"

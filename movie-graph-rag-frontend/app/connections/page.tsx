@@ -40,7 +40,7 @@ export default function ConnectionsPage() {
 
   const handleExplore = async () => {
     if (!fromSelected || !toSelected) {
-      toast.error("Selecciona ambas películas del buscador");
+      toast.error("Select both movies from the search bar");
       return;
     }
 
@@ -55,11 +55,11 @@ export default function ConnectionsPage() {
       setResult(data);
 
       if (!data.found) {
-        toast.info("No se encontró una conexión directa entre estas películas");
+        toast.info("No direct connection found between these movies");
       }
     } catch (error) {
-      console.error("Error explorando conexiones:", error);
-      toast.error("Error al buscar conexiones");
+      console.error("Error exploring connections:", error);
+      toast.error("Error searching connections");
     } finally {
       setIsSearching(false);
     }
@@ -85,7 +85,7 @@ export default function ConnectionsPage() {
             <Link href="/">
               <Button variant="ghost" size="sm" className="mb-4 -ml-2">
                 <ArrowLeft className="h-4 w-4 mr-1" />
-                Volver al inicio
+                Back to home
               </Button>
             </Link>
 
@@ -94,9 +94,9 @@ export default function ConnectionsPage() {
                 <Network className="h-6 w-6 text-accent" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold">Explorador de Conexiones</h1>
+                <h1 className="text-2xl font-bold">Connection Explorer</h1>
                 <p className="text-sm text-muted-foreground">
-                  Descubre el camino semántico entre dos películas en el grafo de conocimiento
+                  Discover the semantic path between two movies in the knowledge graph
                 </p>
               </div>
             </div>
@@ -110,7 +110,7 @@ export default function ConnectionsPage() {
                 <div className="flex flex-col sm:flex-row items-center gap-3">
                   <div className="flex-1 w-full">
                     <label className="text-xs font-medium text-muted-foreground mb-1.5 block">
-                      Película de origen
+                      Source movie
                     </label>
                     <MovieSearchInput
                       value={fromQuery}
@@ -124,7 +124,7 @@ export default function ConnectionsPage() {
                         setFromSelected(movie);
                         setFromQuery(movie.title);
                       }}
-                      placeholder="Ej: Inception, The Matrix..."
+                      placeholder="E.g: Inception, The Matrix..."
                       disabled={isSearching}
                     />
                     {fromSelected && (
@@ -146,7 +146,7 @@ export default function ConnectionsPage() {
 
                   <div className="flex-1 w-full">
                     <label className="text-xs font-medium text-muted-foreground mb-1.5 block">
-                      Película de destino
+                      Destination movie
                     </label>
                     <MovieSearchInput
                       value={toQuery}
@@ -160,7 +160,7 @@ export default function ConnectionsPage() {
                         setToSelected(movie);
                         setToQuery(movie.title);
                       }}
-                      placeholder="Ej: Interstellar, Blade Runner..."
+                      placeholder="E.g: Interstellar, Blade Runner..."
                       disabled={isSearching}
                     />
                     {toSelected && (
@@ -188,12 +188,12 @@ export default function ConnectionsPage() {
                     {isSearching ? (
                       <>
                         <Route className="h-4 w-4 mr-2 animate-pulse" />
-                        Explorando grafo...
+                        Exploring graph...
                       </>
                     ) : (
                       <>
                         <Route className="h-4 w-4 mr-2" />
-                        Encontrar Conexión
+                        Find Connection
                       </>
                     )}
                   </Button>
@@ -254,17 +254,17 @@ export default function ConnectionsPage() {
                       <div>
                         <p className="font-semibold">
                           {result.found
-                            ? `Conexión encontrada`
-                            : `No se encontró conexión`}
+                            ? `Connection found`
+                            : `No connection found`}
                         </p>
                         <p className="text-sm text-muted-foreground mt-0.5">
                           {result.found
                             ? result.distance === 0
-                              ? "Es la misma película"
+                              ? "Same movie"
                               : result.distance === 1
-                              ? `"${result.fromTitle}" y "${result.toTitle}" tienen una conexión directa (1 salto)`
-                              : `"${result.fromTitle}" y "${result.toTitle}" están a ${result.distance} grados de separación`
-                            : `"${result.fromTitle || fromQuery}" y "${result.toTitle || toQuery}" no comparten conexiones conocidas`}
+                              ? `"${result.fromTitle}" and "${result.toTitle}" have a direct connection (1 hop)`
+                              : `"${result.fromTitle}" and "${result.toTitle}" are ${result.distance} degrees of separation apart`
+                            : `"${result.fromTitle || fromQuery}" and "${result.toTitle || toQuery}" share no known connections`}
                         </p>
                       </div>
                     </div>
@@ -282,7 +282,7 @@ export default function ConnectionsPage() {
                   <CardContent className="p-6">
                     <h3 className="text-base font-semibold mb-5 flex items-center gap-2">
                       <Route className="h-4 w-4 text-accent" />
-                      Camino de Conexión
+                      Connection Path
                     </h3>
 
                     {/* Vertical stepper */}
@@ -315,10 +315,10 @@ export default function ConnectionsPage() {
                                   className={`text-[10px] px-1.5 py-0 ${getNodeColor(step.node.type)}`}
                                 >
                                   {step.node.type === "movie"
-                                    ? "Película"
+                                    ? "Movie"
                                     : step.node.type === "person"
-                                    ? "Persona"
-                                    : "Género"}
+                                    ? "Person"
+                                    : "Genre"}
                                 </Badge>
                               </div>
                               {index > 0 && (
@@ -391,7 +391,7 @@ export default function ConnectionsPage() {
                     className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors w-full"
                   >
                     <Code2 className="h-4 w-4" />
-                    <span>Consulta SPARQL utilizada</span>
+                    <span>SPARQL query used</span>
                     {showSparql ? (
                       <ChevronUp className="h-3 w-3 ml-auto" />
                     ) : (
@@ -413,12 +413,11 @@ export default function ConnectionsPage() {
               {!result.found && (
                 <div className="text-center py-6 text-sm text-muted-foreground">
                   <p>
-                    Intenta con películas diferentes o verifica que los títulos
-                    sean correctos.
+                    Try different movies or verify the titles are correct.
                   </p>
                   <p className="mt-1 text-xs">
-                    El explorador busca conexiones por director, actor y género
-                    compartido (hasta 2 saltos en el grafo).
+                    The explorer searches for connections by shared director, actor,
+                    and genre (up to 2 hops in the graph).
                   </p>
                 </div>
               )}
@@ -430,12 +429,11 @@ export default function ConnectionsPage() {
             <div className="text-center py-16 text-muted-foreground">
               <Network className="h-16 w-16 mx-auto mb-4 opacity-20" />
               <p className="text-lg font-medium mb-1">
-                Selecciona dos películas para explorar su conexión
+                Select two movies to explore their connection
               </p>
               <p className="text-sm">
-                Usa los buscadores de arriba para encontrar las películas y
-                descubrir cómo están conectadas a través del grafo de
-                conocimiento.
+                Use the search boxes above to find the movies and
+                discover how they are connected through the knowledge graph.
               </p>
             </div>
           )}

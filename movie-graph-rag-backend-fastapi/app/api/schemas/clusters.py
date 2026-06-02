@@ -4,11 +4,15 @@ from pydantic import BaseModel
 
 
 class ClusterMovie(BaseModel):
+    uri: str | None = None
     title: str
     rating: float | None = None
+    imdbRating: float | None = None
     genres: list[str] = []
     posterUrl: str | None = None
     runtime: int | None = None
+    description: str | None = None
+    director: str | None = None
 
 
 class ClusterInfo(BaseModel):

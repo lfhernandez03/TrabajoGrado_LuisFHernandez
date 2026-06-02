@@ -14,33 +14,33 @@ from app.domain.ports.recommendation_llm_client import RecommendationLlmClientPo
 
 
 _NLU_SYSTEM_PROMPT = (
-    "Eres un analizador de intención para un sistema de recomendación de películas en español.\n\n"
-    "EJEMPLOS:\n"
-    'Consulta: "estoy agotado del trabajo, algo cortito para relajarme"\n'
-    'Respuesta: {"intent": "general", "mood": "relaxed", "social_context": null, "genres": [], "director_hint": null, "year_range": null, "runtime_max": 90, "exclusions": []}\n\n'
-    'Consulta: "somos 6 amigos, viernes por la noche, algo divertido"\n'
-    'Respuesta: {"intent": "comedy", "mood": "excited", "social_context": {"companionType": "friends", "hasChildren": false, "numberOfPeople": 6}, "genres": ["Comedy"], "director_hint": null, "year_range": null, "runtime_max": null, "exclusions": []}\n\n'
-    'Consulta: "algo para ver con mis hijos pequeños esta tarde"\n'
-    'Respuesta: {"intent": "family", "mood": "happy", "social_context": {"companionType": "family", "hasChildren": true, "numberOfPeople": 4}, "genres": ["Animation", "Family"], "director_hint": null, "year_range": null, "runtime_max": null, "exclusions": []}\n\n'
-    'Consulta: "quiero llorar con algo, nada de acción"\n'
-    'Respuesta: {"intent": "drama", "mood": "sad", "social_context": null, "genres": ["Drama", "Romance"], "director_hint": null, "year_range": null, "runtime_max": null, "exclusions": ["Action"]}\n\n'
-    'Consulta: "película romántica para ver con mi pareja, algo de los 90"\n'
-    'Respuesta: {"intent": "romance", "mood": "romantic", "social_context": {"companionType": "partner", "hasChildren": false, "numberOfPeople": 2}, "genres": ["Romance"], "director_hint": null, "year_range": [1990, 1999], "runtime_max": null, "exclusions": []}\n\n'
-    'Consulta: "algo de Nolan, ciencia ficción intensa"\n'
-    'Respuesta: {"intent": "scifi", "mood": "excited", "social_context": null, "genres": ["Science Fiction"], "director_hint": "Christopher Nolan", "year_range": null, "runtime_max": null, "exclusions": []}\n\n'
-    'Consulta: "tengo una hora, algo ligero que no me haga pensar"\n'
-    'Respuesta: {"intent": "general", "mood": "relaxed", "social_context": null, "genres": ["Comedy"], "director_hint": null, "year_range": null, "runtime_max": 60, "exclusions": []}\n\n'
-    'Consulta: "quiero aventura, adrenalina, algo épico"\n'
-    'Respuesta: {"intent": "action", "mood": "adventurous", "social_context": null, "genres": ["Action", "Adventure"], "director_hint": null, "year_range": null, "runtime_max": null, "exclusions": []}\n\n'
-    "REGLAS:\n"
-    "- mood: elige el valor más cercano del enum. NUNCA devuelvas un valor fuera del enum. Si no hay señal emocional clara, usa null.\n"
-    "- Si el usuario menciona un director o actor por nombre, extráelo en director_hint.\n"
-    "- \"sin X\", \"nada de X\", \"que no sea X\" → agregar X a exclusions.\n"
-    "- year_range: solo si el usuario menciona explícitamente una época, década o rango de años.\n"
-    "- numberOfPeople: infiere del contexto (\"somos 6\" → 6, \"en pareja\" → 2, \"con mi familia\" → 4, \"con mis hijos\" → 4).\n"
-    "- runtime_max: solo para restricciones explícitas. \"algo corto\" → 90. \"tengo una hora\" → 60. \"tengo 90 minutos\" → 90.\n"
-    "- Si el usuario menciona un género en español, mapéalo al nombre en inglés del enum.\n"
-    "- Responde SOLO con el JSON. Sin texto adicional, sin backticks, sin explicaciones.\n\n"
+    "You are an intent analyzer for an English movie recommendation system.\n\n"
+    "EXAMPLES:\n"
+    'Query: "I\'m exhausted from work, something short to relax"\n'
+    'Response: {"intent": "general", "mood": "relaxed", "social_context": null, "genres": [], "director_hint": null, "year_range": null, "runtime_max": 90, "exclusions": []}\n\n'
+    'Query: "We\'re 6 friends, Friday night, something fun"\n'
+    'Response: {"intent": "comedy", "mood": "excited", "social_context": {"companionType": "friends", "hasChildren": false, "numberOfPeople": 6}, "genres": ["Comedy"], "director_hint": null, "year_range": null, "runtime_max": null, "exclusions": []}\n\n'
+    'Query: "Something to watch with my young kids this afternoon"\n'
+    'Response: {"intent": "family", "mood": "happy", "social_context": {"companionType": "family", "hasChildren": true, "numberOfPeople": 4}, "genres": ["Animation", "Family"], "director_hint": null, "year_range": null, "runtime_max": null, "exclusions": []}\n\n'
+    'Query: "I want to cry, nothing with action"\n'
+    'Response: {"intent": "drama", "mood": "sad", "social_context": null, "genres": ["Drama", "Romance"], "director_hint": null, "year_range": null, "runtime_max": null, "exclusions": ["Action"]}\n\n'
+    'Query: "Romantic movie for my partner, something from the 90s"\n'
+    'Response: {"intent": "romance", "mood": "romantic", "social_context": {"companionType": "partner", "hasChildren": false, "numberOfPeople": 2}, "genres": ["Romance"], "director_hint": null, "year_range": [1990, 1999], "runtime_max": null, "exclusions": []}\n\n'
+    'Query: "Something by Nolan, intense sci-fi"\n'
+    'Response: {"intent": "scifi", "mood": "excited", "social_context": null, "genres": ["Science Fiction"], "director_hint": "Christopher Nolan", "year_range": null, "runtime_max": null, "exclusions": []}\n\n'
+    'Query: "I have one hour, something light that doesn\'t make me think"\n'
+    'Response: {"intent": "general", "mood": "relaxed", "social_context": null, "genres": ["Comedy"], "director_hint": null, "year_range": null, "runtime_max": 60, "exclusions": []}\n\n'
+    'Query: "I want adventure, adrenaline, something epic"\n'
+    'Response: {"intent": "action", "mood": "adventurous", "social_context": null, "genres": ["Action", "Adventure"], "director_hint": null, "year_range": null, "runtime_max": null, "exclusions": []}\n\n'
+    "RULES:\n"
+    "- mood: choose the closest enum value. NEVER return a value outside the enum. If no clear emotional signal, use null.\n"
+    "- If user mentions a director or actor by name, extract it in director_hint.\n"
+    "- \"without X\", \"no X\", \"nothing with X\" → add X to exclusions.\n"
+    "- year_range: only if user explicitly mentions a time period, decade or year range.\n"
+    "- numberOfPeople: infer from context (\"we're 6\" → 6, \"with my partner\" → 2, \"with my family\" → 4, \"with my kids\" → 4).\n"
+    "- runtime_max: only for explicit restrictions. \"something short\" → 90. \"I have one hour\" → 60. \"I have 90 minutes\" → 90.\n"
+    "- If user mentions a genre, map it to the English enum name.\n"
+    "- Respond ONLY with JSON. No extra text, no backticks, no explanations.\n\n"
     "{\n"
     '  "intent": "general|action|romance|horror|comedy|family|scifi|thriller|drama",\n'
     '  "mood": null | "relaxed|excited|sad|happy|neutral|stressed|anxious|bored|curious|romantic|nostalgic|adventurous|nervous",\n'
@@ -58,33 +58,33 @@ _NLU_SYSTEM_PROMPT = (
 
 QUERY_TYPE_INSTRUCTIONS: dict[str, str] = {
     "general": (
-        "Explica detalladamente (5-7 frases) por qué estas películas encajan con lo que el usuario busca. "
-        "Sé específico sobre el tono, estilo y elementos que hacen cada película especialmente relevante. "
-        "Menciona detalles de la trama o atmósfera que conectan con la búsqueda del usuario."
+        "Explain in detail (5-7 sentences) why these movies match what the user is looking for. "
+        "Be specific about tone, style and elements that make each movie especially relevant. "
+        "Mention plot or atmosphere details that connect to the user's search."
     ),
     "activity": (
-        "El usuario recibió estas recomendaciones basadas en su actividad reciente y preferencias históricas. "
-        "Explica detalladamente (5-7 frases) qué patrones en sus búsquedas anteriores se reflejan en estas sugerencias. "
-        "Menciona géneros, directores o estilos que el usuario ha explorado y cómo se conectan con estas películas. "
-        "Destaca qué hace estas recomendaciones especialmente alineadas con su perfil."
+        "Write exactly 2 sentences. "
+        "First sentence: what makes this specific movie a great match — mention its genre, tone, or a standout element. "
+        "Second sentence: why it fits the user's taste or the time of day. "
+        "Never mention favorites, marking, or improving recommendations. No filler."
     ),
     "cold_start": (
-        "Es la primera vez que el usuario interactúa con el sistema, así que estas recomendaciones están basadas en el contexto de su consulta. "
-        "Explica detalladamente (5-7 frases) por qué estas películas son un excelente punto de partida. "
-        "Destaca la diversidad en géneros o estilos para ayudarle a explorar. "
-        "Invita al usuario a marcar favoritos para mejorar las próximas recomendaciones."
+        "This is the user's first interaction with the system, so these recommendations are based on their query context. "
+        "Explain in detail (5-7 sentences) why these movies are an excellent starting point. "
+        "Emphasize the diversity in genres or styles to help them explore. "
+        "Invite the user to mark favorites to improve future recommendations."
     ),
     "mood_driven": (
-        "El estado emocional del usuario fue la señal principal para esta selección. "
-        "Explica detalladamente (5-7 frases) cómo el tono, ritmo, temática y atmósfera de estas películas conecta con ese específico estado de ánimo. "
-        "Sé concreto: describe escenas o elementos de cada película que generan la emoción deseada. "
-        "Usa lenguaje empático y evocador."
+        "The user's emotional state was the main signal for this selection. "
+        "Explain in detail (5-7 sentences) how the tone, pace, themes and atmosphere of these movies connect with that specific mood. "
+        "Be concrete: describe scenes or elements from each movie that generate the desired emotion. "
+        "Use empathetic and evocative language."
     ),
     "social": (
-        "El contexto social fue el factor determinante en esta selección. "
-        "Explica detalladamente (5-7 frases) por qué estas películas son perfectas para el grupo o compañía descrita. "
-        "Si hay niños, explica en detalle el contenido apropiado, temas seguros y por qué es entretenido para todas las edades. "
-        "Si es un grupo de amigos o pareja, destaca elementos sociales como humor, drama o romance que hacen la experience compartida."
+        "The social context was the determining factor in this selection. "
+        "Explain in detail (5-7 sentences) why these movies are perfect for the described group or company. "
+        "If there are children, explain the appropriate content in detail, safe themes and why it's entertaining for all ages. "
+        "If it's a group of friends or couple, highlight social elements like humor, drama or romance that make the shared experience."
     ),
 }
 
@@ -92,41 +92,41 @@ QUERY_TYPE_INSTRUCTIONS: dict[str, str] = {
 class GeminiRecommendationLlmAdapter(RecommendationLlmClientPort):
     def _keyword_extract_context(self, query_lower: str) -> QueryContext:
         social_context = None
-        if any(token in query_lower for token in ["solo", "sola", "yo solo", "yo sola"]):
+        if any(token in query_lower for token in ["alone", "by myself", "solo", "myself"]):
             social_context = {"companionType": "alone", "hasChildren": False, "numberOfPeople": 1}
-        elif any(token in query_lower for token in ["compañeros", "colegas", "del trabajo"]):
+        elif any(token in query_lower for token in ["colleagues", "coworkers", "work friends"]):
             social_context = {"companionType": "friends", "hasChildren": False, "numberOfPeople": 4}
-        elif any(token in query_lower for token in ["amigos", "friends", "grupo"]):
+        elif any(token in query_lower for token in ["friends", "group", "buddy"]):
             social_context = {"companionType": "friends", "hasChildren": False, "numberOfPeople": 3}
-        elif any(token in query_lower for token in ["pareja", "novia", "novio"]):
+        elif any(token in query_lower for token in ["partner", "girlfriend", "boyfriend", "spouse"]):
             social_context = {"companionType": "partner", "hasChildren": False, "numberOfPeople": 2}
-        elif any(token in query_lower for token in ["familia", "ninos", "niños", "hijos"]):
+        elif any(token in query_lower for token in ["family", "kids", "children", "children"]):
             social_context = {"companionType": "family", "hasChildren": True, "numberOfPeople": 4}
 
         mood = None
-        if any(token in query_lower for token in ["relaj", "tranquil", "liger", "calm"]):
+        if any(token in query_lower for token in ["relax", "tranquil", "light", "calm", "chill"]):
             mood = "relaxed"
-        elif any(token in query_lower for token in ["accion", "acción", "emocion", "intensa"]):
+        elif any(token in query_lower for token in ["action", "emotion", "intense", "adrenaline"]):
             mood = "excited"
-        elif any(token in query_lower for token in ["triste", "sad"]):
+        elif any(token in query_lower for token in ["sad", "cry", "emotional"]):
             mood = "sad"
-        elif any(token in query_lower for token in ["feliz", "happy", "alegre"]):
+        elif any(token in query_lower for token in ["happy", "joy", "fun", "funny"]):
             mood = "happy"
-        elif any(token in query_lower for token in ["estres", "stress", "agobia", "agotad"]):
+        elif any(token in query_lower for token in ["stress", "anxious", "overwhelm", "tired"]):
             mood = "stressed"
-        elif any(token in query_lower for token in ["ansios", "nervios", "angustia"]):
+        elif any(token in query_lower for token in ["anxious", "nervous", "worried", "panic"]):
             mood = "anxious"
-        elif any(token in query_lower for token in ["aburrid", "bored", "hastio"]):
+        elif any(token in query_lower for token in ["boring", "bored", "dull"]):
             mood = "bored"
-        elif any(token in query_lower for token in ["nostalgic", "nostálgic", "recuerdo", "añoran"]):
+        elif any(token in query_lower for token in ["nostalgic", "memory", "remember", "throwback"]):
             mood = "nostalgic"
-        elif any(token in query_lower for token in ["romantic", "romántic", "amor", "enamorad"]):
+        elif any(token in query_lower for token in ["romantic", "love", "romantic", "in love"]):
             mood = "romantic"
-        elif any(token in query_lower for token in ["curiosi", "interesant", "descubr", "explorar"]):
+        elif any(token in query_lower for token in ["curious", "interesting", "discover", "explore"]):
             mood = "curious"
-        elif any(token in query_lower for token in ["aventur", "adrenali", "epico", "épico", "accion pura"]):
+        elif any(token in query_lower for token in ["adventure", "adrenaline", "epic", "epic", "pure action"]):
             mood = "adventurous"
-        elif any(token in query_lower for token in ["concentr", "enfoc", "productiv"]):
+        elif any(token in query_lower for token in ["focus", "concentrate", "productive"]):
             mood = "neutral"
 
         runtime_max = None
@@ -143,40 +143,34 @@ class GeminiRecommendationLlmAdapter(RecommendationLlmClientPort):
             year_range = [min(start_year, end_year), max(start_year, end_year)]
 
         exclusions: list[str] = []
-        for marker in ["sin ", "excepto ", "excluding "]:
+        for marker in ["without ", "except ", "excluding "]:
             if marker in query_lower:
                 tail = query_lower.split(marker, 1)[1].split(".", 1)[0].strip()
                 if tail:
                     exclusions.append(tail)
 
         genre_aliases = {
-            "accion": "Action",
-            "acción": "Action",
+            "action": "Action",
             "drama": "Drama",
-            "comedia": "Comedy",
-            "romantica": "Romance",
-            "romántica": "Romance",
+            "comedy": "Comedy",
+            "romantic": "Romance",
             "romance": "Romance",
-            "terror": "Horror",
-            "miedo": "Horror",
-            "familia": "Family",
-            "familiar": "Family",
-            "animada": "Animation",
-            "animacion": "Animation",
-            "animación": "Animation",
-            "ciencia": "Science Fiction",
-            "ciencia ficcion": "Science Fiction",
-            "ciencia ficción": "Science Fiction",
+            "horror": "Horror",
+            "scary": "Horror",
+            "family": "Family",
+            "animation": "Animation",
+            "animated": "Animation",
             "sci-fi": "Science Fiction",
+            "scifi": "Science Fiction",
+            "science fiction": "Science Fiction",
             "thriller": "Thriller",
-            "fantasia": "Fantasy",
-            "fantasía": "Fantasy",
-            "misterio": "Mystery",
-            "aventura": "Adventure",
+            "fantasy": "Fantasy",
+            "mystery": "Mystery",
+            "adventure": "Adventure",
             "musical": "Musical",
             "western": "Western",
-            "crimen": "Crime",
-            "guerra": "War",
+            "crime": "Crime",
+            "war": "War",
         }
         preferred_genres: list[str] = []
         for keyword, genre_name in genre_aliases.items():
@@ -292,42 +286,42 @@ class GeminiRecommendationLlmAdapter(RecommendationLlmClientPort):
             QUERY_TYPE_INSTRUCTIONS["general"],
         )
         semantic_section = (
-            f"Contexto ontológico inferido: {semantic_hint}\n\n"
+            f"Inferred ontological context: {semantic_hint}\n\n"
             if semantic_hint
             else ""
         )
         if not movies_with_scores:
             return (
-                "Eres un asistente de recomendacion de peliculas. "
-                "Responde en espanol en 2-3 frases, explica por que no hay recomendaciones "
-                "y sugiere agregar favoritos o hacer una consulta mas especifica.\n\n"
+                "You are a movie recommendation assistant. "
+                "Respond in English in 2-3 sentences, explain why there are no recommendations "
+                "and suggest adding favorites or making a more specific query.\n\n"
                 f"{query_type_instruction}\n\n"
                 f"{semantic_section}"
-                f"Consulta: {query}\n"
-                f"Contexto inferido: {context_summary}"
+                f"Query: {query}\n"
+                f"Inferred context: {context_summary}"
             )
 
         top: list[str] = []
-        for movie in movies_with_scores[:5]:
+        for movie in movies_with_scores:
             hints: list[str] = []
             # Individual semantic scores are top-level fields in to_response_dict()
             mood_score = movie.get("moodMatchScore")
             if mood_score is not None:
-                hints.append(f"afinidad_emocional={float(mood_score):.2f}")
+                hints.append(f"emotional_affinity={float(mood_score):.2f}")
             social_score = movie.get("socialMatchScore")
             if social_score is not None:
-                hints.append(f"afinidad_social={float(social_score):.2f}")
+                hints.append(f"social_affinity={float(social_score):.2f}")
             energy_score = movie.get("energyMatchScore")
             if energy_score is not None:
-                hints.append(f"afinidad_energia={float(energy_score):.2f}")
+                hints.append(f"energy_affinity={float(energy_score):.2f}")
             # overallCompatibility lives inside semanticScores
             overall = (movie.get("semanticScores") or {}).get("overallCompatibility")
             if overall is not None:
-                hints.append(f"compatibilidad_general={float(overall):.2f}")
+                hints.append(f"overall_compatibility={float(overall):.2f}")
             score_detail = ", ".join(hints)
             line = (
                 f"- {movie.get('title')} (score={movie.get('compatibilityScore')}, "
-                f"genero={movie.get('genreName')}"
+                f"genre={movie.get('genreName')}"
             )
             if score_detail:
                 line += f", {score_detail}"
@@ -338,9 +332,9 @@ class GeminiRecommendationLlmAdapter(RecommendationLlmClientPort):
         return (
             f"{query_type_instruction}\n\n"
             f"{semantic_section}"
-            f"Consulta: {query}\n"
-            f"Contexto inferido: {context_summary}\n"
-            f"Top recomendaciones:\n{top_text}"
+            f"Query: {query}\n"
+            f"Inferred context: {context_summary}\n"
+            f"Top recommendations:\n{top_text}"
         )
 
     def _fallback_explanation(
@@ -351,16 +345,16 @@ class GeminiRecommendationLlmAdapter(RecommendationLlmClientPort):
     ) -> str:
         if not movies_with_scores:
             return (
-                "Lamentablemente, no encontré películas que coincidan exactamente con tu búsqueda en este momento. "
-                f"Tu consulta fue: '{query}'. "
-                "Te sugiero marcar algunas películas como favoritas para que el sistema aprenda mejor tus preferencias, "
-                "o intenta con una búsqueda más general. "
-                "Vuelve a intentar después de agregar favoritos para obtener recomendaciones más personalizadas."
+                "Unfortunately, I couldn't find movies that exactly match your search at this time. "
+                f"Your query was: '{query}'. "
+                "I suggest marking some movies as favorites so the system can better learn your preferences, "
+                "or try a more general search. "
+                "Try again after adding favorites to get more personalized recommendations."
             )
 
         titles_with_genres = []
-        for movie in movies_with_scores[:5]:
-            title = movie.get("title", "Sin título")
+        for movie in movies_with_scores:
+            title = movie.get("title", "No title")
             genre = movie.get("genreName", "")
             year = movie.get("releaseDate", "")
             if genre:
@@ -370,12 +364,89 @@ class GeminiRecommendationLlmAdapter(RecommendationLlmClientPort):
         
         titles_str = ", ".join(titles_with_genres)
         return (
-            f"Basándome en tu consulta '{query}', preparé estas recomendaciones: {titles_str}. "
-            f"Estas películas se alinean con el contexto que detecté ({context_summary}). "
-            "Cada una ofrece una experiencia única: unas son más relajantes, otras más emocionantes, "
-            "y todas han sido seleccionadas porque encajan con lo que buscas. "
-            "Si alguna te gusta, márcala como favorita para mejorar futuras recomendaciones."
+            f"Based on your query '{query}', here are my recommendations: {titles_str}. "
+            f"These movies align with the context I detected ({context_summary}). "
+            "Each one offers a unique experience: some are more relaxing, others more exciting, "
+            "and all have been selected because they match what you're looking for. "
+            "If you like any of them, mark it as favorite to improve future recommendations."
         )
+
+    def _build_activity_prompt(self, movies_with_scores: list[dict], context_summary: str) -> str:
+        """Focused pitch prompt for the hero section — 2-3 sentences that sell the movie."""
+        movie = movies_with_scores[0] if movies_with_scores else {}
+        title = movie.get("title", "this movie")
+        genre = movie.get("genreName", "")
+        genre_part = f" ({genre})" if genre else ""
+        return (
+            f"Write a 2-3 sentence movie pitch for '{title}'{genre_part} that makes someone want to watch it right now.\n\n"
+            "Rules:\n"
+            "- Hook with the premise or tone in the first sentence.\n"
+            "- Mention one concrete element: a plot beat, a standout performance, or the film's atmosphere.\n"
+            "- End with what kind of viewer or mood it is perfect for.\n"
+            "- No spoilers. No filler phrases like 'this film offers' or 'a unique experience'. No score data. No 'based on your preferences'.\n"
+            "- Max 60 words total."
+        )
+
+    def _generate_explanation_once(
+        self,
+        movies_with_scores: list[dict],
+        context_summary: str,
+        query: str,
+        semantic_hint: str,
+        query_type: str,
+        extra_hint: str = "",
+    ) -> str | None:
+        is_activity = query_type == "activity"
+        try:
+            if is_activity:
+                base_prompt = self._build_activity_prompt(movies_with_scores, context_summary)
+            else:
+                base_prompt = self._build_prompt(
+                    query, context_summary, movies_with_scores, semantic_hint, query_type
+                )
+            prompt = base_prompt + extra_hint if extra_hint else base_prompt
+            max_tokens = 150 if is_activity else 600
+
+            client = genai.Client(api_key=settings.gemini_api_key)
+            response = client.models.generate_content(
+                model=settings.gemini_model,
+                contents=prompt,
+                config=genai.types.GenerateContentConfig(
+                    system_instruction=(
+                        "You are a concise movie recommendation assistant. "
+                        "Follow the length and format instructions in the prompt exactly — do not exceed them. "
+                        "Always respond in English. "
+                        "Be specific: mention the movie title, genre, tone, or a concrete plot element. "
+                        "Never add filler sentences about marking favorites, improving recommendations, or exploring more."
+                    ),
+                    temperature=0.5,
+                    max_output_tokens=max_tokens,
+                ),
+            )
+            return response.text
+        except Exception:
+            return None
+
+    def _call_judge(
+        self, explanation: str, title: str, context_summary: str, query_type: str
+    ) -> float:
+        from app.adapters.llm.explanation_evaluator import build_judge_prompt, parse_judge_score
+
+        prompt = build_judge_prompt(explanation, title, context_summary, query_type)
+        try:
+            client = genai.Client(api_key=settings.gemini_api_key)
+            response = client.models.generate_content(
+                model=settings.gemini_model,
+                contents=prompt,
+                config=genai.types.GenerateContentConfig(
+                    temperature=0.1,
+                    max_output_tokens=100,
+                    response_mime_type="application/json",
+                ),
+            )
+            return parse_judge_score(response.text)
+        except Exception:
+            return 1.0
 
     def generate_recommendation_explanation(
         self,
@@ -385,31 +456,99 @@ class GeminiRecommendationLlmAdapter(RecommendationLlmClientPort):
         semantic_hint: str = "",
         query_type: str = "general",
     ) -> str:
-        try:
-            prompt = self._build_prompt(
-                query,
-                context_summary,
-                movies_with_scores,
-                semantic_hint,
-                query_type,
-            )
-            client = genai.Client(api_key=settings.gemini_api_key)
-            response = client.models.generate_content(
-                model=settings.gemini_model,
-                contents=prompt,
-                config=genai.types.GenerateContentConfig(
-                    system_instruction=(
-                        "Eres un experto asistente de recomendación de películas con profundo conocimiento de cine. "
-                        "Tu tarea es explicar por qué las películas recomendadas son perfectas para el usuario. "
-                        "Siempre responde en español. "
-                        "Sé apasionado, detallado y específico. "
-                        "Explica elementos de la trama, atmósfera, tono y por qué conectan con lo que el usuario busca. "
-                        "Evita ser genérico: haz que cada explicación sea personal y convincente."
-                    ),
-                    temperature=0.5,
-                    max_output_tokens=600,
-                ),
-            )
-            return response.text
-        except Exception:
+        from app.adapters.llm.explanation_evaluator import (
+            validate_text, build_retry_hint, JUDGE_THRESHOLD,
+        )
+
+        title = movies_with_scores[0].get("title", "") if movies_with_scores else ""
+
+        # --- Initial generation ---
+        text = self._generate_explanation_once(
+            movies_with_scores, context_summary, query, semantic_hint, query_type
+        )
+        if not text:
             return self._fallback_explanation(query, context_summary, movies_with_scores)
+
+        # --- Static validation (word count, title presence, forbidden phrases) ---
+        eval_result = validate_text(text, title, query_type)
+        if eval_result.issues:
+            retry = self._generate_explanation_once(
+                movies_with_scores, context_summary, query, semantic_hint, query_type,
+                extra_hint=build_retry_hint(eval_result.issues),
+            )
+            if retry:
+                text = retry
+
+        # --- LLM-as-a-judge ---
+        judge_score = self._call_judge(text, title, context_summary, query_type)
+        if judge_score < JUDGE_THRESHOLD:
+            retry = self._generate_explanation_once(
+                movies_with_scores, context_summary, query, semantic_hint, query_type,
+                extra_hint=build_retry_hint(["low_quality"]),
+            )
+            if retry:
+                text = retry
+
+        return text
+
+    def extract_user_context_with_profile(
+        self,
+        query: str,
+        profile,
+        favorites_sample: list[str],
+        recent_queries: list[str],
+        topological_type: str,
+        dominant_cluster_labels: list[str],
+        accumulated_context,
+        now=None,
+        conversation_history: list[dict] | None = None,
+    ):
+        """NLU enriched with accumulated conversation context.
+
+        Prepends established context from previous turns so the LLM can
+        resolve references like "shorter", "something similar", "no more horror"
+        without needing the full message history in the system prompt.
+        """
+        prefix_parts: list[str] = []
+
+        if accumulated_context:
+            acc: list[str] = []
+            if accumulated_context.mood:
+                acc.append(f"mood={accumulated_context.mood}")
+            if accumulated_context.genres:
+                acc.append(f"genres={accumulated_context.genres}")
+            if accumulated_context.companion:
+                acc.append(f"companion={accumulated_context.companion}")
+            if accumulated_context.runtime_max:
+                acc.append(f"max_runtime={accumulated_context.runtime_max}")
+            if accumulated_context.exclusions:
+                acc.append(f"excluded={accumulated_context.exclusions}")
+            if acc:
+                prefix_parts.append(
+                    f"[Established in this conversation: {', '.join(acc)}]"
+                )
+        elif conversation_history:
+            prior_user = [
+                m["content"]
+                for m in conversation_history
+                if m.get("role") == "user"
+            ][-3:]
+            if prior_user:
+                joined = " | ".join(prior_user)
+                prefix_parts.append(f"[Previous messages: {joined}]")
+
+        enriched = f"{' '.join(prefix_parts)} {query}".strip() if prefix_parts else query
+        return self.extract_user_context(enriched, now=now)
+
+    def generate_greeting_response(
+        self,
+        query: str,
+        user_name=None,
+        is_cold_start: bool = True,
+    ) -> str:
+        """Stub: returns a hardcoded invitation message."""
+        return (
+            "Hello! I'm your movie recommendation assistant. "
+            "Tell me what kind of movie you're looking for and I'll help you find the perfect one. "
+            "For example: 'something funny for tonight?' or 'intense action movie'."
+        )

@@ -21,8 +21,8 @@ export interface TopologicalProfileResponse {
   userId: string;
   /** Shannon entropy normalized [0, 1]. 0 = specialist, 1 = explorer */
   explorationIndex: number;
-  /** 'especialista' | 'equilibrado' | 'explorador' */
-  userType: 'especialista' | 'equilibrado' | 'explorador';
+  /** 'specialist' | 'balanced' | 'explorer' */
+  userType: 'specialist' | 'balanced' | 'explorer';
   dominantClusters: ClusterWeight[];
   unexploredAdjacent: UnexploredCluster[];
   /** 'specializing' | 'diversifying' | 'stable' */

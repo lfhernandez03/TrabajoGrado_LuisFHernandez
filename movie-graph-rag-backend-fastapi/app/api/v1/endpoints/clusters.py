@@ -53,21 +53,30 @@ def _row_to_cluster_movie(row: dict) -> ClusterMovie:
             rating = round(float(row["rating"]), 2)
     except (ValueError, TypeError):
         pass
+    imdb_rating = None
+    try:
+        if row.get("imdbRating"):
+            imdb_rating = round(float(row["imdbRating"]), 2)
+    except (ValueError, TypeError):
+        pass
     runtime = None
     try:
         if row.get("runtime"):
             runtime = int(row["runtime"])
     except (ValueError, TypeError):
         pass
-    # Parse comma-separated genres from GROUP_CONCAT
     genres_str = row.get("genres") or ""
     genres = [g.strip() for g in genres_str.split(",") if g.strip()] if genres_str else []
     return ClusterMovie(
+        uri=row.get("uri") or None,
         title=row.get("title", ""),
         rating=rating,
+        imdbRating=imdb_rating,
         genres=genres,
         posterUrl=row.get("posterUrl") or None,
         runtime=runtime,
+        description=row.get("description") or None,
+        director=row.get("directorName") or None,
     )
 
 
@@ -190,12 +199,16 @@ def _get_movie_cluster(title: str) -> MovieClusterResponse:
     # Step 4: intra-cluster movies (exclude seed, ordered by rating)
     intra_rows = execute_select_query(
         _PREFIXES
-        + "SELECT DISTINCT ?title ?rating ?genreName ?posterUrl WHERE {\n"
+        + "SELECT DISTINCT ?title ?rating ?imdbRating ?genreName ?posterUrl ?runtime ?description ?directorName WHERE {\n"
         f'  ?m movie:belongsToCluster "{safe_cid}" ;\n'
         "     movie:hasTitle ?title .\n"
         "  OPTIONAL { ?m movie:hasRating ?rating }\n"
+        "  OPTIONAL { ?m movie:hasIMDbRating ?imdbRating }\n"
         "  OPTIONAL { ?m movie:hasMainGenre/movie:genreName ?genreName }\n"
         "  OPTIONAL { ?m schema1:image ?posterUrl }\n"
+        "  OPTIONAL { ?m movie:runtime ?runtime }\n"
+        "  OPTIONAL { ?m movie:hasPlotSummary ?description }\n"
+        "  OPTIONAL { ?m movie:hasDirector/movie:hasName ?directorName }\n"
         f'  FILTER(?title != "{safe_title}")\n'
         "} ORDER BY DESC(?rating) LIMIT 50"
     )
@@ -241,13 +254,17 @@ def _get_movie_cluster(title: str) -> MovieClusterResponse:
             safe_adj = _escape(adj_cid)
             bridge_rows = execute_select_query(
                 _PREFIXES
-                + "SELECT DISTINCT ?title ?rating ?genreName ?posterUrl WHERE {\n"
+                + "SELECT DISTINCT ?title ?rating ?imdbRating ?genreName ?posterUrl ?runtime ?description ?directorName WHERE {\n"
                 f"  VALUES ?sharedGenre {{ {genre_values} }}\n"
                 "  ?m movie:hasMainGenre/movie:genreName ?sharedGenre ;\n"
                 f'     movie:belongsToCluster "{safe_adj}" ;\n'
                 "     movie:hasTitle ?title .\n"
                 "  OPTIONAL { ?m movie:hasRating ?rating }\n"
+                "  OPTIONAL { ?m movie:hasIMDbRating ?imdbRating }\n"
                 "  OPTIONAL { ?m schema1:image ?posterUrl }\n"
+                "  OPTIONAL { ?m movie:runtime ?runtime }\n"
+                "  OPTIONAL { ?m movie:hasPlotSummary ?description }\n"
+                "  OPTIONAL { ?m movie:hasDirector/movie:hasName ?directorName }\n"
                 "  BIND(?sharedGenre AS ?genreName)\n"
                 "} ORDER BY DESC(?rating) LIMIT 15"
             )
@@ -335,14 +352,17 @@ def get_cluster_movies(
     safe_cid = _escape(cluster_id)
     query = (
         _PREFIXES
-        + "SELECT ?title ?rating ?posterUrl ?runtime (GROUP_CONCAT(DISTINCT ?genreName; separator=\", \") AS ?genres) WHERE {\n"
+        + "SELECT ?m ?title ?rating ?imdbRating ?posterUrl ?runtime ?description ?directorName (GROUP_CONCAT(DISTINCT ?genreName; separator=\", \") AS ?genres) WHERE {\n"
         f'  ?m movie:belongsToCluster "{safe_cid}" ;\n'
         "     movie:hasTitle ?title .\n"
         "  OPTIONAL { ?m movie:hasRating ?rating }\n"
+        "  OPTIONAL { ?m movie:hasIMDbRating ?imdbRating }\n"
         "  OPTIONAL { ?m movie:hasMainGenre/movie:genreName ?genreName }\n"
         "  OPTIONAL { ?m schema1:image ?posterUrl }\n"
         "  OPTIONAL { ?m movie:runtime ?runtime }\n"
-        f"}} GROUP BY ?title ?rating ?posterUrl ?runtime ORDER BY DESC(?rating) LIMIT {limit}"
+        "  OPTIONAL { ?m movie:hasPlotSummary ?description }\n"
+        "  OPTIONAL { ?m movie:hasDirector/movie:hasName ?directorName }\n"
+        f"}} GROUP BY ?m ?title ?rating ?imdbRating ?posterUrl ?runtime ?description ?directorName ORDER BY DESC(?rating) LIMIT {limit}"
     )
     try:
         rows = execute_select_query(query)

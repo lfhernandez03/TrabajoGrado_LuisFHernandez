@@ -28,10 +28,10 @@ export function ContextRecommendation({
     <section className="mb-10">
       <div className="mb-4">
         <h2 className="text-2xl font-semibold">
-          ¡Hola, {userName?.split(" ")[0] || "Cinéfilo"}!
+          Hello, {userName?.split(" ")[0] || "Movie Lover"}!
         </h2>
         <p className="text-muted-foreground text-sm mt-1">
-          Basado en tu actividad, te recomendamos
+          Based on your activity, we recommend
         </p>
       </div>
 
@@ -61,8 +61,8 @@ export function ContextRecommendation({
 
         <div className="hidden md:flex flex-col gap-2 w-72 text-sm text-muted-foreground leading-relaxed">
           <p>
-            Nuestro sistema de grafos de conocimiento seleccionó esta película
-            con alta compatibilidad semántica con tu perfil de preferencias.
+            Our knowledge graph system selected this movie
+            with high semantic compatibility with your preference profile.
           </p>
         </div>
       </div>

@@ -72,17 +72,17 @@ export function Navbar() {
                     className="cursor-pointer text-destructive"
                   >
                     <LogOut className="mr-2 h-4 w-4" />
-                    <span>Cerrar Sesión</span>
+                    <span>Log Out</span>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
               <div className="flex items-center gap-2">
                 <Button variant="ghost" asChild>
-                  <Link href="/login">Iniciar Sesión</Link>
+                  <Link href="/login">Log In</Link>
                 </Button>
                 <Button asChild>
-                  <Link href="/register">Registrarse</Link>
+                  <Link href="/register">Sign Up</Link>
                 </Button>
               </div>
             )}

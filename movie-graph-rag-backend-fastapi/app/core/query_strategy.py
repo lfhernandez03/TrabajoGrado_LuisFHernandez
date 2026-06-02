@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import random
+
 from app.domain.entities.recommendation_models import UserContext, UserProfile
 from app.core.ontology_query_builder import (
     build_cross_ontology_sparql_from_signals,
@@ -39,6 +41,12 @@ _OPTIONAL_BLOCK = (
     "  OPTIONAL { ?movie bridge:timeMatchScore ?timeMatchScore }\n"
     "  OPTIONAL { ?movie bridge:isKidFriendly ?kidFriendly }\n"
 )
+
+# Géneros confirmados en la ontología — usados para diversificar cold start
+_COLD_START_GENRES = [
+    "Action", "Drama", "Comedy", "Thriller", "Animation",
+    "Romance", "Sci-Fi", "Horror", "Children", "Adventure",
+]
 
 # Broadest possible fallback — no filters, just ORDER BY rating.
 _BROAD_SPARQL = (
@@ -118,15 +126,107 @@ def _genre_filter_sparql(
     )
 
 
-def _centrality_ranking_sparql(genre: str | None = None, limit: int = 50) -> str:
+# Community strategy SELECT — adds ?clusterId so Movie.from_fuseki_row can populate cluster_id.
+# Intentionally NOT using _SELECT_COLS so the extra column doesn't break other strategies.
+_COMMUNITY_SELECT_COLS = (
+    "SELECT DISTINCT ?movie ?title ?genreName ?runtime ?rating ?posterUrl\n"
+    "                ?releaseDate ?compatibilityScore ?moodMatchScore ?socialMatchScore\n"
+    "                ?energyMatchScore ?timeMatchScore ?kidFriendly ?clusterId\n"
+)
+
+
+def _community_profile_sparql(
+    cluster_ids: list[str],
+    mood_es: str | None,
+    hard_kid_filter: bool,
+    runtime_max: int | None,
+    excluded: set[str],
+    limit: int = 40,
+) -> str:
+    """Movies from the user's dominant Louvain clusters, optionally filtered by mood.
+
+    Projects ?clusterId so scorer can compute graph_affinity without an extra query.
+    """
+    values_clause = " ".join(f'"{_esc(c)}"' for c in cluster_ids)
+    mood_filter = f'  ?movie bridge:compatibleMood "{_esc(mood_es)}" .\n' if mood_es else ""
+    children_filter = "  ?movie bridge:isKidFriendly true .\n" if hard_kid_filter else ""
+    runtime_filter = (
+        f"  FILTER(!BOUND(?runtime) || ?runtime <= {int(runtime_max)})\n"
+        if runtime_max is not None else ""
+    )
+    excl_clauses = [
+        f'!CONTAINS(LCASE(STR(?title)), LCASE("{_esc(v)}"))'
+        for v in sorted(excluded)[:10] if str(v).strip()
+    ]
+    exclusion_filter = f"  FILTER({' && '.join(excl_clauses)})\n" if excl_clauses else ""
+    return (
+        _PREFIXES
+        + _COMMUNITY_SELECT_COLS
+        + "WHERE {\n"
+        + f"  VALUES ?clusterId {{ {values_clause} }}\n"
+        + "  ?movie rdf:type movie:FeatureFilm ; movie:hasTitle ?title ;\n"
+        + "         movie:belongsToCluster ?clusterId .\n"
+        + _OPTIONAL_BLOCK
+        + mood_filter
+        + children_filter
+        + runtime_filter
+        + exclusion_filter
+        + "}\n"
+        + "ORDER BY DESC(?compatibilityScore) DESC(?rating)\n"
+        + f"LIMIT {limit}"
+    )
+
+
+def _community_adjacent_sparql(
+    cluster_ids: list[str],
+    mood_es: str | None,
+    hard_kid_filter: bool,
+    runtime_max: int | None,
+    excluded: set[str],
+    limit: int = 40,
+) -> str:
+    """Movies from unexplored adjacent Louvain clusters — serendipity / exploration path."""
+    values_clause = " ".join(f'"{_esc(c)}"' for c in cluster_ids)
+    mood_filter = f'  ?movie bridge:compatibleMood "{_esc(mood_es)}" .\n' if mood_es else ""
+    children_filter = "  ?movie bridge:isKidFriendly true .\n" if hard_kid_filter else ""
+    runtime_filter = (
+        f"  FILTER(!BOUND(?runtime) || ?runtime <= {int(runtime_max)})\n"
+        if runtime_max is not None else ""
+    )
+    excl_clauses = [
+        f'!CONTAINS(LCASE(STR(?title)), LCASE("{_esc(v)}"))'
+        for v in sorted(excluded)[:10] if str(v).strip()
+    ]
+    exclusion_filter = f"  FILTER({' && '.join(excl_clauses)})\n" if excl_clauses else ""
+    return (
+        _PREFIXES
+        + _COMMUNITY_SELECT_COLS
+        + "WHERE {\n"
+        + f"  VALUES ?clusterId {{ {values_clause} }}\n"
+        + "  ?movie rdf:type movie:FeatureFilm ; movie:hasTitle ?title ;\n"
+        + "         movie:belongsToCluster ?clusterId .\n"
+        + _OPTIONAL_BLOCK
+        + mood_filter
+        + children_filter
+        + runtime_filter
+        + exclusion_filter
+        + "}\n"
+        + "ORDER BY DESC(?compatibilityScore) DESC(?rating)\n"
+        + f"LIMIT {limit}"
+    )
+
+
+def _centrality_ranking_sparql(genre: str | None = None, limit: int = 50, offset: int = 0) -> str:
     """Movies ordered by rating + bridge score — used as cold-start ranking.
 
     When ``genre`` is provided the query is restricted to that genre so cold-start
     users that did express a genre preference still receive relevant results.
+    ``offset`` allows paginating the ranking to surface different movies across requests.
     """
     genre_filter = (
         f'  FILTER(?genreName = "{_esc(genre)}")\n' if genre else ""
     )
+    offset_clause = f"OFFSET {offset}\n" if offset > 0 else ""
     return (
         _PREFIXES
         + _SELECT_COLS
@@ -147,11 +247,17 @@ def _centrality_ranking_sparql(genre: str | None = None, limit: int = 50) -> str
         + "  OPTIONAL { ?movie bridge:isKidFriendly ?kidFriendly }\n"
         + "}\n"
         + "ORDER BY DESC(?rating) DESC(?compatibilityScore)\n"
+        + offset_clause
         + f"LIMIT {limit}"
     )
 
 
-def build_strategy(ctx: UserContext, profile: UserProfile) -> list[tuple[str, str]]:
+def build_strategy(
+    ctx: UserContext,
+    profile: UserProfile,
+    dominant_cluster_ids: list[str] | None = None,
+    adjacent_cluster_ids: list[str] | None = None,
+) -> list[tuple[str, str]]:
     """Return an ordered list of ``(name, sparql)`` attempts for the pipeline.
 
     The executor tries each in order until ``min_results`` rows are found.
@@ -175,12 +281,19 @@ def build_strategy(ctx: UserContext, profile: UserProfile) -> list[tuple[str, st
 
     has_strong_signal = bool(mood_es or companion_es or ctx.genres)
 
-    # Cold start with no signal → just return high-quality broad results
+    # Cold start with no signal → genre-stratified queries for diversity
     if profile.is_cold_start and not has_strong_signal:
-        return [
-            ("centrality_ranking", _centrality_ranking_sparql()),
-            ("broad", _BROAD_SPARQL),
-        ]
+        # Sample 4 random genres each request so candidates differ on every call
+        shuffled = random.sample(_COLD_START_GENRES, k=min(4, len(_COLD_START_GENRES)))
+        strategies: list[tuple[str, str]] = []
+        for g in shuffled:
+            strategies.append((
+                f"cold_start_{g.lower()}",
+                _centrality_ranking_sparql(genre=g, limit=15),
+            ))
+        strategies.append(("centrality_ranking", _centrality_ranking_sparql()))
+        strategies.append(("broad", _BROAD_SPARQL))
+        return strategies
 
     attempts: list[tuple[str, str]] = []
 
@@ -232,6 +345,32 @@ def build_strategy(ctx: UserContext, profile: UserProfile) -> list[tuple[str, st
                 excluded_normalized=excluded,
                 limit=40,
                 genres=norm_genres,
+            ),
+        ))
+
+    # ── 3b. community_profile: dominant clusters + optional mood ─────────────
+    if dominant_cluster_ids:
+        attempts.append((
+            "community_profile",
+            _community_profile_sparql(
+                cluster_ids=dominant_cluster_ids,
+                mood_es=mood_es,
+                hard_kid_filter=hard_kid_filter,
+                runtime_max=ctx.runtime_max,
+                excluded=excluded,
+            ),
+        ))
+
+    # ── 3c. community_adjacent: unexplored adjacent clusters + optional mood ─
+    if adjacent_cluster_ids:
+        attempts.append((
+            "community_adjacent",
+            _community_adjacent_sparql(
+                cluster_ids=adjacent_cluster_ids,
+                mood_es=mood_es,
+                hard_kid_filter=hard_kid_filter,
+                runtime_max=ctx.runtime_max,
+                excluded=excluded,
             ),
         ))
 

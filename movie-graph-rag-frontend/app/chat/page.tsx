@@ -6,18 +6,24 @@ import { Navbar } from "@/components/organisms/Navbar";
 import { ProtectedRoute } from "@/components/shared/ProtectedRoute";
 import { UserBubble, AssistantBubble, LoadingBubble } from "@/components/chat";
 import { ContextChips, type ContextChip } from "@/components/molecules/ContextChips";
-import { sendChatMessage, type ChatMessage, type ChatRecommendationResponse } from "@/services/chat.service";
+import { sendChatConversation, type ChatMessage, type ChatResponse, type ChatMovieResponse } from "@/services/chat.service";
+import { MovieDetailsDialog } from "@/components/home/MovieDetailsDialog";
+import type { Movie } from "@/services/movies.service";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
 const QUICK_PROMPTS = [
-  { icon: "🎬", text: "Acción para ver con amigos esta noche" },
-  { icon: "🍿", text: "Algo ligero y divertido" },
-  { icon: "💕", text: "Romántica para ver en pareja" },
-  { icon: "👨‍👩‍👧", text: "Familiar apta para niños" },
-  { icon: "🧠", text: "Que me haga pensar, menos de 2 horas" },
-  { icon: "😰", text: "Estoy estresado, necesito desconectarme" },
+  { icon: "🎬", text: "Action movie to watch with friends tonight" },
+  { icon: "🍿", text: "Something light and fun" },
+  { icon: "💕", text: "Romantic movie for couples" },
+  { icon: "👨‍👩‍👧", text: "Family-friendly for kids" },
+  { icon: "🧠", text: "Makes me think, less than 2 hours" },
+  { icon: "😰", text: "I'm stressed, I need to disconnect" },
 ];
+
+const SESSIONS_KEY = "moviq_sessions";
+const ACTIVE_KEY = "moviq_active_session";
+const MAX_SESSIONS = 20;
 
 function genId() {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
@@ -29,14 +35,70 @@ interface Session {
   messages: ChatMessage[];
 }
 
+function deserializeSessions(raw: string): Session[] {
+  try {
+    const parsed = JSON.parse(raw) as Session[];
+    return parsed.map((s) => ({
+      ...s,
+      messages: s.messages.map((m) => ({
+        ...m,
+        timestamp: new Date(m.timestamp),
+      })),
+    }));
+  } catch {
+    return [];
+  }
+}
+
+function readStoredSessions(): Session[] {
+  if (typeof window === "undefined") return [];
+  const raw = localStorage.getItem(SESSIONS_KEY);
+  return raw ? deserializeSessions(raw) : [];
+}
+
+function readStoredActiveId(): string | null {
+  if (typeof window === "undefined") return null;
+  return localStorage.getItem(ACTIVE_KEY);
+}
+
 export default function ChatPage() {
-  const [sessions, setSessions] = useState<Session[]>([]);
-  const [activeId, setActiveId] = useState<string | null>(null);
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [sessions, setSessions] = useState<Session[]>(() => readStoredSessions());
+  const [activeId, setActiveId] = useState<string | null>(() => readStoredActiveId());
+  const [messages, setMessages] = useState<ChatMessage[]>(() => {
+    const storedSessions = readStoredSessions();
+    const storedActiveId = readStoredActiveId();
+    const active = storedSessions.find((s) => s.id === storedActiveId);
+    return active?.messages ?? [];
+  });
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [lastRec, setLastRec] = useState<ChatRecommendationResponse | null>(null);
+  const [lastRec, setLastRec] = useState<ChatResponse | null>(() => {
+    const storedSessions = readStoredSessions();
+    const storedActiveId = readStoredActiveId();
+    const active = storedSessions.find((s) => s.id === storedActiveId);
+    if (!active) return null;
+    const last = active.messages.findLast((m) => m.recommendation);
+    return last?.recommendation ?? null;
+  });
   const [contextChips, setContextChips] = useState<ContextChip[]>([]);
+  const [selectedMovie, setSelectedMovie] = useState<Movie | null>(null);
+  const [movieDialogOpen, setMovieDialogOpen] = useState(false);
+
+  const handleViewDetails = (chatMovie: ChatMovieResponse) => {
+    setSelectedMovie({
+      uri: chatMovie.uri ?? "",
+      title: chatMovie.title,
+      posterUrl: chatMovie.posterUrl,
+      year: chatMovie.year,
+      runtime: chatMovie.runtime,
+      certification: chatMovie.certification,
+      director: chatMovie.director,
+      genres: chatMovie.genres ?? (chatMovie.genreName ? [chatMovie.genreName] : undefined),
+      description: chatMovie.description,
+      rating: chatMovie.averageRating,
+    });
+    setMovieDialogOpen(true);
+  };
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -47,11 +109,27 @@ export default function ChatPage() {
 
   useEffect(() => { scrollBottom(); }, [messages, isLoading, scrollBottom]);
 
+  // ── Persistence ───────────────────────────────────────────────────────────
+
+  useEffect(() => {
+    try {
+      const trimmed = sessions.slice(0, MAX_SESSIONS);
+      localStorage.setItem(SESSIONS_KEY, JSON.stringify(trimmed));
+    } catch {
+      // Quota exceeded — silently ignore
+    }
+  }, [sessions]);
+
+  useEffect(() => {
+    if (activeId) localStorage.setItem(ACTIVE_KEY, activeId);
+    else localStorage.removeItem(ACTIVE_KEY);
+  }, [activeId]);
+
   // ── Session helpers ───────────────────────────────────────────────────────
 
   const newSession = useCallback(() => {
     const id = genId();
-    const session: Session = { id, label: "Nueva conversación", messages: [] };
+    const session: Session = { id, label: "New conversation", messages: [] };
     setSessions((prev) => [session, ...prev]);
     setActiveId(id);
     setMessages([]);
@@ -75,6 +153,7 @@ export default function ChatPage() {
 
     // Ensure we have an active session
     let sid = activeId;
+    let currentMessages = messages;
     if (!sid) {
       const id = genId();
       const session: Session = {
@@ -85,6 +164,7 @@ export default function ChatPage() {
       setSessions((prev) => [session, ...prev]);
       setActiveId(id);
       sid = id;
+      currentMessages = [];
     }
 
     const userMsg: ChatMessage = {
@@ -99,8 +179,14 @@ export default function ChatPage() {
     setIsLoading(true);
     setTimeout(() => textareaRef.current?.focus(), 0);
 
+    // Build the full message history to send to the backend
+    const apiMessages = [
+      ...currentMessages.map((m) => ({ role: m.role, content: m.content })),
+      { role: "user" as const, content: query },
+    ];
+
     try {
-      const rec = await sendChatMessage(query);
+      const rec = await sendChatConversation(sid, apiMessages);
       const assistantMsg: ChatMessage = {
         id: genId(),
         role: "assistant",
@@ -121,39 +207,35 @@ export default function ChatPage() {
       });
       setLastRec(rec);
 
-      // Extract context chips from response
-      const ctx = rec.contextExtracted as Record<string, unknown> | undefined;
+      // Extract context chips from flat context_extracted
+      const ctx = rec.context_extracted;
       const newChips: ContextChip[] = [];
-      const emotional = ctx?.emotionalContext as Record<string, string> | undefined;
-      const social = ctx?.socialContext as Record<string, unknown> | undefined;
-      const requirement = ctx?.requirementContext as Record<string, unknown> | undefined;
-
-      if (emotional?.moodDescription) {
-        newChips.push({ id: genId(), label: emotional.moodDescription, type: "mood" });
+      if (ctx.mood) {
+        newChips.push({ id: genId(), label: ctx.mood, type: "mood" });
       }
-      if (social?.companionType && typeof social.companionType === "string") {
-        newChips.push({ id: genId(), label: social.companionType, type: "companion" });
+      if (ctx.companion) {
+        newChips.push({ id: genId(), label: ctx.companion, type: "companion" });
       }
-      if (emotional?.desiredEnergyLevel) {
-        newChips.push({ id: genId(), label: `Energía ${emotional.desiredEnergyLevel}`, type: "energy" });
+      if (ctx.energy) {
+        newChips.push({ id: genId(), label: `Energy ${ctx.energy}`, type: "energy" });
       }
-      if (requirement?.availableTime && typeof requirement.availableTime === "number") {
-        newChips.push({ id: genId(), label: `${requirement.availableTime} min`, type: "runtime" });
+      if (ctx.runtime_max) {
+        newChips.push({ id: genId(), label: `${ctx.runtime_max} min`, type: "runtime" });
       }
       setContextChips(newChips);
     } catch {
       const errMsg: ChatMessage = {
         id: genId(),
         role: "assistant",
-        content: "Lo siento, hubo un error al procesar tu consulta. Por favor, intenta de nuevo.",
+        content: "Sorry, there was an error processing your query. Please try again.",
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, errMsg]);
-      toast.error("Error al obtener recomendación");
+      toast.error("Error getting recommendation");
     } finally {
       setIsLoading(false);
     }
-  }, [input, isLoading, activeId]);
+  }, [input, isLoading, activeId, messages]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -168,9 +250,7 @@ export default function ChatPage() {
   const isEmpty = messages.length === 0;
 
   // ── Context panel data ────────────────────────────────────────────────────
-  const ctx = lastRec?.contextExtracted as Record<string, unknown> | undefined;
-  const emotional = ctx?.emotionalContext as Record<string, string> | undefined;
-  const social = ctx?.socialContext as Record<string, unknown> | undefined;
+  const ctx = lastRec?.context_extracted;
 
   return (
     <ProtectedRoute>
@@ -189,7 +269,7 @@ export default function ChatPage() {
                 className="w-full flex items-center gap-2 px-3 py-2 rounded-lg bg-surface2 border border-border text-sm text-text hover:border-accent/40 hover:text-accent transition-all"
               >
                 <Plus className="w-4 h-4" />
-                Nueva conversación
+                New conversation
               </button>
             </div>
 
@@ -197,7 +277,7 @@ export default function ChatPage() {
             <div className="flex-1 p-2 flex flex-col gap-1">
               {sessions.length === 0 ? (
                 <p className="text-xs text-muted text-center py-8">
-                  Tus conversaciones aparecerán aquí
+                  Your conversations will appear here
                 </p>
               ) : (
                 sessions.map((s) => (
@@ -222,7 +302,7 @@ export default function ChatPage() {
             {/* Quick prompts */}
             <div className="p-3 border-t border-border">
               <p className="text-[10px] font-semibold text-muted uppercase tracking-wider mb-2">
-                Sugerencias rápidas
+                Quick suggestions
               </p>
               <div className="flex flex-col gap-1">
                 {QUICK_PROMPTS.slice(0, 4).map((p) => (
@@ -253,10 +333,10 @@ export default function ChatPage() {
                     <div className="w-16 h-16 rounded-full bg-teal/10 flex items-center justify-center mb-4">
                       <span className="text-2xl text-teal">✦</span>
                     </div>
-                    <h2 className="font-display text-3xl text-text mb-2">¿Qué quieres ver hoy?</h2>
+                    <h2 className="font-display text-3xl text-text mb-2">What do you want to watch today?</h2>
                     <p className="text-sm text-muted max-w-sm mb-8">
-                      Cuéntame tu estado de ánimo, con quién estás, cuánto tiempo tienes.
-                      El grafo encontrará tu película perfecta.
+                      Tell me your mood, who you're with, how much time you have.
+                      The graph will find your perfect movie.
                     </p>
                     {/* Quick chips on empty state */}
                     <div className="flex flex-wrap gap-2 justify-center">
@@ -281,7 +361,7 @@ export default function ChatPage() {
                   msg.role === "user" ? (
                     <UserBubble key={msg.id} message={msg} />
                   ) : (
-                    <AssistantBubble key={msg.id} message={msg} />
+                    <AssistantBubble key={msg.id} message={msg} onViewDetails={handleViewDetails} />
                   )
                 )}
                 {isLoading && <LoadingBubble />}
@@ -303,7 +383,7 @@ export default function ChatPage() {
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
                     onKeyDown={handleKeyDown}
-                    placeholder="Describe qué tipo de película buscas…"
+                    placeholder="Describe what kind of movie you're looking for…"
                     disabled={isLoading}
                     rows={1}
                     className={cn(
@@ -342,52 +422,67 @@ export default function ChatPage() {
           <aside className="hidden xl:flex flex-col w-65 shrink-0 border-l border-border bg-surface overflow-y-auto">
             <div className="p-4 border-b border-border">
               <p className="text-xs font-semibold text-muted uppercase tracking-wider">
-                Contexto extraído
+                Extracted context
               </p>
             </div>
 
             {lastRec ? (
               <div className="p-4 flex flex-col gap-4 text-xs">
                 {/* Emotional context */}
-                {emotional && (
-                  <ContextPanel label="Estado emocional">
-                    {emotional.moodDescription && (
-                      <Row label="Mood" value={emotional.moodDescription} />
-                    )}
-                    {emotional.desiredEnergyLevel && (
-                      <Row label="Energía" value={emotional.desiredEnergyLevel} />
-                    )}
+                {(ctx?.mood || ctx?.energy) && (
+                  <ContextPanel label="Emotional state">
+                    {ctx.mood && <Row label="Mood" value={ctx.mood} />}
+                    {ctx.energy && <Row label="Energy" value={ctx.energy} />}
                   </ContextPanel>
                 )}
 
                 {/* Social context */}
-                {social && (
-                  <ContextPanel label="Contexto social">
-                    {typeof social.companionType === "string" && (
-                      <Row label="Compañía" value={social.companionType} />
-                    )}
+                {ctx?.companion && (
+                  <ContextPanel label="Social context">
+                    <Row label="Companion" value={ctx.companion} />
+                    {ctx.has_children && <Row label="Children" value="Yes" />}
                   </ContextPanel>
                 )}
 
-                {/* Metrics */}
-                {lastRec.moviesFound !== undefined && (
-                  <ContextPanel label="Métricas">
-                    <Row label="Películas" value={String(lastRec.moviesFound)} />
-                    <Row label="Tiempo" value={`${lastRec.executionTimeMs}ms`} />
+                {/* Preferences */}
+                {(ctx?.genres?.length || ctx?.runtime_max || ctx?.exclusions?.length) ? (
+                  <ContextPanel label="Preferences">
+                    {ctx.genres && ctx.genres.length > 0 && (
+                      <Row label="Genres" value={ctx.genres.join(", ")} />
+                    )}
+                    {ctx.runtime_max && (
+                      <Row label="Max runtime" value={`${ctx.runtime_max} min`} />
+                    )}
+                    {ctx.exclusions && ctx.exclusions.length > 0 && (
+                      <Row label="Exclude" value={ctx.exclusions.join(", ")} />
+                    )}
                   </ContextPanel>
-                )}
+                ) : null}
+
+                {/* Metrics */}
+                <ContextPanel label="Metrics">
+                  <Row label="Movies" value={String(lastRec.movies.length)} />
+                  <Row label="Time" value={`${lastRec.execution_ms}ms`} />
+                  <Row label="Turn" value={String(lastRec.turn_count)} />
+                  {lastRec.strategy_used && (
+                    <Row label="Strategy" value={lastRec.strategy_used} />
+                  )}
+                  {ctx?.confidence !== undefined && (
+                    <Row label="Confidence" value={`${Math.round(ctx.confidence * 100)}%`} />
+                  )}
+                </ContextPanel>
 
                 {/* Strategy indicator */}
                 <div className="flex items-center gap-1.5 text-teal">
                   <Sparkles className="w-3.5 h-3.5" />
-                  <span className="font-medium">GraphRAG activo</span>
+                  <span className="font-medium">GraphRAG active</span>
                 </div>
               </div>
             ) : (
               <div className="flex flex-col items-center justify-center flex-1 text-center p-6">
                 <Clock className="w-8 h-8 text-muted/30 mb-2" />
                 <p className="text-xs text-muted">
-                  El contexto extraído de tu consulta aparecerá aquí.
+                  The context extracted from your query will appear here.
                 </p>
               </div>
             )}
@@ -395,6 +490,12 @@ export default function ChatPage() {
 
         </div>
       </div>
+      <MovieDetailsDialog
+        movie={selectedMovie}
+        open={movieDialogOpen}
+        onOpenChange={setMovieDialogOpen}
+        onRecommendSimilar={() => setMovieDialogOpen(false)}
+      />
     </ProtectedRoute>
   );
 }

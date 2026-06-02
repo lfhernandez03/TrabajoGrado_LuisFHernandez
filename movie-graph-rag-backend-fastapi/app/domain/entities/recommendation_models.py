@@ -28,6 +28,10 @@ class UserContext:
     # Identifies the conversation session. Set by the API layer, not the LLM.
     # Used to accumulate context across multiple turns of the same conversation.
     raw_query: str = ""
+    off_topic: bool = False
+    # True when the user message is clearly not a movie recommendation query
+    # (greeting, small talk, unrelated question). ChatUseCase short-circuits
+    # to a friendly invitation response when this is True.
 
 
 @dataclass
@@ -72,6 +76,9 @@ class Movie:
     kid_friendly: bool | None = None
     serendipity_score: float = 0.0
     description: str | None = None
+    cluster_id: str | None = None
+    # Louvain community ID from movie:belongsToCluster. Populated when
+    # community SPARQL strategy is used, or after _bulk_fetch_cluster_ids().
 
     @classmethod
     def from_fuseki_row(cls, row: dict) -> Movie:
@@ -135,6 +142,8 @@ class Movie:
         except Exception:
             kid_friendly = None
 
+        cluster_id = str(row["clusterId"]).strip() if row.get("clusterId") else None
+
         # Build semantic scores dict for backward compatibility
         semantic_scores = {}
         score_mappings = {
@@ -167,6 +176,7 @@ class Movie:
             semantic_scores=semantic_scores,
             kid_friendly=kid_friendly,
             description=row.get("description"),
+            cluster_id=cluster_id,
         )
 
     def to_response_dict(self) -> dict:
@@ -236,6 +246,8 @@ class ConversationSession:
     accumulated_context: UserContext | None = None
     # Merged UserContext from all user turns so far.
     # None until at least one user turn has been processed.
+    recommended_titles: list[str] = field(default_factory=list)
+    # Titles already shown to the user so they can be excluded in future turns.
 
     created_at: datetime = field(default_factory=datetime.utcnow)
     last_updated: datetime = field(default_factory=datetime.utcnow)

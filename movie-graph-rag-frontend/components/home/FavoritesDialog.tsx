@@ -36,21 +36,21 @@ export function FavoritesDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Heart className="h-5 w-5 text-accent" />
-            Mis Favoritos
+            My Favorites
           </DialogTitle>
           <DialogDescription>
-            {favorites.length} película(s) guardada(s)
+            {favorites.length} saved movie{favorites.length !== 1 ? "s" : ""}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-3 mt-4">
           {isLoading ? (
             <div className="text-center py-8 text-muted-foreground">
-              Cargando favoritos...
+              Loading favorites...
             </div>
           ) : favorites.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
-              Aún no tienes películas favoritas
+              You don&apos;t have any favorite movies yet
             </div>
           ) : (
             favorites.map((movie) => (
@@ -60,7 +60,7 @@ export function FavoritesDialog({
                     <div className="min-w-0 flex-1">
                       <p className="font-semibold line-clamp-1">{movie.title}</p>
                       <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
-                        {movie.description || movie.relationReason || "Película favorita"}
+                        {movie.description || movie.relationReason || "Favorite movie"}
                       </p>
                       <div className="flex flex-wrap gap-3 mt-2 text-xs text-muted-foreground">
                         {movie.year && <span>{movie.year}</span>}
@@ -68,7 +68,7 @@ export function FavoritesDialog({
                         {movie.addedAt && (
                           <span className="flex items-center gap-1">
                             <Calendar className="h-3 w-3" />
-                            {new Date(movie.addedAt).toLocaleDateString("es-ES")}
+                            {new Date(movie.addedAt).toLocaleDateString("en-US")}
                           </span>
                         )}
                       </div>
@@ -82,7 +82,7 @@ export function FavoritesDialog({
                           onOpenChange(false);
                         }}
                       >
-                        Ver similares
+                        Similar movies
                       </Button>
                       <Button
                         size="sm"
@@ -101,7 +101,7 @@ export function FavoritesDialog({
 
         <div className="pt-4 border-t mt-4">
           <Button variant="outline" className="w-full" onClick={() => onOpenChange(false)}>
-            Cerrar
+            Close
           </Button>
         </div>
       </DialogContent>

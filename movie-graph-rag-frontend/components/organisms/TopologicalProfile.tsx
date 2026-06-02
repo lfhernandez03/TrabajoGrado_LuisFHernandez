@@ -1,30 +1,28 @@
 'use client'
 
-import { TrendingDown, TrendingUp, Minus, Brain, Compass, User } from 'lucide-react'
-import { ScoreBar } from '@/components/atoms'
-import { Tag } from '@/components/atoms'
+import { TrendingDown, TrendingUp, Minus, Brain, Compass, User, Sparkles } from 'lucide-react'
 import { SkeletonBox, SkeletonText } from '@/components/atoms'
 import type { TopologicalProfileResponse } from '@/services/topology.service'
 import { cn } from '@/lib/utils'
 
-// ── Helpers ──────────────────────────────────────────────────────────────────
+// ── Config ────────────────────────────────────────────────────────────────────
 
 const USER_TYPE_CONFIG = {
-  especialista: {
-    label: 'Especialista',
-    description: 'Te especializas en géneros concretos',
+  specialist: {
+    label: 'Specialist',
+    description: 'You focus on specific genres',
     icon: Brain,
     color: 'text-accent bg-accent/10 border-accent/30',
   },
-  equilibrado: {
-    label: 'Equilibrado',
-    description: 'Balanceas exploración y preferencias',
+  balanced: {
+    label: 'Balanced',
+    description: 'You balance exploration and preferences',
     icon: User,
     color: 'text-teal bg-teal/10 border-teal/30',
   },
-  explorador: {
-    label: 'Explorador',
-    description: 'Disfrutas la diversidad cinematográfica',
+  explorer: {
+    label: 'Explorer',
+    description: 'You enjoy cinematic diversity',
     icon: Compass,
     color: 'text-accent2 bg-accent2/10 border-accent2/30',
   },
@@ -32,24 +30,33 @@ const USER_TYPE_CONFIG = {
 
 const TREND_CONFIG = {
   specializing: {
-    label: 'Especializándote',
+    label: 'Specializing',
     icon: TrendingDown,
     color: 'text-accent',
-    description: 'Tus gustos se están concentrando',
+    bg: 'bg-accent/10',
   },
   diversifying: {
-    label: 'Diversificando',
+    label: 'Diversifying',
     icon: TrendingUp,
     color: 'text-teal',
-    description: 'Estás expandiendo tus horizontes',
+    bg: 'bg-teal/10',
   },
   stable: {
-    label: 'Estable',
+    label: 'Stable',
     icon: Minus,
     color: 'text-muted',
-    description: 'Patrón de consumo consistente',
+    bg: 'bg-muted/10',
   },
 }
+
+// Rank 0 → richest, rank 4 → faintest
+const CLUSTER_BAR_COLORS = [
+  'bg-gradient-to-r from-teal to-accent',
+  'bg-teal/55',
+  'bg-teal/30',
+  'bg-border2',
+  'bg-border2/50',
+]
 
 // ── Skeleton ─────────────────────────────────────────────────────────────────
 
@@ -81,44 +88,70 @@ export interface TopologicalProfileProps {
   className?: string
 }
 
-// ── Shared sub-sections ───────────────────────────────────────────────────────
+// ── Sub-sections ──────────────────────────────────────────────────────────────
 
-function UserTypeHeader({ profile, typeConfig }: { profile: TopologicalProfileResponse; typeConfig: typeof USER_TYPE_CONFIG[keyof typeof USER_TYPE_CONFIG] }) {
+function UserTypeHeader({
+  profile,
+  typeConfig,
+}: {
+  profile: TopologicalProfileResponse
+  typeConfig: (typeof USER_TYPE_CONFIG)[keyof typeof USER_TYPE_CONFIG]
+}) {
   const TypeIcon = typeConfig.icon
   return (
-    <div className="flex items-start gap-4">
+    <div className="flex items-start gap-3">
       <div className={cn('p-3 rounded-xl border shrink-0', typeConfig.color)}>
         <TypeIcon className="h-6 w-6" />
       </div>
       <div className="min-w-0">
-        <div className="flex items-center gap-2 flex-wrap">
-          <h3 className="text-lg font-bold font-display tracking-wide">{typeConfig.label}</h3>
-          <span className={cn('text-xs px-2 py-0.5 rounded-full border font-medium', typeConfig.color)}>
-            {profile.userType}
-          </span>
-        </div>
-        <p className="text-sm text-muted mt-0.5">{typeConfig.description}</p>
+        <h3 className="text-lg font-bold font-display tracking-wide leading-tight">{typeConfig.label}</h3>
+        <span className={cn('text-[11px] px-2 py-0.5 rounded-full border font-medium inline-block mt-1', typeConfig.color)}>
+          {profile.userType}
+        </span>
+        <p className="text-xs text-muted mt-1.5 leading-snug">{typeConfig.description}</p>
       </div>
     </div>
   )
 }
 
 function ExplorationIndex({ profile }: { profile: TopologicalProfileResponse }) {
+  const pct = Math.round(profile.explorationIndex * 100)
+  const barClass =
+    profile.explorationIndex > 0.6
+      ? 'bg-gradient-to-r from-teal to-accent'
+      : profile.explorationIndex > 0.3
+        ? 'bg-gradient-to-r from-teal/70 to-teal'
+        : 'bg-accent'
+
   return (
-    <div className="bg-surface2 rounded-xl p-4 space-y-3 border border-border">
+    <div className="bg-surface2 rounded-xl p-4 space-y-2.5 border border-border">
       <div className="flex items-center justify-between">
-        <p className="text-xs font-medium text-muted uppercase tracking-wider">Índice de exploración</p>
-        <span className="text-xs text-muted">Especialista → Explorador</span>
+        <p className="text-[11px] font-semibold text-muted uppercase tracking-widest">Exploration index</p>
+        <div className="flex items-center gap-2">
+          <span className="text-[11px] text-muted/70">Specialist → Explorer</span>
+          <span className="text-sm font-bold text-teal tabular-nums">{pct}%</span>
+        </div>
       </div>
-      <ScoreBar
-        score={profile.explorationIndex}
-        label=""
-        animated
-        variant={profile.explorationIndex > 0.6 ? 'teal' : profile.explorationIndex > 0.3 ? 'gradient' : 'accent'}
-      />
-      <div className="flex justify-between text-xs text-muted">
-        <span>Enfocado</span>
-        <span>Diverso</span>
+
+      {/* Bar with position-marker dot */}
+      <div className="relative h-3 flex items-center">
+        <div className="absolute inset-x-0 h-2 bg-bg rounded-full overflow-hidden border border-border/50">
+          <div
+            className={cn('h-full rounded-full animate-fill-bar', barClass)}
+            style={
+              { width: `${pct}%`, '--fill-width': `${pct}%` } as React.CSSProperties
+            }
+          />
+        </div>
+        <div
+          className="absolute w-3 h-3 bg-text rounded-full border-2 border-bg shadow-lg z-10 transition-all duration-700"
+          style={{ left: `calc(${pct}% - 6px)` }}
+        />
+      </div>
+
+      <div className="flex justify-between text-[11px] text-muted/70">
+        <span>Focused</span>
+        <span>Diverse</span>
       </div>
     </div>
   )
@@ -126,30 +159,38 @@ function ExplorationIndex({ profile }: { profile: TopologicalProfileResponse }) 
 
 function DominantClusters({ profile }: { profile: TopologicalProfileResponse }) {
   if (profile.dominantClusters.length === 0) return null
+  const clusters = profile.dominantClusters.slice(0, 5)
+
   return (
     <div className="space-y-3">
-      <p className="text-xs font-medium text-muted uppercase tracking-wider">Comunidades dominantes</p>
-      <div className="space-y-2.5">
-        {profile.dominantClusters.slice(0, 5).map((cluster, i) => {
+      <p className="text-[11px] font-semibold text-muted uppercase tracking-widest">Dominant communities</p>
+      <div className="space-y-3">
+        {clusters.map((cluster, i) => {
           const pct = Math.round(cluster.weight * 100)
           const isTop = i === 0
+          const barColor = CLUSTER_BAR_COLORS[i] ?? 'bg-border2/40'
+
           return (
-            <div key={cluster.clusterId} className="space-y-1">
-              <div className="flex items-center justify-between text-sm">
-                <span className={cn('truncate', isTop ? 'text-text font-medium' : 'text-muted')}>
-                  {isTop && <span className="text-accent mr-1.5">●</span>}
-                  {cluster.label}
-                </span>
-                <div className="flex items-center gap-2 shrink-0 ml-2">
-                  <span className="text-xs text-muted">{cluster.moviesSeen} vistas</span>
-                  <span className={cn('text-xs font-semibold tabular-nums', isTop ? 'text-teal' : 'text-muted')}>
+            <div key={cluster.clusterId} className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className={cn('text-[10px] font-bold tabular-nums shrink-0 w-4', isTop ? 'text-accent' : 'text-muted/40')}>
+                    {i + 1}
+                  </span>
+                  <span className={cn('truncate text-xs', isTop ? 'text-text font-semibold' : 'text-text/75')}>
+                    {cluster.label}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2.5 shrink-0 ml-2">
+                  <span className="text-[11px] text-muted">{cluster.moviesSeen} seen</span>
+                  <span className={cn('text-xs font-bold tabular-nums min-w-8 text-right', isTop ? 'text-teal' : 'text-muted/70')}>
                     {pct}%
                   </span>
                 </div>
               </div>
-              <div className="h-1.5 bg-surface2 rounded-full overflow-hidden">
+              <div className="h-1.5 bg-bg rounded-full overflow-hidden">
                 <div
-                  className={cn('h-full rounded-full transition-all duration-700', isTop ? 'bg-linear-to-r from-teal to-accent' : 'bg-border2')}
+                  className={cn('h-full rounded-full transition-all duration-700', barColor)}
                   style={{ width: `${pct}%` }}
                 />
               </div>
@@ -164,41 +205,46 @@ function DominantClusters({ profile }: { profile: TopologicalProfileResponse }) 
 function UnexploredAdjacent({ profile }: { profile: TopologicalProfileResponse }) {
   if (profile.unexploredAdjacent.length === 0) return null
   return (
-    <div className="space-y-2">
-      <p className="text-xs font-medium text-muted uppercase tracking-wider">Comunidades adyacentes sin explorar</p>
-      <div className="flex flex-wrap gap-2">
+    <div className="space-y-2.5">
+      <p className="text-[11px] font-semibold text-muted uppercase tracking-widest">
+        Unexplored adjacent communities
+      </p>
+      <div className="flex flex-wrap gap-1.5">
         {profile.unexploredAdjacent.map((cluster) => (
-          <Tag key={cluster.clusterId} label={cluster.label} variant="static" />
+          <span
+            key={cluster.clusterId}
+            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-teal/5 border border-teal/20 text-teal/70 hover:bg-teal/10 hover:text-teal hover:border-teal/40 transition-all duration-200 cursor-default"
+          >
+            <Sparkles className="h-3 w-3 opacity-70 shrink-0" />
+            {cluster.label}
+          </span>
         ))}
       </div>
     </div>
   )
 }
 
-function TrendAndStats({ profile, trendConfig, clusteredPct }: {
+function TrendAndStats({
+  profile,
+  trendConfig,
+  clusteredPct,
+}: {
   profile: TopologicalProfileResponse
-  trendConfig: typeof TREND_CONFIG[keyof typeof TREND_CONFIG]
+  trendConfig: (typeof TREND_CONFIG)[keyof typeof TREND_CONFIG]
   clusteredPct: number
 }) {
   const TrendIcon = trendConfig.icon
   return (
-    <div className="space-y-3">
-      <div className="flex items-center gap-3 p-3 rounded-lg bg-surface2 border border-border">
-        <TrendIcon className={cn('h-5 w-5 shrink-0', trendConfig.color)} />
-        <div className="min-w-0">
-          <p className={cn('text-sm font-medium', trendConfig.color)}>{trendConfig.label}</p>
-          <p className="text-xs text-muted mt-0.5 truncate">{profile.trendExplanation}</p>
-        </div>
+    <div className="flex items-start gap-3 p-3 rounded-xl bg-surface2 border border-border">
+      <div className={cn('p-1.5 rounded-lg shrink-0 mt-0.5', trendConfig.bg)}>
+        <TrendIcon className={cn('h-4 w-4', trendConfig.color)} />
       </div>
-      <div className="grid grid-cols-2 gap-3">
-        <div className="bg-surface2 rounded-lg p-3 text-center border border-border">
-          <p className="text-2xl font-bold font-display text-text">{profile.totalFavorites}</p>
-          <p className="text-xs text-muted mt-0.5">Favoritos totales</p>
-        </div>
-        <div className="bg-surface2 rounded-lg p-3 text-center border border-border">
-          <p className="text-2xl font-bold font-display text-teal">{clusteredPct}%</p>
-          <p className="text-xs text-muted mt-0.5">En comunidades</p>
-        </div>
+      <div className="min-w-0 flex-1">
+        <p className={cn('text-sm font-semibold', trendConfig.color)}>{trendConfig.label}</p>
+        <p className="text-[11px] text-muted mt-1 leading-relaxed">{profile.trendExplanation}</p>
+        <p className="text-[11px] text-muted/60 mt-2">
+          <span className="font-semibold text-teal">{clusteredPct}%</span> of favorites mapped to graph clusters
+        </p>
       </div>
     </div>
   )
@@ -218,28 +264,19 @@ export function TopologicalProfile({ profile, orientation = 'vertical', classNam
   if (orientation === 'horizontal') {
     return (
       <div className={cn('space-y-5', className)}>
-        {/* Row 1: 3 columns */}
-        <div className="grid grid-cols-1 md:grid-cols-[220px_1fr_200px] gap-6 items-start">
-          {/* Col 1 — User type */}
+        <div className="grid grid-cols-1 md:grid-cols-[190px_1fr_210px] gap-6 items-start">
           <UserTypeHeader profile={profile} typeConfig={typeConfig} />
-
-          {/* Col 2 — Exploration + clusters */}
           <div className="space-y-4">
             <ExplorationIndex profile={profile} />
             <DominantClusters profile={profile} />
           </div>
-
-          {/* Col 3 — Trend + stats */}
           <TrendAndStats profile={profile} trendConfig={trendConfig} clusteredPct={clusteredPct} />
         </div>
-
-        {/* Row 2 — Unexplored (full width, compact) */}
         <UnexploredAdjacent profile={profile} />
       </div>
     )
   }
 
-  // Vertical (sidebar) layout — unchanged behaviour
   return (
     <div className={cn('space-y-6', className)}>
       <UserTypeHeader profile={profile} typeConfig={typeConfig} />
