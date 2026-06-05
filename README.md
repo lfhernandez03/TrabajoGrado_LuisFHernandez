@@ -211,6 +211,8 @@ Colección persistente de películas marcadas por el usuario, usada como señal 
 Este proyecto es el Trabajo de Grado presentado ante la **Universidad del Valle**, Cali, Colombia, para optar al título de Ingeniero de Sistemas. Investiga la aplicación de tecnologías de web semántica (OWL 2, RDF, SPARQL), GraphRAG y LLMs en el dominio de la recomendación cinematográfica explicable, comparando ventajas frente a sistemas colaborativos y basados en contenido tradicionales.
 
 **Palabras clave:** GraphRAG · Ontologías OWL · SPARQL · Recomendación explicable · Web semántica · LLM · Grafo de conocimiento
+!(MovieOntology GIF)[https://drive.google.com/file/d/1ZvaYDaSPI0CgJNJneNup-zXcCkF-ZjZH/view?usp=sharing]
+
 
 ---
 
