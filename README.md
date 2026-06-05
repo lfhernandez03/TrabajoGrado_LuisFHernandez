@@ -166,7 +166,7 @@ El conocimiento cinematográfico se representa mediante tres ontologías interde
 
 Los diagramas de las ontologías están disponibles en [`movie-graph-rag-ontologies/docs/figures/`](movie-graph-rag-ontologies/docs/figures/).
 
-![MovieOntology GIF](https://drive.google.com/file/d/1ZvaYDaSPI0CgJNJneNup-zXcCkF-ZjZH/view?usp=sharing)
+![MovieOntology GIF](https://media4.giphy.com/media/v1.Y2lkPTc5MGI3NjExdzh3NWNsa3EydHYyZTd2aXY2OWtudmU3MXU1bjRrNzV2anhreWtrOSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/hfm5SAEpjDyi9IryXI/giphy.gif)
 
 ---
 
