@@ -1,0 +1,224 @@
+{
+  "main": {
+    "id": "b52230e3c854f8a5",
+    "type": "split",
+    "children": [
+      {
+        "id": "35d081c8d866ffef",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "579dbabfbfc33101",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "ONTOLOGIAS.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "ONTOLOGIAS"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "49b38d58a96aebe3",
+    "type": "split",
+    "children": [
+      {
+        "id": "3c89bfb84b5ae577",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "f63b78398244487b",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical",
+                "autoReveal": false
+              },
+              "icon": "lucide-folder-closed",
+              "title": "Explorador de archivos"
+            }
+          },
+          {
+            "id": "f234e047bdb797b6",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-search",
+              "title": "Buscar"
+            }
+          },
+          {
+            "id": "76f1046c1f24f280",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {},
+              "icon": "lucide-bookmark",
+              "title": "Marcadores"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "right": {
+    "id": "1a17513a2dd3b811",
+    "type": "split",
+    "children": [
+      {
+        "id": "8a8ee03982790134",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "4473e9c4304f65eb",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "file": "ONTOLOGIAS.md",
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-coming-in",
+              "title": "Enlaces entrantes de ONTOLOGIAS"
+            }
+          },
+          {
+            "id": "759caeef06fa10e1",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "file": "ONTOLOGIAS.md",
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-going-out",
+              "title": "Enlaces salientes de ONTOLOGIAS"
+            }
+          },
+          {
+            "id": "2494367d60ad0ccf",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-tags",
+              "title": "Etiquetas"
+            }
+          },
+          {
+            "id": "e698d682ceb5ecd2",
+            "type": "leaf",
+            "state": {
+              "type": "all-properties",
+              "state": {
+                "sortOrder": "frequency",
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-archive",
+              "title": "Todas las propiedades"
+            }
+          },
+          {
+            "id": "c2e5e67278d5def1",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "file": "ONTOLOGIAS.md",
+                "followCursor": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-list",
+              "title": "Esquema de ONTOLOGIAS"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:Abrir selector rápido": false,
+      "graph:Abrir vista gráfica": false,
+      "canvas:Crear nuevo lienzo": false,
+      "daily-notes:Abrir la nota de hoy": false,
+      "templates:Insertar plantilla": false,
+      "command-palette:Abrir paleta de comandos": false,
+      "bases:Crear nueva base": false
+    }
+  },
+  "active": "f63b78398244487b",
+  "lastOpenFiles": [
+    "ONTOLOGIAS/Sin título.md",
+    "ONTOLOGIAS/movie-ontology/Sin título 1.md",
+    "ONTOLOGIAS/movie-ontology/MovieOntology.base",
+    "ONTOLOGIAS/movie-ontology/Sin título.base",
+    "ONTOLOGIAS/movie-ontology/Sin título.md",
+    "ONTOLOGIAS/movie-ontology/Certification.md",
+    "ONTOLOGIAS/bridge-ontology/_index.md",
+    "ONTOLOGIAS/bridge-ontology/wasWatchedBy.md",
+    "ONTOLOGIAS/bridge-ontology/wasRatedBy.md",
+    "ONTOLOGIAS/bridge-ontology/timeMatchScore.md",
+    "ONTOLOGIAS/bridge-ontology/temporalMatchScore.md",
+    "ONTOLOGIAS/bridge-ontology/suitableForSocialContext.md",
+    "ONTOLOGIAS/bridge-ontology/socialMatchScore.md",
+    "ONTOLOGIAS/bridge-ontology/satisfiesRequirement.md",
+    "ONTOLOGIAS/bridge-ontology/requirementMatchScore.md",
+    "ONTOLOGIAS/bridge-ontology/recommends.md",
+    "ONTOLOGIAS/bridge-ontology/moodMatchScore.md",
+    "ONTOLOGIAS/bridge-ontology/isSuitableFor.md",
+    "ONTOLOGIAS/bridge-ontology/isSatisfiedBy.md",
+    "ONTOLOGIAS/bridge-ontology/isRecommendedIn.md",
+    "ONTOLOGIAS/bridge-ontology/isKidFriendly.md",
+    "ONTOLOGIAS/bridge-ontology/isAlignedWith.md",
+    "ONTOLOGIAS/bridge-ontology/hasWatched.md",
+    "ONTOLOGIAS/bridge-ontology/hasRated.md",
+    "ONTOLOGIAS/bridge-ontology/energyMatchScore.md",
+    "ONTOLOGIAS/bridge-ontology/compatibleTimeOfDay.md",
+    "ONTOLOGIAS/bridge-ontology/compatibleMood.md",
+    "ONTOLOGIAS/bridge-ontology/compatibleEnergyLevel.md",
+    "ONTOLOGIAS/bridge-ontology",
+    "ONTOLOGIAS/context-ontology",
+    "ONTOLOGIAS/movie-ontology",
+    "movie-graph-rag-ontologies/generate_ontology_notes.py.tmp.2504.a328e7403047",
+    "ONTOLOGIAS",
+    "movie-graph-rag-ontologies/generate_ontology_notes.py",
+    "movie-graph-rag-ontologies/generate_ontology_notes.py.tmp.2504.74028793e83f"
+  ]
+}

@@ -168,6 +168,8 @@ Los diagramas de las ontologías están disponibles en [`movie-graph-rag-ontolog
 
 ![MovieOntology GIF](https://media4.giphy.com/media/v1.Y2lkPTc5MGI3NjExdzh3NWNsa3EydHYyZTd2aXY2OWtudmU3MXU1bjRrNzV2anhreWtrOSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/hfm5SAEpjDyi9IryXI/giphy.gif)
 
+La carpeta [`ONTOLOGIAS/`](ONTOLOGIAS/) contiene las notas de las ontologías en formato Markdown compatible con **Obsidian**. Abriendo esa carpeta como vault en Obsidian se puede explorar la vista de grafo interactiva que muestra las relaciones entre clases y propiedades de las tres ontologías.
+
 ---
 
 ## Funcionalidades
